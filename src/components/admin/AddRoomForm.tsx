@@ -23,7 +23,9 @@ export default function AddRoomForm() {
   const [maxGuests, setMaxGuests] = useState("2");
   const [bedConfig, setBedConfig] = useState("");
   const [amenities, setAmenities] = useState("");
+  const [displayOrder, setDisplayOrder] = useState("");
   const [doorCode, setDoorCode] = useState("");
+  const [wifiNetworkName, setWifiNetworkName] = useState("");
   const [wifiPassword, setWifiPassword] = useState("");
   const [draftId, setDraftId] = useState(newDraftId);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
@@ -54,7 +56,9 @@ export default function AddRoomForm() {
     setMaxGuests("2");
     setBedConfig("");
     setAmenities("");
+    setDisplayOrder("");
     setDoorCode("");
+    setWifiNetworkName("");
     setWifiPassword("");
     setDraftId(newDraftId());
     setPhotoUrls([]);
@@ -85,7 +89,9 @@ export default function AddRoomForm() {
           .split(",")
           .map((a) => a.trim())
           .filter(Boolean),
+        displayOrder: displayOrder.trim() ? Number(displayOrder) : undefined,
         doorCode,
+        wifiNetworkName,
         wifiPassword,
         photoUrls,
         photoLabels,
@@ -179,11 +185,31 @@ export default function AddRoomForm() {
           />
         </div>
         <div>
+          <label className="text-sm font-medium text-ink/80">Room order (optional)</label>
+          <input
+            type="number"
+            step="1"
+            value={displayOrder}
+            onChange={(e) => setDisplayOrder(e.target.value)}
+            placeholder="e.g. 11"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+          />
+        </div>
+        <div>
           <label className="text-sm font-medium text-ink/80">Door code (optional)</label>
           <input
             type="text"
             value={doorCode}
             onChange={(e) => setDoorCode(e.target.value)}
+            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-ink/80">WiFi network name (optional)</label>
+          <input
+            type="text"
+            value={wifiNetworkName}
+            onChange={(e) => setWifiNetworkName(e.target.value)}
             className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>

@@ -6,10 +6,12 @@ import { CheckCircle, DoorOpen, HandWaving, WifiHigh } from "@phosphor-icons/rea
 export default function UnlockedSection({
   token,
   doorCode,
+  wifiNetworkName,
   wifiPassword,
 }: {
   token: string;
   doorCode: string | null;
+  wifiNetworkName: string | null;
   wifiPassword: string | null;
 }) {
   const [message, setMessage] = useState("");
@@ -69,8 +71,13 @@ export default function UnlockedSection({
         <div className="rounded-xl border-2 border-terracotta-500 bg-page p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-ink/80">
             <WifiHigh size={18} className="text-terracotta-600" />
-            WiFi password
+            WiFi
           </div>
+          {wifiNetworkName && (
+            <p className="mt-1 text-sm text-ink/65">
+              Network: <span className="font-mono text-ink">{wifiNetworkName}</span>
+            </p>
+          )}
           <p className="mt-1 font-mono text-2xl tracking-widest text-ink">
             {wifiPassword ?? "—"}
           </p>

@@ -20,10 +20,14 @@ export async function PATCH(
 
   if (typeof body.doorCode === "string") update.door_code = body.doorCode.trim();
   if (typeof body.wifiPassword === "string") update.wifi_password = body.wifiPassword.trim();
+  if (typeof body.wifiNetworkName === "string") update.wifi_network_name = body.wifiNetworkName.trim();
   if (typeof body.name === "string") update.name = body.name.trim();
   if (typeof body.description === "string") update.description = body.description.trim();
   if (typeof body.pricePerNight === "number" && Number.isFinite(body.pricePerNight)) {
     update.price_per_night = body.pricePerNight;
+  }
+  if (typeof body.displayOrder === "number" && Number.isFinite(body.displayOrder)) {
+    update.display_order = body.displayOrder;
   }
   if (Array.isArray(body.photoUrls) && body.photoUrls.every((u: unknown) => typeof u === "string")) {
     update.photo_urls = body.photoUrls;

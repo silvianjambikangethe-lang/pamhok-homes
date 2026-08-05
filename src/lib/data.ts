@@ -56,6 +56,8 @@ const SAMPLE_ROOMS: Room[] = [
     photo_urls: [],
     door_code: null,
     wifi_password: null,
+    wifi_network_name: null,
+    display_order: 1,
     is_active: true,
     created_at: new Date().toISOString(),
   },
@@ -80,6 +82,8 @@ const SAMPLE_ROOMS: Room[] = [
     photo_urls: [],
     door_code: null,
     wifi_password: null,
+    wifi_network_name: null,
+    display_order: 2,
     is_active: true,
     created_at: new Date().toISOString(),
   },
@@ -103,6 +107,8 @@ const SAMPLE_ROOMS: Room[] = [
     photo_urls: [],
     door_code: null,
     wifi_password: null,
+    wifi_network_name: null,
+    display_order: 3,
     is_active: true,
     created_at: new Date().toISOString(),
   },
@@ -117,7 +123,8 @@ export async function getRooms(): Promise<{ rooms: Room[]; isSample: boolean }> 
     .from("rooms")
     .select("*")
     .eq("is_active", true)
-    .order("price_per_night", { ascending: true });
+    .order("display_order", { ascending: true })
+    .order("name", { ascending: true });
 
   // Sample data is a dev-convenience fallback for "not connected/reachable"
   // — NOT for "connected and genuinely has zero rooms right now." A live

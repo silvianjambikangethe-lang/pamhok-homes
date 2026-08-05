@@ -12,6 +12,8 @@ interface RoomSetting {
   currency: string;
   door_code: string | null;
   wifi_password: string | null;
+  wifi_network_name: string | null;
+  display_order: number;
   photo_urls: string[];
   photo_labels: string[];
 }
@@ -20,7 +22,9 @@ function RoomRow({ room }: { room: RoomSetting }) {
   const [name, setName] = useState(room.name);
   const [description, setDescription] = useState(room.description);
   const [pricePerNight, setPricePerNight] = useState(String(room.price_per_night));
+  const [displayOrder, setDisplayOrder] = useState(String(room.display_order));
   const [doorCode, setDoorCode] = useState(room.door_code ?? "");
+  const [wifiNetworkName, setWifiNetworkName] = useState(room.wifi_network_name ?? "");
   const [wifiPassword, setWifiPassword] = useState(room.wifi_password ?? "");
   const [photoUrls, setPhotoUrls] = useState(room.photo_urls);
   const [photoLabels, setPhotoLabels] = useState(room.photo_labels);
@@ -57,6 +61,11 @@ function RoomRow({ room }: { room: RoomSetting }) {
       setError("Enter a valid price per night.");
       return;
     }
+    const order = Number(displayOrder);
+    if (!Number.isFinite(order)) {
+      setError("Enter a valid room order.");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -69,7 +78,9 @@ function RoomRow({ room }: { room: RoomSetting }) {
         name,
         description,
         pricePerNight: price,
+        displayOrder: order,
         doorCode,
+        wifiNetworkName,
         wifiPassword,
         photoUrls,
         photoLabels,
@@ -94,7 +105,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
     >
       <h3 className="font-serif text-lg font-semibold text-ink">{room.name}</h3>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <div>
           <label className="text-sm font-medium text-ink/80">Room name</label>
           <input
@@ -123,7 +134,23 @@ function RoomRow({ room }: { room: RoomSetting }) {
             className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
-        <div className="sm:col-span-2">
+        <div>
+          <label className="text-sm font-medium text-ink/80">
+            Room order
+          </label>
+          <input
+            type="number"
+            step="1"
+            value={displayOrder}
+            onChange={(e) => {
+              setDisplayOrder(e.target.value);
+              markDirty();
+            }}
+            placeholder="e.g. 1"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+          />
+        </div>
+        <div className="sm:col-span-3">
           <label className="text-sm font-medium text-ink/80">Description</label>
           <textarea
             rows={3}
@@ -147,7 +174,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
         />
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
         <div>
           <label className="flex items-center gap-2 text-sm font-medium text-ink/80">
             <DoorOpen size={16} /> Door code
@@ -159,6 +186,22 @@ function RoomRow({ room }: { room: RoomSetting }) {
               setDoorCode(e.target.value);
               markDirty();
             }}
+            placeholder="Not set"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+          />
+        </div>
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-ink/80">
+            <WifiHigh size={16} /> WiFi network name
+          </label>
+          <input
+            type="text"
+            value={wifiNetworkName}
+            onChange={(e) => {
+              setWifiNetworkName(e.target.value);
+              markDirty();
+            }}
+            placeholder="Not set"
             className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
@@ -173,6 +216,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
               setWifiPassword(e.target.value);
               markDirty();
             }}
+            placeholder="Not set"
             className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>

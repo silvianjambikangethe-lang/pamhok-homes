@@ -52,6 +52,8 @@ export type Room = {
   photo_urls: string[];
   door_code: string | null;
   wifi_password: string | null;
+  wifi_network_name: string | null;
+  display_order: number;
   is_active: boolean;
   created_at: string;
 };

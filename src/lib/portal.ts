@@ -9,7 +9,7 @@ export interface LatestLaundryRequest {
 }
 
 export interface PortalBooking extends Booking {
-  room: Pick<Room, "id" | "name" | "slug" | "door_code" | "wifi_password"> | null;
+  room: Pick<Room, "id" | "name" | "slug" | "door_code" | "wifi_password" | "wifi_network_name"> | null;
   guest: Pick<Guest, "full_name"> | null;
   hasReview: boolean;
   latestLaundryRequest: LatestLaundryRequest | null;
@@ -25,7 +25,9 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
 
   const { data, error } = await supabase
     .from("bookings")
-    .select("*, room:rooms(id, name, slug, door_code, wifi_password), guest:guests(full_name)")
+    .select(
+      "*, room:rooms(id, name, slug, door_code, wifi_password, wifi_network_name), guest:guests(full_name)",
+    )
     .eq("access_token", token)
     .maybeSingle();
 

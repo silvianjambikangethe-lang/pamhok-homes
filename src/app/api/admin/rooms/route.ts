@@ -37,7 +37,12 @@ export async function POST(request: Request) {
     ? body.amenities.filter((a: unknown) => typeof a === "string" && a.trim()).map((a: string) => a.trim())
     : [];
   const doorCode = typeof body.doorCode === "string" ? body.doorCode.trim() : "";
+  const wifiNetworkName = typeof body.wifiNetworkName === "string" ? body.wifiNetworkName.trim() : "";
   const wifiPassword = typeof body.wifiPassword === "string" ? body.wifiPassword.trim() : "";
+  const displayOrder =
+    typeof body.displayOrder === "number" && Number.isFinite(body.displayOrder)
+      ? body.displayOrder
+      : 0;
   const photoUrls =
     Array.isArray(body.photoUrls) && body.photoUrls.every((u: unknown) => typeof u === "string")
       ? body.photoUrls
@@ -67,7 +72,9 @@ export async function POST(request: Request) {
         bed_config: bedConfig,
         amenities,
         door_code: doorCode,
+        wifi_network_name: wifiNetworkName,
         wifi_password: wifiPassword,
+        display_order: displayOrder,
         photo_urls: photoUrls,
         photo_labels: photoLabels,
         is_active: true,

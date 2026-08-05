@@ -10,7 +10,7 @@ export async function GET(
 
   const { data: booking, error } = await supabase
     .from("bookings")
-    .select("payment_status, id_verification_status, checked_out_at, door_code, wifi_password")
+    .select("payment_status, id_verification_status, checked_out_at")
     .eq("access_token", token)
     .maybeSingle();
 

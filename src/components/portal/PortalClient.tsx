@@ -182,6 +182,7 @@ export default function PortalClient({
           <UnlockedSection
             token={token}
             doorCode={booking.room?.door_code ?? null}
+            wifiNetworkName={booking.room?.wifi_network_name ?? null}
             wifiPassword={booking.room?.wifi_password ?? null}
           />
         )}

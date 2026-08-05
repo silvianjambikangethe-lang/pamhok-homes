@@ -29,6 +29,8 @@ create table if not exists rooms (
   photo_urls text[] not null default '{}',     -- real uploaded photos, editable from /admin/rooms
   door_code text,                              -- property-wide unlock code, editable from /admin/rooms
   wifi_password text,
+  wifi_network_name text,                      -- WiFi SSID guests connect to, editable from /admin/rooms
+  display_order int not null default 0,        -- controls listing order on /rooms and /admin/rooms (lower first)
   is_active boolean not null default true,
   created_at timestamptz default now()
 );
@@ -346,26 +348,26 @@ on conflict (id) do nothing;
 -- didn't call for one). Set door_code/wifi_password per room so newly
 -- verified bookings pick up sane defaults.
 -- ============================================================
-insert into rooms (name, slug, description, price_per_night, max_guests, bed_config, amenities, photo_labels, door_code, wifi_password)
+insert into rooms (name, slug, description, price_per_night, max_guests, bed_config, amenities, photo_labels, door_code, wifi_password, display_order)
 values
   ('The Garden Room', 'garden-room',
    'A cozy double room with soft natural light and garden views — perfect for solo travelers or couples.',
    4500, 2, '1 Queen bed',
    array['Free WiFi','Free Parking','Full Kitchen Access','In-Room Safe','Dry Cleaning'],
    array['Garden Room bed','Garden Room desk','Ensuite bathroom'],
-   '1234', 'pamhok-guest'),
+   '1234', 'pamhok-guest', 1),
   ('The Family Suite', 'family-suite',
    'Two connected bedrooms with a shared living area — spacious enough for families or small groups.',
    8500, 4, '1 Queen bed + 2 Singles',
    array['Free WiFi','Free Parking','Full Kitchen Access','In-Room Safe','Dry Cleaning'],
    array['Family Suite living area','Family Suite bedroom','Second bedroom'],
-   '5678', 'pamhok-guest'),
+   '5678', 'pamhok-guest', 2),
   ('The Studio Loft', 'studio-loft',
    'A bright, modern studio with its own kitchenette — ideal for remote workers or short business trips.',
    5500, 2, '1 Queen bed',
    array['Free WiFi','Free Parking','Full Kitchen Access','In-Room Safe'],
    array['Studio Loft interior','Studio Loft workspace','Kitchenette'],
-   '9012', 'pamhok-guest')
+   '9012', 'pamhok-guest', 3)
 on conflict (slug) do nothing;
 
 -- ============================================================
