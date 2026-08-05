@@ -1,0 +1,21 @@
+import type { Metadata } from "next";
+import { requireAdmin } from "@/lib/admin";
+import WhatsappSetupForm from "@/components/admin/WhatsappSetupForm";
+
+export const metadata: Metadata = {
+  title: "WhatsApp Contact — Pamhok Homes",
+  robots: { index: false, follow: false },
+};
+
+export default async function WhatsappSetupPage() {
+  const { admin } = await requireAdmin();
+
+  return (
+    <div className="flex min-h-[70vh] items-center justify-center px-4">
+      <WhatsappSetupForm
+        initialPhone={admin.whatsapp_phone}
+        required={!admin.whatsapp_phone}
+      />
+    </div>
+  );
+}

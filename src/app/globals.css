@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Light mode — RGB triplets so Tailwind's `/opacity` modifiers work. */
+  --color-page: 245 239 230; /* Warm Ivory #F5EFE6 */
+  --color-surface: 237 228 214; /* deeper ivory #EDE4D6 */
+  --color-ink: 43 33 27; /* Deep Espresso #2B211B */
+}
+
+.dark {
+  --color-page: 30 24 18; /* #1E1812 — warm brown-black, not pure black */
+  --color-surface: 46 36 29; /* #2E241D */
+  --color-ink: 240 233 221; /* Warm Ivory (dark-mode text) #F0E9DD */
+}
+
+body {
+  background-color: rgb(var(--color-page));
+  color: rgb(var(--color-ink));
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  /* Dark-mode-only type adjustments (typography-guide.md §4): thin serif
+   * strokes read as too delicate on a dark background, and muted text
+   * measured for a light background looks dimmer than intended on a dark
+   * one — both need a small nudge that a plain :root variable can't give
+   * font-weight, and Tailwind's /opacity modifier bakes its value into
+   * the rule at build time rather than through a variable. Two selectors
+   * beat the compiled utility on specificity, so they apply reliably
+   * regardless of class order in the source. */
+  .dark .text-display,
+  .dark .text-h1,
+  .dark .text-h2 {
+    font-weight: 600;
+  }
+
+  /* Cormorant italic accents (eyebrow labels, pull-quotes) look faint
+   * below 500 weight against a dark background — text-label already
+   * bakes in 500, text-quote defaults to 400 in light mode and needs the
+   * same floor here. */
+  .dark .text-quote {
+    font-weight: 500;
+  }
+
+  .dark .text-ink\/65 {
+    color: rgb(var(--color-ink) / 0.72);
+  }
+}
+
+@layer utilities {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10;
+  }
+
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-terracotta-500 focus-visible:ring-offset-2 focus-visible:ring-offset-page;
+  }
+}

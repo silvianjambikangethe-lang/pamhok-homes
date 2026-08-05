@@ -1,0 +1,132 @@
+# Pamhok Homes
+
+Booking website for Pamhok Homes — Next.js + Supabase, with M-Pesa/PayPal/Pesapal
+payments, a token-based guest portal, and an RLS-gated admin dashboard.
+
+## Local setup
+
+```bash
+npm install
+cp .env.example .env.local   # then fill in real values
+npm run dev
+```
+
+Open http://localhost:3000. Without Supabase configured, room pages fall back
+to sample data so the site still renders — the booking form will show a
+"not connected yet" message until you connect a real project.
+
+## Connecting Supabase
+
+1. Create a project at supabase.com (or use the existing one).
+2. In **Project Settings > API**, copy the **Project URL**, **anon public
+   key**, and **service_role key** into `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (server-only — never expose this to the browser)
+3. In **SQL Editor > New Query**, paste and run [`supabase/schema.sql`](supabase/schema.sql).
+   This creates all tables, RLS policies, the private `id-documents` storage
+   bucket, and seeds three sample rooms you can edit or replace.
+4. Create your own login in **Authentication > Users > Add user**, then run
+   in the SQL Editor (with your own values):
+   ```sql
+   insert into admin_users (id, email) values ('<your-auth-user-id>', 'you@example.com');
+   ```
+   You can now sign in at `/admin/login`.
+
+Managing rooms (name, price, photos, description) is done directly in the
+Supabase table editor on the `rooms` table — there's no "add room" screen in
+the admin dashboard, since the brief didn't call for one.
+
+## Payments
+
+Three methods, per the final confirmed list: M-Pesa, PayPal, and Pesapal (card).
+
+- **PayPal & Pesapal** run as regular Next.js API routes
+  (`src/app/api/payments/...`). Add your keys to `.env.local` and they work
+  immediately — no redeploy of anything else needed. Pesapal always settles
+  in KES (it's a Kenyan gateway); PayPal charges in whatever currency the
+  guest had selected in the currency switcher, falling back to USD since
+  PayPal can't process KES at all.
+- **M-Pesa (Daraja)** runs as two **Supabase Edge Functions**
+  (`supabase/functions/mpesa-initiate`, `supabase/functions/mpesa-callback`),
+  because Safaricom needs a stable public callback URL independent of
+  wherever this Next.js app ends up hosted. Deploy them with the
+  [Supabase CLI](https://supabase.com/docs/guides/functions):
+  ```bash
+  supabase functions deploy mpesa-initiate
+  supabase functions deploy mpesa-callback --no-verify-jwt
+  supabase secrets set MPESA_CONSUMER_KEY=... MPESA_CONSUMER_SECRET=... MPESA_SHORTCODE=... MPESA_PASSKEY=... MPESA_ENV=sandbox
+  ```
+  (`--no-verify-jwt` on the callback function only — Safaricom can't send a
+  Supabase auth header.) Get sandbox credentials at developer.safaricom.co.ke.
+
+Every payment button shows a clear "Payment method not yet configured"
+state instead of crashing when its credentials are missing. Get Pesapal
+merchant credentials at developer.pesapal.com.
+
+## Multi-currency display
+
+The KES amount is always the authoritative figure — bookings are stored
+and reported in KES only. Guests can additionally see an approximate
+conversion (USD/EUR/GBP) via the currency switcher next to any price,
+using free daily-cached exchange rates (frankfurter.app, no API key
+needed). Selecting a currency there also decides what PayPal actually
+charges; M-Pesa and Pesapal always charge KES regardless of the display
+currency.
+
+## Automated ID verification
+
+Guests upload a photo of their national ID/passport **and** a selfie
+(`IdUploadForm`). If `SMILE_ID_PARTNER_ID`/`SMILE_ID_API_KEY` are set in
+`.env.local`, `src/lib/smileid.ts` runs a real-time Smile ID Document
+Verification job (their sandbox contract — signing, the upload/zip/poll
+flow — was confirmed directly against `testapi.smileidentity.com` while
+building this). A selfie is required: Smile ID's own backend rejects a
+job submitted with only an ID image. On a pass, `id_verification_status`
+is auto-set to `Verified` and the door code/WiFi unlock in
+`src/lib/unlock.ts` fires immediately (still gated on payment also being
+`Paid`). On a fail, error, or missing Smile ID config, the booking stays
+`Pending` exactly as before — the admin's existing Approve/Reject buttons
+on `/admin/verifications` are the manual override, and that page now also
+shows the Smile ID result (and both images) so the host knows why the
+auto-check didn't pass. Get sandbox credentials at
+[usesmileid.com](https://usesmileid.com).
+
+## Laundry requests
+
+Guests get a dedicated "Request Laundry Pickup" button in the portal
+(separate from the general "Call for Assistance" button), gated to their
+active stay window. Status progresses Open → Picked Up → Cleaning →
+Ready → Returned → Closed, set from the admin dashboard's requests feed;
+the guest sees a simplified version of that status.
+
+## Checkout reminders (dormant)
+
+`src/app/api/cron/checkout-reminders` computes which bookings need a
+"checkout tomorrow" or "checkout today" reminder, but only logs — there's
+no email/SMS provider wired up yet, and nothing is deployed to schedule
+it. Once both exist, point a scheduler (Vercel Cron, or a Supabase Edge
+Function on a cron trigger) at this route twice a day and swap the
+`console.log` in `sendReminder` for a real provider call. The "Extend My
+Stay" flow it would promote is already fully functional today, directly
+in the guest portal.
+
+## Deployment
+
+No hosting has been chosen yet. Vercel is the natural fit for Next.js —
+connect this repo, add the same environment variables from `.env.local`
+(including a real `NEXT_PUBLIC_SITE_URL`), and deploy.
+
+## A note on this dev machine
+
+This machine's Application Control (WDAC) policy blocks native `.node`
+binaries, which breaks Next.js's default Rust-based tooling. Two
+adjustments were made to work around it, both safe to keep permanently
+(they don't affect production behavior):
+
+- Tailwind CSS is pinned to v3 (pure JS) instead of v4 (native Rust "oxide"
+  engine).
+- `next.config.ts` sets `typescript.ignoreBuildErrors: true` because the
+  WASM fallback's type-check pass crashes on this machine. Type safety is
+  still enforced by running `npx tsc --noEmit` separately, and CI/other
+  machines without this restriction can re-enable it.
