@@ -12,6 +12,7 @@ import ExtendStaySection from "@/components/portal/ExtendStaySection";
 import CheckoutSection from "@/components/portal/CheckoutSection";
 import ReviewForm from "@/components/portal/ReviewForm";
 import VerificationPassSection from "@/components/portal/VerificationPassSection";
+import ArrivalSection from "@/components/portal/ArrivalSection";
 import { firstNameLastInitial } from "@/lib/guest-display-name";
 
 function formatCurrency(amount: number, currency: string) {
@@ -34,12 +35,14 @@ export default function PortalClient({
   rates,
   qrDataUrl,
   adminPhone,
+  mapsUrl,
 }: {
   booking: PortalBooking;
   token: string;
   rates: Record<DisplayCurrency, number>;
   qrDataUrl: string | null;
   adminPhone: string | null;
+  mapsUrl: string | null;
 }) {
   const checkOutDate = startOfDay(parseISO(booking.check_out));
   const isCheckoutDay = isPast(checkOutDate) || format(checkOutDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
@@ -104,6 +107,18 @@ export default function PortalClient({
           bookingReference={booking.booking_reference}
           qrDataUrl={isPassReady ? qrDataUrl : null}
         />
+
+        {isVerifiedAndActive && (
+          <ArrivalSection
+            mapsUrl={mapsUrl}
+            guestDisplayName={firstNameLastInitial(booking.guest?.full_name)}
+            roomName={booking.room?.name ?? "Pamhok Homes"}
+            checkIn={booking.check_in}
+            checkOut={booking.check_out}
+            bookingReference={booking.booking_reference}
+            qrDataUrl={qrDataUrl}
+          />
+        )}
 
         {booking.id_verification_status === "Not Submitted" && (
           <IdUploadForm token={token} rejected={false} />

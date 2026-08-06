@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getBookingByToken } from "@/lib/portal";
 import { getExchangeRates } from "@/lib/currency";
 import { generateQrDataUrl } from "@/lib/qrcode";
-import { getAdminContactPhone } from "@/lib/data";
+import { getAdminContactPhone, getContactContent } from "@/lib/data";
 import PortalClient from "@/components/portal/PortalClient";
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export default async function GuestPortalPage({
   const isPassReady =
     booking.payment_status === "Paid" && booking.id_verification_status === "Verified";
 
-  const [rates, qrDataUrl, adminPhone] = await Promise.all([
+  const [rates, qrDataUrl, adminPhone, contactContent] = await Promise.all([
     getExchangeRates(),
     isPassReady
       ? generateQrDataUrl(
@@ -32,6 +32,7 @@ export default async function GuestPortalPage({
         )
       : Promise.resolve(null),
     getAdminContactPhone(),
+    getContactContent(),
   ]);
 
   return (
@@ -41,6 +42,7 @@ export default async function GuestPortalPage({
       rates={rates}
       qrDataUrl={qrDataUrl}
       adminPhone={adminPhone}
+      mapsUrl={contactContent.maps_url}
     />
   );
 }

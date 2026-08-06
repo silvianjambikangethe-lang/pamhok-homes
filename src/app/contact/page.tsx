@@ -4,6 +4,7 @@ import { SITE, whatsappLink } from "@/lib/site";
 import { getAdminContactPhone, getContactContent } from "@/lib/data";
 import ContactForm from "@/components/ContactForm";
 import PageBanner from "@/components/PageBanner";
+import GetDirectionsButton from "@/components/GetDirectionsButton";
 
 export const metadata: Metadata = {
   title: "Contact & Location — Pamhok Homes",
@@ -62,15 +63,17 @@ export default async function ContactPage() {
             )}
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-2xl border border-gold-500/20 shadow-card">
-            <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-surface text-center text-ink/65">
-              <MapPin size={32} weight="light" />
-              <p className="max-w-[220px] text-sm">
-                Map preview will appear here once the property address is
-                finalized.
-              </p>
+          {content.maps_url && (
+            <div className="mt-6 overflow-hidden rounded-2xl border border-gold-500/20 shadow-card">
+              <div className="flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-surface p-6 text-center text-ink/65">
+                <MapPin size={32} weight="light" className="text-terracotta-600" />
+                <p className="max-w-[220px] text-sm">
+                  Open the pinned location in Google Maps for directions.
+                </p>
+                <GetDirectionsButton mapsUrl={content.maps_url} />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="lg:col-span-3">

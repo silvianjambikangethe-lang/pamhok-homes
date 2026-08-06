@@ -290,6 +290,7 @@ const DEFAULT_CONTACT_CONTENT: ContactContent = {
   address_note: "Exact address shared after booking confirmation",
   intro_line:
     "Questions about a stay, or need something during your trip? Reach us directly — a real person always answers.",
+  maps_url: null,
 };
 
 async function getSiteContentValue<T>(key: SiteContent["key"], fallback: T): Promise<T> {

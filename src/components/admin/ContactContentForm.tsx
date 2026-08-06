@@ -66,6 +66,24 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
           />
         </div>
         <div>
+          <label className="text-sm font-medium text-ink/80">Google Maps link</label>
+          <input
+            type="text"
+            value={value.maps_url ?? ""}
+            onChange={(e) => {
+              setValue({ ...value, maps_url: e.target.value.trim() || null });
+              setSaved(false);
+            }}
+            placeholder="https://maps.app.goo.gl/…"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+          />
+          <p className="mt-1 text-xs text-ink/65">
+            Powers the &quot;Get Directions&quot; button on the Contact page
+            and in the guest portal. Share a pin from Google Maps and paste
+            the link here.
+          </p>
+        </div>
+        <div>
           <label className="text-sm font-medium text-ink/80">Contact form intro line</label>
           <textarea
             rows={2}

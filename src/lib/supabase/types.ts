@@ -156,6 +156,7 @@ export type ContactContent = {
   address_text: string;
   address_note: string;
   intro_line: string;
+  maps_url: string | null;
 };
 
 export type SiteContent = {
