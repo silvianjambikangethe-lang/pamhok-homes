@@ -1,6 +1,6 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-08-06 (evening). Written for continuing this project in a
+Last updated: 2026-08-07. Written for continuing this project in a
 **new chat** — paste a link to this file (or its contents) so the new session
 has full context. This supersedes the previous version of this file (dated
 2026-08-06, morning) — that one's content is folded into this one, updated
@@ -65,12 +65,11 @@ local-only reference file, not something `git status` will ever show).
 - **10 real rooms**, correctly numbered/ordered 1–10 on both `/admin/rooms`
   and the public `/rooms` page (new `display_order` field, admin-editable).
   Room order is **not** the same as price order — it's a manual field the
-  admin sets. ⚠️ **Content note**: 9 of the 10 rooms currently share the
-  *exact same* description text ("The one-bedroom at Pamhok Homes provides
-  a spacious yet intimate setting…") — only Room Eight has distinct copy.
-  Worth flagging to the owner in case that wasn't intentional. Also,
-  "Room Ten (Q)" still has that naming quirk (almost certainly meant to be
-  "(10)") — never fixed, never asked to be.
+  admin sets. 9 of the 10 rooms share the *exact same* description text
+  ("The one-bedroom at Pamhok Homes provides a spacious yet intimate
+  setting…") — only Room Eight has distinct copy; confirmed intentional
+  with the owner, no change needed. "Room Ten (Q)" also confirmed
+  intentional as-is.
 - **Per-room WiFi network name** (SSID), separate from the WiFi password —
   admin sets both in Room Settings; guest portal shows both once verified.
 - **Room settings live preview** — toggle in `/admin/rooms` shows exactly
@@ -97,20 +96,25 @@ local-only reference file, not something `git status` will ever show).
     prompt, then opens the real pin either way.
   - **Neighborhood page is now admin-editable** (`/admin/content` →
     Neighborhood): add/remove places under Food or Recreation, each with a
-    name, detail line, and a photo upload slot. 6 real places already
-    added under Recreation (Thika Road Mall/TRM, Garden City Mall, Two
-    Rivers Mall, Village Market, Karura Forest, Nairobi National Park),
-    **all with working "Get Directions from Pamhok Homes" buttons** built
-    from precise point-to-point Maps routes. Photo slots are intentionally
-    empty — owner said they'll add real photos personally. "Food" category
-    is empty (none of the 6 places are specifically restaurants).
+    name, detail line, and a photo upload slot. 6 real places under
+    Recreation (Thika Road Mall/TRM, Garden City Mall, Two Rivers Mall,
+    Village Market, Karura Forest, Nairobi National Park), **all with
+    working "Get Directions from Pamhok Homes" buttons** built from
+    precise point-to-point Maps routes. Two Food places added (Artcaffe,
+    Java House); no Maps link supplied for either yet, so no directions
+    button on those two until one's added. All neighborhood photos —
+    Recreation and Food — are now uploaded.
 - **"I've Arrived" flow in the guest portal** — once paid + verified, a
   guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
   latter pops up a congratulations message plus their verification pass
-  (QR code, name, room, dates, reference) to show security. The door
-  code/WiFi card behind it **blurs** while the popup is open (fixed a real
-  privacy gap — it used to be visible around the popup's edges on wider
-  screens) and un-blurs the moment the guest closes it.
+  (name, room, dates, reference — QR code removed) to show security. The
+  Reference field is a computed code, not the booking's own
+  `booking_reference`: `REF{month}/{day}-{room}-{yy}` from the check-in
+  date and room number, e.g. a 7 Aug 2026 check-in into Room Four reads
+  `REF8/7-4-26`. The door code/WiFi card behind the popup **blurs** while
+  it's open (fixed a real privacy gap — it used to be visible around the
+  popup's edges on wider screens) and un-blurs the moment the guest closes
+  it.
 - **Emergency site shutdown switch** (`/admin/settings` → "Site Status")
   — two-step confirm to shut down, one click to reopen. When closed, the
   guest-facing marketing pages (home, rooms, about, amenities,
@@ -211,32 +215,22 @@ This is the most important section to get right for whoever picks this up.
    M-Pesa section above for the exact process.
 3. **Go live with PayPal** — same-day, self-serve, whenever the owner is
    ready. See above for the exact steps.
-4. **Add real neighborhood photos** — 6 real places exist, all photo slots
-   empty, waiting on the owner (`/admin/content` → Neighborhood → per-place
-   "Upload Image").
-5. **Feature real guest reviews as they come in** — the mechanism is built
+4. **Feature real guest reviews as they come in** — the mechanism is built
    (`/admin/reviews`) but there are zero real reviews yet, so the homepage
    is still showing fake sample testimonials by design.
-6. **Fill in remaining placeholder photos** — Living Room / Bedroom /
+5. **Fill in remaining placeholder photos** — Living Room / Bedroom /
    Kitchen (homepage) and Coffee Corner / Reading Nook (About) — still
    empty, unchanged this session, wired up and ready in Edit Content.
-7. **Review the identical room descriptions** — 9 of 10 rooms share one
-   description verbatim; confirm with the owner whether that's intentional
-   or each room should get its own copy.
-8. **Fix "Room Ten (Q)"** naming — likely meant to be "(10)", never
-   corrected.
-9. **Update business expense placeholders** — Domain (.store), Vercel Pro,
+6. **Update business expense placeholders** — Domain (.store), Vercel Pro,
    Supabase Pro all still have placeholder renewal dates (2026-09-03) and
    no amount, so the "Renewals due soon" dashboard alert will fire on the
    wrong date until corrected in `/admin/expenses`.
-10. **Legal review** — Terms & Privacy are still AI-drafted, not
-    lawyer-reviewed, despite handling real ID documents and payment data.
-11. **Production credentials for Smile ID** — still sandbox.
-12. **Consider rotating exposed secrets** — see the security note in the
-    M-Pesa/PayPal section above. Owner's call, not urgent, not a code bug.
-13. **Set up a GitHub remote** if/when the owner wants an off-machine
-    backup — local git is done, this is the only remaining piece from the
-    original "set up version control" ask.
+7. **Production credentials for Smile ID** — still sandbox.
+8. **Consider rotating exposed secrets** — see the security note in the
+   M-Pesa/PayPal section above. Owner's call, not urgent, not a code bug.
+9. **Set up a GitHub remote** if/when the owner wants an off-machine
+   backup — local git is done, this is the only remaining piece from the
+   original "set up version control" ask.
 
 ---
 
