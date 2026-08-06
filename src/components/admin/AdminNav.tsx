@@ -14,6 +14,7 @@ import {
   PencilSimple,
   Receipt,
   SignOut,
+  Star,
 } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { SITE } from "@/lib/site";
@@ -28,6 +29,7 @@ const LINKS = [
   { href: "/admin/requests", label: "Guest Requests", icon: ChatCircleDots },
   { href: "/admin/rooms", label: "Room Settings", icon: DoorOpen },
   { href: "/admin/content", label: "Edit Content", icon: PencilSimple },
+  { href: "/admin/reviews", label: "Reviews", icon: Star },
   { href: "/admin/expenses", label: "Expenses", icon: Receipt },
   { href: "/admin/whatsapp-setup", label: "WhatsApp Contact", icon: DeviceMobile },
   { href: "/admin/settings", label: "Settings", icon: Gear },

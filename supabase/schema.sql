@@ -181,6 +181,7 @@ create table if not exists reviews (
   rating int not null check (rating between 1 and 5),
   comment text,
   guest_display_name text,
+  featured boolean not null default false,  -- admin-curated highlight, shown on the homepage
   created_at timestamptz default now()
 );
 

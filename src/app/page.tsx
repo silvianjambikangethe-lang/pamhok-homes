@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Star } from "@phosphor-icons/react/dist/ssr";
 import PhotoCard from "@/components/PhotoCard";
 import Eyebrow from "@/components/Eyebrow";
-import { getAmenitiesContent, getHomepageContent } from "@/lib/data";
+import { getAmenitiesContent, getFeaturedReviews, getHomepageContent } from "@/lib/data";
 import { getAmenityIcon } from "@/lib/amenity-icons";
 
 // Real property photos will eventually make this a photo hero. Until
@@ -12,31 +12,11 @@ import { getAmenityIcon } from "@/lib/amenity-icons";
 // makes that stretch unreadable. Once an admin sets a hero image, a fixed
 // dark overlay guarantees the same contrast regardless of the photo.
 
-const TESTIMONIALS = [
-  {
-    name: "Amina W.",
-    quote:
-      "Felt like staying at a friend's place, not a hotel. The check-in was seamless and the room was spotless.",
-    rating: 5,
-  },
-  {
-    name: "David K.",
-    quote:
-      "Perfect base for a TRM trip — five minutes from everything, and the host was incredibly responsive on WhatsApp.",
-    rating: 5,
-  },
-  {
-    name: "Grace N.",
-    quote:
-      "Loved the little touches. Fast WiFi, comfortable bed, and the neighborhood recommendations were spot on.",
-    rating: 5,
-  },
-];
-
 export default async function HomePage() {
-  const [content, amenities] = await Promise.all([
+  const [content, amenities, { reviews: featuredReviews }] = await Promise.all([
     getHomepageContent(),
     getAmenitiesContent(),
+    getFeaturedReviews(),
   ]);
   const amenityPreview = amenities.slice(0, 5);
 
@@ -172,21 +152,23 @@ export default async function HomePage() {
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
+          {featuredReviews.map((review) => (
             <figure
-              key={t.name}
+              key={review.id}
               className="flex flex-col gap-4 rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card"
             >
               <div className="flex gap-1 text-gold-500" aria-hidden="true">
-                {Array.from({ length: t.rating }).map((_, i) => (
+                {Array.from({ length: review.rating }).map((_, i) => (
                   <Star key={i} size={16} weight="fill" />
                 ))}
               </div>
-              <blockquote className="font-accent text-quote italic text-ink/80">
-                “{t.quote}”
-              </blockquote>
+              {review.comment && (
+                <blockquote className="font-accent text-quote italic text-ink/80">
+                  “{review.comment}”
+                </blockquote>
+              )}
               <figcaption className="text-body-sm font-semibold text-ink">
-                {t.name}
+                {review.guest_display_name ?? "Guest"}
               </figcaption>
             </figure>
           ))}

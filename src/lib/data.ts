@@ -206,6 +206,7 @@ const SAMPLE_REVIEWS: Review[] = [
     comment:
       "Felt like staying at a friend's place, not a hotel. Spotless and welcoming.",
     guest_display_name: "Amina W.",
+    featured: true,
     created_at: new Date().toISOString(),
   },
   {
@@ -215,6 +216,17 @@ const SAMPLE_REVIEWS: Review[] = [
     comment:
       "Perfect base for a TRM trip — five minutes from everything, and the host was incredibly responsive.",
     guest_display_name: "David K.",
+    featured: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "sample-3",
+    booking_id: "sample",
+    rating: 5,
+    comment:
+      "Loved the little touches. Fast WiFi, comfortable bed, and the neighborhood recommendations were spot on.",
+    guest_display_name: "Grace N.",
+    featured: true,
     created_at: new Date().toISOString(),
   },
 ];
@@ -229,6 +241,32 @@ export async function getReviews(): Promise<{ reviews: Review[]; isSample: boole
     .select("*")
     .order("created_at", { ascending: false })
     .limit(12);
+
+  if (error || !data || data.length === 0) {
+    return { reviews: SAMPLE_REVIEWS, isSample: true };
+  }
+
+  return { reviews: data, isSample: false };
+}
+
+// Homepage-facing subset: only reviews an admin has explicitly featured
+// (see /admin/reviews), not just the most recent ones — a 1-star review
+// submitted five minutes ago shouldn't outrank a 5-star one from last
+// month just by being newer. Falls back to sample testimonials only when
+// nothing has been featured yet, same "never blend real and fake" rule as
+// getReviews() — once even one real review is featured, that's what shows,
+// however few.
+export async function getFeaturedReviews(): Promise<{ reviews: Review[]; isSample: boolean }> {
+  if (!isSupabaseConfigured()) {
+    return { reviews: SAMPLE_REVIEWS, isSample: true };
+  }
+
+  const { data, error } = await publicClient()
+    .from("reviews")
+    .select("*")
+    .eq("featured", true)
+    .order("created_at", { ascending: false })
+    .limit(6);
 
   if (error || !data || data.length === 0) {
     return { reviews: SAMPLE_REVIEWS, isSample: true };

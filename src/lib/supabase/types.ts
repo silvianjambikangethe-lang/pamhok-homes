@@ -119,6 +119,7 @@ export type Review = {
   rating: number;
   comment: string | null;
   guest_display_name: string | null;
+  featured: boolean;
   created_at: string;
 };
 
