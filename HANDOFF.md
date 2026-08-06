@@ -1,194 +1,242 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-08-06. Written for continuing this project in a **new chat** —
-paste a link to this file (or its contents) so the new session has full context.
-This supersedes the previous version of this file (dated 2026-08-04) — that one's
-content is folded into this one, updated for everything since.
+Last updated: 2026-08-06 (evening). Written for continuing this project in a
+**new chat** — paste a link to this file (or its contents) so the new session
+has full context. This supersedes the previous version of this file (dated
+2026-08-06, morning) — that one's content is folded into this one, updated
+for everything since.
 
 ## Website URL
 
-**Not deployed anywhere yet.** This project only exists as a local dev server —
-there is no live/public URL. Run it with:
+**Not deployed anywhere yet — still local only.** Run it with:
 
 ```bash
 npm install   # if starting fresh
 npm run dev
 ```
 
-Opens at `http://localhost:3000`. In Claude Code, ask the new session to open
-the preview using the `pamhok-homes` launch config (`.claude/launch.json`).
+Opens at **`http://localhost:3000`**. In Claude Code, ask the new session to
+open the preview using the `pamhok-homes` launch config
+(`.claude/launch.json`, `autoPort: true` — if port 3000 is already taken by
+another session's dev server on the same machine, connect directly via
+`preview_start` with `{url: "http://localhost:3000"}` instead of fighting
+for the port; don't run a second `next dev` on the same project folder).
 
-**Known issue this session**: the dev server died unprompted a couple of times
-during long work sessions (computer sleep, or just long uptime) and needed a
-restart via the launch config. If a new session gets "connection refused" on
-localhost:3000, that's why — just restart it, it's not a code problem.
+Real credentials live in `.env.local` (gitignored). **Version control is now
+set up** (see below) — this is no longer the only safety net.
 
-All real credentials live in `.env.local` (gitignored, confirmed via the
-`.env*` rule in `.gitignore`). **This project is not in a git repository at
-all** (`git status` returns "not a git repository") — there is no version
-control and no commit history. Worth setting up before this gets much bigger;
-right now the only safety net is this handoff doc and Supabase's own data.
+---
+
+## Git — now set up (was pending, now done)
+
+Local repo initialized this session. 12 commits so far, working tree clean:
+
+```
+f429dd5 Add review curation to the admin dashboard
+d142db7 Restrict room card hover/pointer cursor to tablet and up
+6b16f3d Add an emergency site shutdown switch to admin Settings
+90d87f4 Support pasting ready-made Google Maps directions links
+ea6841d Add point-to-point directions from Pamhok Homes to neighborhood places
+9b89741 Make the Neighborhood page admin-editable, with photos
+32868be Blur door code/WiFi behind the arrival pass popup
+03df202 Add a live public-page preview to room settings
+c0a996a Add Google Maps directions and an in-portal arrival flow
+2a0c5df Add date-first room search and hover/tap feedback on room cards
+f3648b9 Add per-room WiFi network name and room ordering
+d9b658f Initial commit
+```
+
+**No remote yet.** The owner has not asked for a GitHub backup — offer,
+don't assume. Pushing anywhere is a "visible to others" action, confirm
+first per this project's own standing instructions.
+
+`.gitignore` correctly excludes `.env*` (confirmed — this also means
+`.env.example` itself has never actually been committed, since it's swept
+up by the same blanket `.env*` rule; harmless, just means it's a
+local-only reference file, not something `git status` will ever show).
 
 ---
 
 ## What's live and working right now (verified, not assumed)
 
-- **Core booking flow, Pesapal→removed, PayPal + M-Pesa only.** Pesapal was
-  fully removed this session (see below) — final payment methods are M-Pesa
-  (Paybill/STK Push) and PayPal (which also takes cards directly, no PayPal
-  account needed).
-- **Pay-and-verify gated unlock**, ID verification gates payment, refund
-  logic on rejection (PayPal auto-refund; M-Pesa flagged for manual refund
-  with a "Mark Refunded" button in the dashboard) — all still in place from
-  earlier sessions, all re-verified working during this session's work.
-- **Guest ID verification now has a real retry flow** (built this session):
-  guest gets **up to 3 self-serve attempts** to upload a photo that passes
-  Smile ID's automated check, with "you have N attempts left" messaging each
-  time. Only after the 3rd failure does it escalate to the admin's
-  `/admin/verifications` queue (a PDF upload or Smile ID being unreachable
-  skips straight to admin review without spending an attempt, since there's
-  no automated check to retry in that case). The admin card shows "(after 3
-  attempts)" for context. Once escalated, the guest portal shows a **"call
-  the host directly"** bar with a real `tel:` link, right after the "under
-  review" banner.
-- **Admin dashboard is fully built out**: Overview (stats + 4 alert cards:
-  Pending ID verifications, Guest requests, Refunds needed, Renewals due
-  soon), Bookings, ID Verifications, Calendar, Guest Requests, Room Settings,
-  Edit Content, **Expenses** (new), Settings (change password + WhatsApp
-  contact number, both with real rate limiting/verification).
-- **Login is now rate-limited** — 8 wrong passwords locks that email out for
-  15 minutes (server-side, real DB-backed, verified with a live simulation).
-  Footer has a small "Host Login" link (was "Owner login") pointing to
-  `/admin/login`.
-- **WhatsApp contact is guest-facing only now, not automated alerts.**
-  Twilio was removed entirely (see below) — the admin's WhatsApp number
-  (Settings → WhatsApp Contact) now only powers guest-facing "Contact Host"
-  buttons: Footer, Contact page, guest portal, and a new **floating WhatsApp
-  button** (bottom-right, fades out after scrolling, hidden on `/admin`).
-  Admin dashboard alerts are dashboard-badge-only now (no external service).
-- **Homepage and About page photo slots are all admin-editable now** —
-  previously several were hardcoded placeholders with no way to change them.
-  Every photo field (hero, About main photo, Living Room/Bedroom/Kitchen,
-  Coffee Corner/Reading Nook) has Upload/Replace/**Remove**, and the photo
-  grids have a hover lift+zoom effect. Room photos (Add Room + existing
-  rooms) now have the same 3-photo format **plus an editable name tag per
-  photo** (was previously invisible/uneditable `photo_labels` data).
-- **Business expense tracker** (`/admin/expenses`, new this session) — add
-  recurring bills (name, amount, currency, billing cycle, due date, notes),
-  live "Renewals due soon" dashboard card (no cron needed — computes live on
-  page load), plus a dormant `/api/cron/expense-reminders` route ready for a
-  future scheduler.
-- **Footer social links** (new this session) — admin-managed list of
-  platform icons in the footer, active/inactive toggle, reordering.
-- **Real contact info is live**: phone `+254 704 393 189`, email
-  `pamhokhomes@gmail.com` (both `SITE.phone`/`SITE.contactEmail` in
-  `src/lib/site.ts`, and `admin_users.whatsapp_phone` — these were
-  out of sync at one point this session; both are now the same real number).
+- **Core booking flow** — PayPal + M-Pesa, pay-and-verify gated unlock, ID
+  verification via Smile ID, refund logic — all unchanged from before this
+  session, still working.
+- **10 real rooms**, correctly numbered/ordered 1–10 on both `/admin/rooms`
+  and the public `/rooms` page (new `display_order` field, admin-editable).
+  Room order is **not** the same as price order — it's a manual field the
+  admin sets. ⚠️ **Content note**: 9 of the 10 rooms currently share the
+  *exact same* description text ("The one-bedroom at Pamhok Homes provides
+  a spacious yet intimate setting…") — only Room Eight has distinct copy.
+  Worth flagging to the owner in case that wasn't intentional. Also,
+  "Room Ten (Q)" still has that naming quirk (almost certainly meant to be
+  "(10)") — never fixed, never asked to be.
+- **Per-room WiFi network name** (SSID), separate from the WiFi password —
+  admin sets both in Room Settings; guest portal shows both once verified.
+- **Room settings live preview** — toggle in `/admin/rooms` shows exactly
+  how a room's *unsaved* edits will look on the public listing card, plus a
+  "View Live Page" link to the real saved page.
+- **Date-first room search on `/rooms`** — leads with a calendar; the room
+  grid stays hidden until check-in/check-out are picked, then filters
+  client-side to only rooms with no conflicting booking. Dates carry
+  through to the room detail page via `?checkIn=&checkOut=`, pre-filling
+  that room's own calendar (re-validated against live availability on
+  arrival — falls back to blank with a notice if someone else booked those
+  exact dates in the gap).
+- **Room card hover/tap effects** — lift + photo zoom, scoped correctly:
+  tablet/desktop (≥768px) get real `:hover` + pointer cursor; phone
+  (<768px) only gets the effect on tap (`:active`), cursor stays the
+  default arrow. Verified at all three breakpoints.
+- **Real Google Maps integration**:
+  - Pamhok Homes' actual pin resolved to precise coordinates and stored
+    (Contact & Location admin section — paste any Google Maps link into
+    the "Google Maps link" field and it auto-resolves on blur, showing a
+    ✓ or a clear error).
+  - "Get Directions" button (Contact page + guest portal) — shows a
+    friendly location-permission explainer before the browser's native
+    prompt, then opens the real pin either way.
+  - **Neighborhood page is now admin-editable** (`/admin/content` →
+    Neighborhood): add/remove places under Food or Recreation, each with a
+    name, detail line, and a photo upload slot. 6 real places already
+    added under Recreation (Thika Road Mall/TRM, Garden City Mall, Two
+    Rivers Mall, Village Market, Karura Forest, Nairobi National Park),
+    **all with working "Get Directions from Pamhok Homes" buttons** built
+    from precise point-to-point Maps routes. Photo slots are intentionally
+    empty — owner said they'll add real photos personally. "Food" category
+    is empty (none of the 6 places are specifically restaurants).
+- **"I've Arrived" flow in the guest portal** — once paid + verified, a
+  guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
+  latter pops up a congratulations message plus their verification pass
+  (QR code, name, room, dates, reference) to show security. The door
+  code/WiFi card behind it **blurs** while the popup is open (fixed a real
+  privacy gap — it used to be visible around the popup's edges on wider
+  screens) and un-blurs the moment the guest closes it.
+- **Emergency site shutdown switch** (`/admin/settings` → "Site Status")
+  — two-step confirm to shut down, one click to reopen. When closed, the
+  guest-facing marketing pages (home, rooms, about, amenities,
+  neighborhood, contact) rewrite to `/maintenance` with a warm message and
+  real WhatsApp/call buttons. **Deliberately stays live throughout**:
+  `/admin` (so the dashboard can reopen it), `/api` (payment callbacks),
+  `/portal/[token]` and `/verify/[token]` (a guest already checked in
+  shouldn't lose their door code because of an unrelated emergency, and
+  security must still be able to scan passes).
+- **Reviews are now admin-curatable** (`/admin/reviews`, brand new) — every
+  guest-submitted review gets a "Feature" toggle and a delete option
+  (two-step confirm). **This fixed a real, previously-invisible gap**: the
+  homepage's "Guest Reviews" section was rendering a hardcoded fake
+  testimonials array — `getReviews()` existed in the codebase but was
+  never actually called from anywhere. Real guest reviews were being
+  collected via the post-stay portal flow and just sitting unused in the
+  database. Now: the homepage shows the fake sample testimonials **only**
+  until the admin features at least one real review, then switches to
+  showing real featured reviews exclusively (never blends real + fake).
+  **Currently 0 real reviews exist** — nothing's been featured yet because
+  nothing real exists yet to feature.
+- **Real amenities, homepage, about, and contact copy** — all written this
+  session with real property details, no more placeholder text in those
+  sections.
 
-## What the owner has already started using (as of this handoff)
+## M-Pesa & PayPal — where things actually stand
 
-Confirmed via direct DB query, not assumed — real data, not test data:
-- **1 real room** already added: "Room One (1)" with 3 real uploaded photos
-  and name tags ("LOUNGE", "KITCHEN", "BEDROOM"). Still needs a real name
-  (currently literally "Room One (1)"), description, and price review.
-- **2 real social links**: Instagram and TikTok, both with real URLs.
-- **Homepage**: real eyebrow/headline/subtext copy and a real hero photo,
-  already in place.
-- **About page**: real body copy and a real main photo already in place.
-  The Coffee Corner / Reading Nook photo slots are still empty/placeholder.
-- **Contact page**: real intro line in place.
-- Amenities section is still the original default 5 items — not yet
-  customized.
+This is the most important section to get right for whoever picks this up.
+
+- **M-Pesa STK Push is fully built**, but as **two Supabase Edge
+  Functions** (`supabase/functions/mpesa-initiate`,
+  `supabase/functions/mpesa-callback`) — **not** Next.js API routes, and
+  **not** configured via `.env.local`. Credentials are **Supabase project
+  secrets**, set via `supabase secrets set` (or the Supabase Dashboard →
+  Edge Functions → Secrets). This was discovered this session: `.env.local`
+  used to have a full set of `MPESA_*` variables that looked active but
+  were 100% dead/unused — nothing in the running app ever read them. That
+  dead block has been removed from `.env.local`, and `.env.example` now
+  has a comment pointing at the correct location instead of misleading
+  blank placeholders.
+- **New sandbox Consumer Key + Consumer Secret were set this session**
+  (Supabase Edge Function secrets, confirmed via updated timestamp).
+  `MPESA_SHORTCODE` and `MPESA_PASSKEY` were **left untouched** — only
+  Consumer Key/Secret were given as new values. Worth double-checking
+  those two against whatever the new sandbox app's own dashboard shows,
+  though the current values (shortcode `174379` + its paired passkey) are
+  Safaricom's standard shared public sandbox test values, so they're
+  likely still fine regardless of which app/Consumer Key is used.
+- **Going to production M-Pesa requires**: (1) a real Paybill number, (2)
+  M-Pesa Portal access with an Admin/Business Manager role (separate from
+  the Daraja developer account — email m-pesabusiness@safaricom.co.ke if
+  the owner doesn't have this), (3) submitting a "Go-Live" request inside
+  the logged-in Daraja portal for the **M-Pesa Express (Prompt) / STK
+  Push** API specifically, tied to the Paybill. This is a real Safaricom
+  business review process — expect days, not minutes. **This also can't
+  fully complete until the site is deployed** — the callback URL Safaricom
+  posts results to needs to be a real public HTTPS URL, and right now
+  everything points at `localhost`.
+- **PayPal is still on sandbox** (`PAYPAL_ENV=sandbox` in `.env.local`).
+  Going live is same-day and fully self-serve: upgrade the PayPal account
+  to Business if it isn't already, flip the toggle from Sandbox to Live on
+  developer.paypal.com/dashboard, create/open a Live app, copy the Client
+  ID + Secret. No credentials handed over for this yet.
+- **⚠️ Security note for the owner, not a code issue**: earlier this
+  session, an unredacted terminal command briefly printed several *other*
+  real secret values (Supabase service role key, PayPal sandbox client
+  ID/secret, Smile ID API key) into this session's tool-output transcript
+  while inspecting `.env.local`. Nothing left the local machine — it was a
+  local command, not sent anywhere — but if that's a concern, rotating
+  those specific keys is a reasonable precaution. The new M-Pesa
+  credentials were **not** exposed this way (set via a temp env file with
+  `--env-file`, never printed).
 
 ---
 
-## Everything removed/changed this session (context for why things look different)
-
-1. **Pesapal removed entirely** — all integration code, checkout UI, env
-   vars, refund branching. Final payment methods: M-Pesa + PayPal only.
-2. **Twilio/automated WhatsApp alerts removed entirely** — all internal
-   admin alerts (new requests, urgent ID review, refunds needed) are
-   dashboard-badge-only now. The admin's WhatsApp number was repurposed
-   for guest-facing "Contact Host" buttons instead (see above).
-3. **Test/dummy data cleared** from `bookings`, `guests`, `reviews` (was
-   13 test guests and their bookings, one fake review — all gone, real
-   0/0/0 now, confirmed).
-4. **Two fake sample rooms deleted** — "The Family Suite" and "The Garden
-   Room" never corresponded to real rooms and were removed. This surfaced
-   and fixed a real bug in the process: `getRooms()`/`getRoomBySlug()` used
-   to silently fall back to fake sample data whenever the real `rooms`
-   table was empty or a slug wasn't found — even when Supabase was properly
-   connected. That's fixed now: an empty/not-found result shows a genuine
-   empty state (or 404), never fake data. Sample-data fallback now only
-   fires on an actual connection error.
-
----
-
-## Known unresolved issues (carried over, still true)
+## Known unresolved issues (carried over from before, still true)
 
 1. **A genuine unexplained RLS anomaly** from early in the project (a
    fresh table with a textbook-correct insert policy still rejected `anon`
-   inserts) — worked around by routing guest-facing writes through the
-   service-role client, but root cause was never found. Worth a Supabase
-   support ticket, independent of this project's code.
+   inserts) — worked around via the service-role client, root cause never
+   found. Worth a Supabase support ticket, independent of this project.
 2. **Smile ID's success path is still unverified** — only the failure path
-   has ever been tested (fake images correctly fail their real liveness/
-   document checks; there's no way to fabricate a passing test without a
-   genuine ID photo + matching selfie). Not a code concern, just an
-   untested path.
+   has ever been tested. Not a code concern, just an untested path.
 3. **M-Pesa's real "Paid" outcome still needs a genuine test** — the STK
-   push plumbing is proven correct end-to-end against Safaricom's sandbox
-   (confirmed a real CheckoutRequestID gets issued), but no real phone has
-   ever entered a PIN to complete one, so the actual success path is
-   unconfirmed.
+   push plumbing is proven correct against Safaricom's sandbox (a real
+   `CheckoutRequestID` gets issued), but no real phone has ever completed
+   one, so the actual success path is unconfirmed.
 
-## Still to do (accurate as of this handoff)
+## Still to do (priority order)
 
-- **Deploy somewhere and set a real domain.** `NEXT_PUBLIC_SITE_URL` is
-  still `http://localhost:3000` — this isn't cosmetic, it's baked into
-  PayPal/M-Pesa callback URLs, QR-code verification links, and portal
-  links, so none of those will work correctly once this is actually hosted
-  until it's updated. `MPESA_CALLBACK_URL` and `CRON_SECRET` are also still
-  blank in `.env.local`.
-- **Add real rooms** (beyond the one already started) — the improved Add
-  Room form now supports 3 photos + name tags in one step. Also worth
-  renaming "Room One (1)" to something real.
-- **Fill in the Living Room / Bedroom / Kitchen photos** on the homepage
-  and the **Coffee Corner / Reading Nook** photos on About — both sections
-  are wired up and ready in Edit Content, just not filled in yet.
-- **Customize the Amenities section** — still the original default copy.
-- **Fix the business expense placeholders** — Domain (.store), Vercel Pro,
-  and Supabase Pro were seeded with a 30-days-out placeholder date and no
-  amount, since the real renewal dates/costs weren't known. Update them in
-  `/admin/expenses` with real values, or the "Renewals due soon" alert will
-  fire on the wrong date.
-- **Get real Twilio credentials if WhatsApp automated alerts are wanted
-  back** — moot for now since that whole system was intentionally removed
-  this session in favor of dashboard-only alerts + guest-facing WhatsApp
-  buttons. Only relevant if that decision gets revisited.
-- **Legal review** — Terms & Privacy are still AI-drafted, not
-  lawyer-reviewed, despite handling real ID documents and payment data.
-- **Production credentials** — Smile ID and M-Pesa are both still on
-  sandbox credentials.
-- **Set up version control** — this project has no git repository at all
-  right now: no history, no way to revert a bad change, no backup of the
-  code itself beyond what's on disk. Owner wants to tackle this in the new
-  chat. The plan:
-  1. **Local repo first** (safe, no account needed, doesn't push anywhere):
-     ```bash
-     git init
-     git add -A
-     git commit -m "Initial commit"
-     ```
-  2. **Then ask the owner** whether they also want a remote backup (e.g. a
-     private GitHub repo) — that's a separate step (create the repo, add
-     it as a remote, push). Don't assume; confirm first, since pushing
-     code anywhere is a "visible to others / affects shared state" action.
-  3. Check `.gitignore` already exists and correctly excludes `.env.local`
-     and other secrets before the first commit — confirm, don't assume,
-     since accidentally committing real credentials would be bad. It was
-     confirmed to exist and correctly cover `.env*` earlier in this
-     project's life, but re-verify at commit time regardless.
+1. **Deploy somewhere + set a real domain.** Blocks almost everything
+   else below. `NEXT_PUBLIC_SITE_URL` is still `http://localhost:3000` —
+   baked into PayPal/M-Pesa callback URLs, QR-code verification links, and
+   portal links. `MPESA_CALLBACK_URL` and `CRON_SECRET` are also still
+   blank.
+2. **Submit the M-Pesa Go-Live request** — needs deployment done first
+   (real callback URL) and M-Pesa Portal Admin access confirmed. See the
+   M-Pesa section above for the exact process.
+3. **Go live with PayPal** — same-day, self-serve, whenever the owner is
+   ready. See above for the exact steps.
+4. **Add real neighborhood photos** — 6 real places exist, all photo slots
+   empty, waiting on the owner (`/admin/content` → Neighborhood → per-place
+   "Upload Image").
+5. **Feature real guest reviews as they come in** — the mechanism is built
+   (`/admin/reviews`) but there are zero real reviews yet, so the homepage
+   is still showing fake sample testimonials by design.
+6. **Fill in remaining placeholder photos** — Living Room / Bedroom /
+   Kitchen (homepage) and Coffee Corner / Reading Nook (About) — still
+   empty, unchanged this session, wired up and ready in Edit Content.
+7. **Review the identical room descriptions** — 9 of 10 rooms share one
+   description verbatim; confirm with the owner whether that's intentional
+   or each room should get its own copy.
+8. **Fix "Room Ten (Q)"** naming — likely meant to be "(10)", never
+   corrected.
+9. **Update business expense placeholders** — Domain (.store), Vercel Pro,
+   Supabase Pro all still have placeholder renewal dates (2026-09-03) and
+   no amount, so the "Renewals due soon" dashboard alert will fire on the
+   wrong date until corrected in `/admin/expenses`.
+10. **Legal review** — Terms & Privacy are still AI-drafted, not
+    lawyer-reviewed, despite handling real ID documents and payment data.
+11. **Production credentials for Smile ID** — still sandbox.
+12. **Consider rotating exposed secrets** — see the security note in the
+    M-Pesa/PayPal section above. Owner's call, not urgent, not a code bug.
+13. **Set up a GitHub remote** if/when the owner wants an off-machine
+    backup — local git is done, this is the only remaining piece from the
+    original "set up version control" ask.
 
 ---
 
