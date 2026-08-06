@@ -11,7 +11,11 @@ export default async function AdminCalendarPage() {
   const days = eachDayOfInterval({ start: today, end: rangeEnd });
 
   const [{ data: rooms }, { data: bookings }] = await Promise.all([
-    supabase.from("rooms").select("id, name").eq("is_active", true).order("name"),
+    supabase
+      .from("rooms")
+      .select("id, name")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true }),
     supabase
       .from("bookings")
       .select("room_id, check_in, check_out, booking_status, guest:guests(full_name)")
