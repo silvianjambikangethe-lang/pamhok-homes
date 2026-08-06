@@ -94,16 +94,16 @@ export default function RoomsBrowser({
             <Link
               key={room.id}
               href={`/rooms/${room.slug}${dateQuery}`}
-              className="focus-ring group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-gold-500/20 bg-surface shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-warm active:-translate-y-1 active:shadow-warm"
+              className="focus-ring group flex cursor-default flex-col overflow-hidden rounded-2xl border border-gold-500/20 bg-surface shadow-card transition-all duration-300 active:-translate-y-1 active:shadow-warm md:cursor-pointer md:hover:-translate-y-1 md:hover:shadow-warm"
             >
               <RoomPhoto
                 url={room.photo_urls?.[0]}
                 label={room.photo_labels?.[0] ?? room.name}
                 seed={room.slug}
-                className="aspect-[4/3] w-full transition-transform duration-300 group-hover:scale-105 group-active:scale-105"
+                className="aspect-[4/3] w-full transition-transform duration-300 group-active:scale-105 md:group-hover:scale-105"
               />
               <div className="flex flex-1 flex-col p-6">
-                <h2 className="font-serif text-h3 text-ink group-hover:text-terracotta-600 group-active:text-terracotta-600">
+                <h2 className="font-serif text-h3 text-ink group-active:text-terracotta-600 md:group-hover:text-terracotta-600">
                   {room.name}
                 </h2>
                 <p className="mt-2 line-clamp-2 text-body-sm text-ink/65">
