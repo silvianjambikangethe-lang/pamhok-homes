@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Confetti, MapPinLine, X } from "@phosphor-icons/react";
 import GetDirectionsButton from "@/components/GetDirectionsButton";
 import PassDetails from "@/components/portal/PassDetails";
@@ -13,6 +12,9 @@ export default function ArrivalSection({
   checkOut,
   bookingReference,
   qrDataUrl,
+  showArrival,
+  onShowArrival,
+  onCloseArrival,
 }: {
   mapsUrl: string | null;
   guestDisplayName: string;
@@ -21,9 +23,10 @@ export default function ArrivalSection({
   checkOut: string;
   bookingReference: string | null;
   qrDataUrl: string | null;
+  showArrival: boolean;
+  onShowArrival: () => void;
+  onCloseArrival: () => void;
 }) {
-  const [showArrival, setShowArrival] = useState(false);
-
   return (
     <div className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card">
       <div className="flex items-center gap-2">
@@ -38,7 +41,7 @@ export default function ArrivalSection({
         <GetDirectionsButton mapsUrl={mapsUrl} />
         <button
           type="button"
-          onClick={() => setShowArrival(true)}
+          onClick={onShowArrival}
           className="focus-ring flex items-center justify-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600"
         >
           I&apos;ve Arrived
@@ -55,7 +58,7 @@ export default function ArrivalSection({
           <div className="relative w-full max-w-md rounded-2xl border-2 border-terracotta-500 bg-surface p-6 shadow-warm">
             <button
               type="button"
-              onClick={() => setShowArrival(false)}
+              onClick={onCloseArrival}
               aria-label="Close"
               className="focus-ring absolute right-4 top-4 rounded-full p-1.5 text-ink/65 hover:bg-page hover:text-ink"
             >

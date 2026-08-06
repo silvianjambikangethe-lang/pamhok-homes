@@ -1,5 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { format, isPast, parseISO, startOfDay } from "date-fns";
-import { CalendarBlank, Info, Phone, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
+import { CalendarBlank, Info, Phone, WhatsappLogo } from "@phosphor-icons/react";
 import type { PortalBooking } from "@/lib/portal";
 import type { DisplayCurrency } from "@/lib/currency";
 import { whatsappLink } from "@/lib/site";
@@ -44,6 +47,7 @@ export default function PortalClient({
   adminPhone: string | null;
   mapsUrl: string | null;
 }) {
+  const [showArrival, setShowArrival] = useState(false);
   const checkOutDate = startOfDay(parseISO(booking.check_out));
   const isCheckoutDay = isPast(checkOutDate) || format(checkOutDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
   const isPassReady =
@@ -117,6 +121,9 @@ export default function PortalClient({
             checkOut={booking.check_out}
             bookingReference={booking.booking_reference}
             qrDataUrl={qrDataUrl}
+            showArrival={showArrival}
+            onShowArrival={() => setShowArrival(true)}
+            onCloseArrival={() => setShowArrival(false)}
           />
         )}
 
@@ -199,6 +206,7 @@ export default function PortalClient({
             doorCode={booking.room?.door_code ?? null}
             wifiNetworkName={booking.room?.wifi_network_name ?? null}
             wifiPassword={booking.room?.wifi_password ?? null}
+            blurred={showArrival}
           />
         )}
 

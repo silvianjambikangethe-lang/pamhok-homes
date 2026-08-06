@@ -8,11 +8,13 @@ export default function UnlockedSection({
   doorCode,
   wifiNetworkName,
   wifiPassword,
+  blurred = false,
 }: {
   token: string;
   doorCode: string | null;
   wifiNetworkName: string | null;
   wifiPassword: string | null;
+  blurred?: boolean;
 }) {
   const [message, setMessage] = useState("");
   const [requestType, setRequestType] = useState<"cleaning" | "assistance" | "other">(
@@ -58,30 +60,43 @@ export default function UnlockedSection({
       </div>
 
       {/* Step 3 (unlocked): Terracotta accent border signals "now active" — same in both themes. */}
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border-2 border-terracotta-500 bg-page p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-ink/80">
-            <DoorOpen size={18} className="text-terracotta-600" />
-            Door code
-          </div>
-          <p className="mt-1 font-mono text-2xl tracking-widest text-ink">
-            {doorCode ?? "—"}
-          </p>
-        </div>
-        <div className="rounded-xl border-2 border-terracotta-500 bg-page p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-ink/80">
-            <WifiHigh size={18} className="text-terracotta-600" />
-            WiFi
-          </div>
-          {wifiNetworkName && (
-            <p className="mt-1 text-sm text-ink/65">
-              Network: <span className="font-mono text-ink">{wifiNetworkName}</span>
+      <div className="relative mt-5">
+        <div
+          className={`grid gap-4 transition-[filter] duration-200 sm:grid-cols-2 ${
+            blurred ? "pointer-events-none select-none blur-md" : ""
+          }`}
+        >
+          <div className="rounded-xl border-2 border-terracotta-500 bg-page p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink/80">
+              <DoorOpen size={18} className="text-terracotta-600" />
+              Door code
+            </div>
+            <p className="mt-1 font-mono text-2xl tracking-widest text-ink">
+              {doorCode ?? "—"}
             </p>
-          )}
-          <p className="mt-1 font-mono text-2xl tracking-widest text-ink">
-            {wifiPassword ?? "—"}
-          </p>
+          </div>
+          <div className="rounded-xl border-2 border-terracotta-500 bg-page p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink/80">
+              <WifiHigh size={18} className="text-terracotta-600" />
+              WiFi
+            </div>
+            {wifiNetworkName && (
+              <p className="mt-1 text-sm text-ink/65">
+                Network: <span className="font-mono text-ink">{wifiNetworkName}</span>
+              </p>
+            )}
+            <p className="mt-1 font-mono text-2xl tracking-widest text-ink">
+              {wifiPassword ?? "—"}
+            </p>
+          </div>
         </div>
+        {blurred && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="rounded-full bg-espresso/85 px-4 py-1.5 text-center text-xs font-semibold text-ivory shadow-warm">
+              Hidden while your arrival pass is shown
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="mt-6 border-t border-gold-500/20 pt-5">
