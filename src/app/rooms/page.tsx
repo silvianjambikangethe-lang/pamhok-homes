@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Info, UsersThree } from "@phosphor-icons/react/dist/ssr";
-import RoomPhoto from "@/components/RoomPhoto";
-import { getRooms } from "@/lib/data";
+import { Info } from "@phosphor-icons/react/dist/ssr";
+import { getAllAvailability, getRooms } from "@/lib/data";
 import PageBanner from "@/components/PageBanner";
+import RoomsBrowser from "@/components/RoomsBrowser";
 
 export const metadata: Metadata = {
   title: "Rooms & Availability — Pamhok Homes",
@@ -11,16 +10,9 @@ export const metadata: Metadata = {
     "Browse our rooms and check live availability at Pamhok Homes, Nairobi.",
 };
 
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-KE", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
 export default async function RoomsPage() {
   const { rooms, isSample } = await getRooms();
+  const availability = await getAllAvailability();
 
   return (
     <div>
@@ -30,7 +22,7 @@ export default async function RoomsPage() {
       <div className="text-center">
         <p className="mx-auto max-w-xl text-body text-ink/80">
           Every room comes with free WiFi, free parking, and full kitchen
-          access. Pick your dates on the next page to see live availability.
+          access. Pick your dates below to see which rooms are open.
         </p>
       </div>
 
@@ -53,46 +45,11 @@ export default async function RoomsPage() {
         </p>
       )}
 
-      <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {rooms.map((room) => (
-          <Link
-            key={room.id}
-            href={`/rooms/${room.slug}`}
-            className="focus-ring group flex flex-col overflow-hidden rounded-2xl border border-gold-500/20 bg-surface shadow-card transition-shadow hover:shadow-warm"
-          >
-            <RoomPhoto
-              url={room.photo_urls?.[0]}
-              label={room.photo_labels?.[0] ?? room.name}
-              seed={room.slug}
-              className="aspect-[4/3] w-full"
-            />
-            <div className="flex flex-1 flex-col p-6">
-              <h2 className="font-serif text-h3 text-ink group-hover:text-terracotta-600">
-                {room.name}
-              </h2>
-              <p className="mt-2 line-clamp-2 text-body-sm text-ink/65">
-                {room.description}
-              </p>
-              <div className="mt-3 flex items-center gap-1.5 text-small text-ink/65">
-                <UsersThree size={16} />
-                Up to {room.max_guests} guests · {room.bed_config}
-              </div>
-              <div className="mt-4 flex items-baseline justify-between border-t border-gold-500/20 pt-4">
-                <span className="font-serif text-price text-terracotta-600">
-                  {formatCurrency(room.price_per_night, room.currency)}
-                  <span className="text-small font-normal text-ink/65">
-                    {" "}
-                    / night
-                  </span>
-                </span>
-                <span className="text-btn text-terracotta-600">
-                  View →
-                </span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {rooms.length > 0 && (
+        <div className="mt-12">
+          <RoomsBrowser rooms={rooms} availability={availability} />
+        </div>
+      )}
       </div>
     </div>
   );

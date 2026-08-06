@@ -22,10 +22,13 @@ export async function generateMetadata({
 
 export default async function RoomDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ checkIn?: string; checkOut?: string }>;
 }) {
   const { slug } = await params;
+  const { checkIn, checkOut } = await searchParams;
   const { room } = await getRoomBySlug(slug);
   if (!room) notFound();
 
@@ -90,7 +93,13 @@ export default async function RoomDetailPage({
 
         <div className="lg:col-span-2">
           <div className="lg:sticky lg:top-24">
-            <BookingWidget room={room} availability={availability} rates={rates} />
+            <BookingWidget
+              room={room}
+              availability={availability}
+              rates={rates}
+              initialCheckIn={checkIn}
+              initialCheckOut={checkOut}
+            />
           </div>
         </div>
       </div>

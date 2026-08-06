@@ -183,6 +183,19 @@ export async function getAvailability(roomId: string): Promise<AvailabilityRow[]
   return data;
 }
 
+// Same data as getAvailability(), but across every room at once — used by
+// the /rooms listing page to filter the whole grid down to rooms with no
+// conflicting booking for a guest-picked date range, without a round trip
+// per room.
+export async function getAllAvailability(): Promise<AvailabilityRow[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const { data, error } = await publicClient().from("availability_view").select("*");
+
+  if (error || !data) return [];
+  return data;
+}
+
 const SAMPLE_REVIEWS: Review[] = [
   {
     id: "sample-1",

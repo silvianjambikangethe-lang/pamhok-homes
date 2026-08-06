@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { differenceInCalendarDays, format } from "date-fns";
+import { differenceInCalendarDays, format, isAfter, isBefore, isValid, parseISO, startOfDay } from "date-fns";
 import { CalendarBlank, UsersThree, Warning } from "@phosphor-icons/react";
 import BookingCalendar, {
   type DateRange,
@@ -20,14 +20,48 @@ function formatCurrency(amount: number, currency: string) {
   }).format(amount);
 }
 
+// Validates dates carried over from the /rooms listing page's date-first
+// search (via ?checkIn=&checkOut= query params) against this room's own
+// up-to-date availability — someone could have booked in the gap between
+// the guest browsing the list and landing here. Falls back to a blank
+// selection (with a heads-up message) rather than trusting the URL.
+function resolveInitialSelection(
+  initialCheckIn: string | undefined,
+  initialCheckOut: string | undefined,
+  bookedRanges: DateRange[],
+): { selection: DateSelection; wasReset: boolean } {
+  const blank = { selection: { checkIn: null, checkOut: null }, wasReset: false };
+  if (!initialCheckIn || !initialCheckOut) return blank;
+
+  const checkIn = parseISO(initialCheckIn);
+  const checkOut = parseISO(initialCheckOut);
+  if (!isValid(checkIn) || !isValid(checkOut) || !isBefore(checkIn, checkOut)) {
+    return blank;
+  }
+  if (isBefore(checkIn, startOfDay(new Date()))) {
+    return { selection: { checkIn: null, checkOut: null }, wasReset: true };
+  }
+  const conflicts = bookedRanges.some(
+    (r) => isBefore(r.start, checkOut) && isAfter(r.end, checkIn),
+  );
+  if (conflicts) {
+    return { selection: { checkIn: null, checkOut: null }, wasReset: true };
+  }
+  return { selection: { checkIn, checkOut }, wasReset: false };
+}
+
 export default function BookingWidget({
   room,
   availability,
   rates,
+  initialCheckIn,
+  initialCheckOut,
 }: {
   room: Room;
   availability: AvailabilityRow[];
   rates: Record<DisplayCurrency, number>;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
 }) {
   const router = useRouter();
   const bookedRanges: DateRange[] = useMemo(
@@ -39,10 +73,13 @@ export default function BookingWidget({
     [availability],
   );
 
-  const [selection, setSelection] = useState<DateSelection>({
-    checkIn: null,
-    checkOut: null,
+  const [{ selection, wasReset: datesWereReset }, setSelectionState] = useState(() => {
+    const result = resolveInitialSelection(initialCheckIn, initialCheckOut, bookedRanges);
+    return result;
   });
+  function setSelection(next: DateSelection) {
+    setSelectionState({ selection: next, wasReset: false });
+  }
   const [guestCount, setGuestCount] = useState<1 | 2 | "other" | null>(null);
   const [guest, setGuest] = useState({ fullName: "", email: "", phone: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -110,6 +147,12 @@ export default function BookingWidget({
           <CalendarBlank size={18} />
           Select your dates
         </p>
+        {datesWereReset && (
+          <p className="mb-3 flex items-center gap-2 text-sm text-danger">
+            <Warning size={16} className="shrink-0" />
+            Those dates were just booked — please pick new ones.
+          </p>
+        )}
         <BookingCalendar
           bookedRanges={bookedRanges}
           selection={selection}
