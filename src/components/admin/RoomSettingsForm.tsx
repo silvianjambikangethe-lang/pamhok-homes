@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, DoorOpen, WifiHigh } from "@phosphor-icons/react";
+import Link from "next/link";
+import { ArrowSquareOut, CheckCircle, DoorOpen, Eye, EyeSlash, WifiHigh } from "@phosphor-icons/react";
 import RoomPhotoSlots from "@/components/admin/RoomPhotoSlots";
+import RoomCardPreview from "@/components/admin/RoomCardPreview";
 
 interface RoomSetting {
   id: string;
+  slug: string;
   name: string;
   description: string;
   price_per_night: number;
   currency: string;
+  max_guests: number;
+  bed_config: string;
   door_code: string | null;
   wifi_password: string | null;
   wifi_network_name: string | null;
@@ -31,6 +36,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   function markDirty() {
     setSaved(false);
@@ -103,7 +109,48 @@ function RoomRow({ room }: { room: RoomSetting }) {
       onSubmit={handleSubmit}
       className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card"
     >
-      <h3 className="font-serif text-lg font-semibold text-ink">{room.name}</h3>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="font-serif text-lg font-semibold text-ink">{room.name}</h3>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowPreview((v) => !v)}
+            className="focus-ring flex items-center gap-1.5 rounded-full border border-gold-500/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
+          >
+            {showPreview ? <EyeSlash size={14} /> : <Eye size={14} />}
+            {showPreview ? "Hide Preview" : "Preview"}
+          </button>
+          <Link
+            href={`/rooms/${room.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus-ring flex items-center gap-1.5 rounded-full border border-gold-500/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
+          >
+            <ArrowSquareOut size={14} />
+            View Live Page
+          </Link>
+        </div>
+      </div>
+
+      {showPreview && (
+        <div className="mt-4 rounded-xl border border-dashed border-gold-500/40 bg-page p-4">
+          <RoomCardPreview
+            name={name}
+            description={description}
+            pricePerNight={Number(pricePerNight)}
+            currency={room.currency}
+            maxGuests={room.max_guests}
+            bedConfig={room.bed_config}
+            photoUrl={photoUrls[0]}
+            photoLabel={photoLabels[0]}
+            seed={room.slug}
+          />
+          <p className="mt-3 text-xs text-ink/55">
+            Reflects your unsaved edits below — save to make them real for
+            guests.
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <div>

@@ -8,7 +8,7 @@ export default async function AdminRoomsPage() {
   const { data: rooms } = await supabase
     .from("rooms")
     .select(
-      "id, name, description, price_per_night, currency, door_code, wifi_password, wifi_network_name, display_order, photo_urls, photo_labels",
+      "id, slug, name, description, price_per_night, currency, max_guests, bed_config, door_code, wifi_password, wifi_network_name, display_order, photo_urls, photo_labels",
     )
     .eq("is_active", true)
     .order("display_order", { ascending: true })

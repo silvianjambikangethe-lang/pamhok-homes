@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "@phosphor-icons/react";
+import { Eye, EyeSlash, Plus } from "@phosphor-icons/react";
 import RoomPhotoSlots from "@/components/admin/RoomPhotoSlots";
+import RoomCardPreview from "@/components/admin/RoomCardPreview";
 
 // Photos need somewhere to upload to before the room itself exists (its
 // real id isn't known until the create call succeeds) — a random
@@ -32,6 +33,7 @@ export default function AddRoomForm() {
   const [photoLabels, setPhotoLabels] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   function setPhotoAt(index: number, url: string) {
     setPhotoUrls((prev) => {
@@ -115,10 +117,38 @@ export default function AddRoomForm() {
       onSubmit={handleSubmit}
       className="rounded-2xl border border-dashed border-gold-500/40 bg-surface p-6 shadow-card"
     >
-      <h2 className="font-serif text-lg font-semibold text-ink">Add a New Room</h2>
-      <p className="mt-1 text-xs text-ink/65">
-        It&apos;ll appear below once created — photos can be added now or later.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-lg font-semibold text-ink">Add a New Room</h2>
+          <p className="mt-1 text-xs text-ink/65">
+            It&apos;ll appear below once created — photos can be added now or later.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowPreview((v) => !v)}
+          className="focus-ring flex shrink-0 items-center gap-1.5 rounded-full border border-gold-500/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
+        >
+          {showPreview ? <EyeSlash size={14} /> : <Eye size={14} />}
+          {showPreview ? "Hide Preview" : "Preview"}
+        </button>
+      </div>
+
+      {showPreview && (
+        <div className="mt-4 rounded-xl border border-dashed border-gold-500/40 bg-page p-4">
+          <RoomCardPreview
+            name={name}
+            description={description}
+            pricePerNight={Number(pricePerNight)}
+            currency="KES"
+            maxGuests={Number(maxGuests) || 2}
+            bedConfig={bedConfig}
+            photoUrl={photoUrls[0]}
+            photoLabel={photoLabels[0]}
+            seed={draftId}
+          />
+        </div>
+      )}
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div>
