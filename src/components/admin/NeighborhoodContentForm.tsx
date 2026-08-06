@@ -3,9 +3,17 @@
 import { useState } from "react";
 import { CheckCircle, Plus, Trash } from "@phosphor-icons/react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import MapsLinkField from "@/components/admin/MapsLinkField";
 import type { NeighborhoodContent, NeighborhoodItem } from "@/lib/supabase/types";
 
-const EMPTY_ITEM: NeighborhoodItem = { name: "", detail: "", photo_url: null };
+const EMPTY_ITEM: NeighborhoodItem = {
+  name: "",
+  detail: "",
+  photo_url: null,
+  maps_url: null,
+  lat: null,
+  lng: null,
+};
 
 function CategoryEditor({
   title,
@@ -60,6 +68,18 @@ function CategoryEditor({
                   className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-surface px-3 py-2 text-sm text-ink"
                 />
               </div>
+            </div>
+            <div className="mt-3">
+              <MapsLinkField
+                label="Google Maps link (optional)"
+                value={{ maps_url: item.maps_url, lat: item.lat, lng: item.lng }}
+                onChange={({ maps_url, lat, lng }) => updateItem(index, { maps_url, lat, lng })}
+                inputBg="bg-surface"
+              />
+              <p className="mt-1 text-xs text-ink/65">
+                Adds a &quot;Get Directions from Pamhok Homes&quot; button for
+                this place on the public page.
+              </p>
             </div>
             <div className="mt-3 flex items-end justify-between gap-3">
               <ImageUploadField

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckCircle } from "@phosphor-icons/react";
+import MapsLinkField from "@/components/admin/MapsLinkField";
 import type { ContactContent } from "@/lib/supabase/types";
 
 export default function ContactContentForm({ initial }: { initial: ContactContent }) {
@@ -66,20 +67,18 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-ink/80">Google Maps link</label>
-          <input
-            type="text"
-            value={value.maps_url ?? ""}
-            onChange={(e) => {
-              setValue({ ...value, maps_url: e.target.value.trim() || null });
+          <MapsLinkField
+            label="Google Maps link"
+            value={{ maps_url: value.maps_url, lat: value.maps_lat, lng: value.maps_lng }}
+            onChange={({ maps_url, lat, lng }) => {
+              setValue({ ...value, maps_url, maps_lat: lat, maps_lng: lng });
               setSaved(false);
             }}
-            placeholder="https://maps.app.goo.gl/…"
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
           <p className="mt-1 text-xs text-ink/65">
-            Powers the &quot;Get Directions&quot; button on the Contact page
-            and in the guest portal. Share a pin from Google Maps and paste
+            Powers the &quot;Get Directions&quot; button on the Contact page,
+            the guest portal, and the &quot;from Pamhok Homes&quot; directions
+            on the Neighborhood page. Share a pin from Google Maps and paste
             the link here.
           </p>
         </div>

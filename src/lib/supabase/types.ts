@@ -157,12 +157,17 @@ export type ContactContent = {
   address_note: string;
   intro_line: string;
   maps_url: string | null;
+  maps_lat: number | null;
+  maps_lng: number | null;
 };
 
 export type NeighborhoodItem = {
   name: string;
   detail: string;
   photo_url: string | null;
+  maps_url: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
 export type NeighborhoodContent = {

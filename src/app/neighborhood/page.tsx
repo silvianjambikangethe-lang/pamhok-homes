@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { ForkKnife, Info, Ticket } from "@phosphor-icons/react/dist/ssr";
 import RoomPhoto from "@/components/RoomPhoto";
 import PageBanner from "@/components/PageBanner";
-import { getNeighborhoodContent } from "@/lib/data";
+import GetDirectionsButton from "@/components/GetDirectionsButton";
+import { getContactContent, getNeighborhoodContent } from "@/lib/data";
+import { buildDirectionsUrl } from "@/lib/maps";
 import type { NeighborhoodItem } from "@/lib/supabase/types";
 
 export const metadata: Metadata = {
@@ -11,7 +13,15 @@ export const metadata: Metadata = {
     "Food and recreation near Pamhok Homes, close to Thika Road Mall, Nairobi.",
 };
 
-function NeighborhoodGrid({ items }: { items: NeighborhoodItem[] }) {
+function NeighborhoodGrid({
+  items,
+  pamhokLat,
+  pamhokLng,
+}: {
+  items: NeighborhoodItem[];
+  pamhokLat: number | null;
+  pamhokLng: number | null;
+}) {
   if (items.length === 0) {
     return (
       <p className="mt-6 text-body-sm text-ink/65">
@@ -22,29 +32,50 @@ function NeighborhoodGrid({ items }: { items: NeighborhoodItem[] }) {
 
   return (
     <div className="mt-6 grid gap-5 sm:grid-cols-2">
-      {items.map((item, index) => (
-        <div
-          key={`${item.name}-${index}`}
-          className="flex gap-4 rounded-2xl border border-gold-500/20 bg-surface p-5 shadow-card"
-        >
-          <RoomPhoto
-            url={item.photo_url ?? undefined}
-            label={item.name}
-            seed={item.name}
-            className="h-20 w-20 shrink-0 rounded-xl"
-          />
-          <div>
-            <p className="font-serif text-h3 text-ink">{item.name}</p>
-            <p className="mt-1 text-body-sm text-ink/65">{item.detail}</p>
+      {items.map((item, index) => {
+        const directionsUrl =
+          pamhokLat != null && pamhokLng != null && item.lat != null && item.lng != null
+            ? buildDirectionsUrl(pamhokLat, pamhokLng, item.lat, item.lng)
+            : null;
+
+        return (
+          <div
+            key={`${item.name}-${index}`}
+            className="rounded-2xl border border-gold-500/20 bg-surface p-5 shadow-card"
+          >
+            <div className="flex gap-4">
+              <RoomPhoto
+                url={item.photo_url ?? undefined}
+                label={item.name}
+                seed={item.name}
+                className="h-20 w-20 shrink-0 rounded-xl"
+              />
+              <div>
+                <p className="font-serif text-h3 text-ink">{item.name}</p>
+                <p className="mt-1 text-body-sm text-ink/65">{item.detail}</p>
+              </div>
+            </div>
+            {directionsUrl && (
+              <div className="mt-4">
+                <GetDirectionsButton
+                  mapsUrl={directionsUrl}
+                  label="Get Directions from Pamhok Homes"
+                  needsLocationPrompt={false}
+                />
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 export default async function NeighborhoodPage() {
-  const content = await getNeighborhoodContent();
+  const [content, contact] = await Promise.all([
+    getNeighborhoodContent(),
+    getContactContent(),
+  ]);
 
   return (
     <div>
@@ -71,7 +102,11 @@ export default async function NeighborhoodPage() {
             Food
           </h2>
         </div>
-        <NeighborhoodGrid items={content.food} />
+        <NeighborhoodGrid
+          items={content.food}
+          pamhokLat={contact.maps_lat}
+          pamhokLng={contact.maps_lng}
+        />
       </section>
 
       <section className="bg-surface py-12 sm:py-16">
@@ -82,7 +117,11 @@ export default async function NeighborhoodPage() {
               Recreation
             </h2>
           </div>
-          <NeighborhoodGrid items={content.recreation} />
+          <NeighborhoodGrid
+            items={content.recreation}
+            pamhokLat={contact.maps_lat}
+            pamhokLng={contact.maps_lng}
+          />
         </div>
       </section>
     </div>

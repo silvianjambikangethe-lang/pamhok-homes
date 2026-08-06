@@ -292,6 +292,8 @@ const DEFAULT_CONTACT_CONTENT: ContactContent = {
   intro_line:
     "Questions about a stay, or need something during your trip? Reach us directly — a real person always answers.",
   maps_url: null,
+  maps_lat: null,
+  maps_lng: null,
 };
 
 // Starts empty rather than pre-seeded with placeholder recommendations —

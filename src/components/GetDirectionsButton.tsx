@@ -6,9 +6,18 @@ import { MapPin, NavigationArrow } from "@phosphor-icons/react";
 export default function GetDirectionsButton({
   mapsUrl,
   className = "",
+  label = "Get Directions",
+  // The location pre-prompt only makes sense when Google Maps needs to use
+  // the guest's own live position (directions *to* Pamhok Homes from
+  // wherever they are). Links that already carry a fixed origin AND
+  // destination — e.g. "Pamhok Homes -> a neighborhood place" — don't need
+  // it; the route is already fully specified.
+  needsLocationPrompt = true,
 }: {
   mapsUrl: string | null;
   className?: string;
+  label?: string;
+  needsLocationPrompt?: boolean;
 }) {
   const [showPrompt, setShowPrompt] = useState(false);
 
@@ -19,7 +28,7 @@ export default function GetDirectionsButton({
   }
 
   function handleClick() {
-    if (!("geolocation" in navigator)) {
+    if (!needsLocationPrompt || !("geolocation" in navigator)) {
       openMaps();
       return;
     }
@@ -48,7 +57,7 @@ export default function GetDirectionsButton({
         className={`focus-ring flex items-center justify-center gap-2 rounded-full border border-gold-500/25 px-5 py-2.5 text-sm font-semibold text-ink/80 transition-colors hover:border-terracotta-300 ${className}`}
       >
         <NavigationArrow size={18} weight="fill" className="text-terracotta-600" />
-        Get Directions
+        {label}
       </button>
 
       {showPrompt && (
