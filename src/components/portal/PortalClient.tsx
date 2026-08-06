@@ -32,6 +32,13 @@ const STATUS_STYLES: Record<string, string> = {
   Failed: "bg-danger text-white",
 };
 
+// e.g. check-in 7 Aug 2026, room display_order 4 -> "REF8/7-4-26"
+function formatPassReference(checkIn: string, roomDisplayOrder: number | undefined) {
+  if (roomDisplayOrder == null) return null;
+  const date = parseISO(checkIn);
+  return `REF${format(date, "M")}/${format(date, "d")}-${roomDisplayOrder}-${format(date, "yy")}`;
+}
+
 export default function PortalClient({
   booking,
   token,
@@ -53,6 +60,7 @@ export default function PortalClient({
   const isPassReady =
     booking.payment_status === "Paid" && booking.id_verification_status === "Verified";
   const isVerifiedAndActive = isPassReady && !booking.checked_out_at;
+  const passReference = formatPassReference(booking.check_in, booking.room?.display_order);
 
   return (
     <div>
@@ -108,7 +116,7 @@ export default function PortalClient({
           roomName={booking.room?.name ?? "Pamhok Homes"}
           checkIn={booking.check_in}
           checkOut={booking.check_out}
-          bookingReference={booking.booking_reference}
+          bookingReference={passReference}
           qrDataUrl={isPassReady ? qrDataUrl : null}
         />
 
@@ -119,7 +127,7 @@ export default function PortalClient({
             roomName={booking.room?.name ?? "Pamhok Homes"}
             checkIn={booking.check_in}
             checkOut={booking.check_out}
-            bookingReference={booking.booking_reference}
+            bookingReference={passReference}
             qrDataUrl={qrDataUrl}
             showArrival={showArrival}
             onShowArrival={() => setShowArrival(true)}

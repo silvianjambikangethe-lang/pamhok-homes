@@ -6,14 +6,13 @@ export default function PassDetails({
   checkIn,
   checkOut,
   bookingReference,
-  qrDataUrl,
 }: {
   guestDisplayName: string;
   roomName: string;
   checkIn: string;
   checkOut: string;
   bookingReference: string | null;
-  qrDataUrl: string | null;
+  qrDataUrl?: string | null;
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
@@ -37,15 +36,6 @@ export default function PassDetails({
           <dd className="font-mono font-semibold text-ink">{bookingReference ?? "—"}</dd>
         </div>
       </dl>
-
-      {qrDataUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={qrDataUrl}
-          alt="QR code linking to an independent verification page for this pass"
-          className="h-28 w-28 self-start rounded-lg border border-gold-500/25 bg-white p-1.5"
-        />
-      )}
     </div>
   );
 }
