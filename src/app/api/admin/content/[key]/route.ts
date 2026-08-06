@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { SiteContent } from "@/lib/supabase/types";
 
-const VALID_KEYS: SiteContent["key"][] = ["homepage", "about", "amenities", "contact"];
+const VALID_KEYS: SiteContent["key"][] = [
+  "homepage",
+  "about",
+  "amenities",
+  "contact",
+  "neighborhood",
+];
 
 export async function PATCH(
   request: Request,

@@ -159,9 +159,20 @@ export type ContactContent = {
   maps_url: string | null;
 };
 
+export type NeighborhoodItem = {
+  name: string;
+  detail: string;
+  photo_url: string | null;
+};
+
+export type NeighborhoodContent = {
+  food: NeighborhoodItem[];
+  recreation: NeighborhoodItem[];
+};
+
 export type SiteContent = {
-  key: "homepage" | "about" | "amenities" | "contact";
-  value: HomepageContent | AboutContent | AmenityItem[] | ContactContent;
+  key: "homepage" | "about" | "amenities" | "contact" | "neighborhood";
+  value: HomepageContent | AboutContent | AmenityItem[] | ContactContent | NeighborhoodContent;
   updated_at: string;
 };
 

@@ -8,6 +8,7 @@ import type {
   AvailabilityRow,
   ContactContent,
   HomepageContent,
+  NeighborhoodContent,
   Review,
   Room,
   SiteContent,
@@ -293,6 +294,14 @@ const DEFAULT_CONTACT_CONTENT: ContactContent = {
   maps_url: null,
 };
 
+// Starts empty rather than pre-seeded with placeholder recommendations —
+// same reasoning as sample rooms: a host's actual neighborhood picks,
+// added from /admin/content, not generic guesses baked into the code.
+const DEFAULT_NEIGHBORHOOD_CONTENT: NeighborhoodContent = {
+  food: [],
+  recreation: [],
+};
+
 async function getSiteContentValue<T>(key: SiteContent["key"], fallback: T): Promise<T> {
   if (!isSupabaseConfigured()) return fallback;
 
@@ -320,6 +329,10 @@ export function getAmenitiesContent(): Promise<AmenityItem[]> {
 
 export function getContactContent(): Promise<ContactContent> {
   return getSiteContentValue("contact", DEFAULT_CONTACT_CONTENT);
+}
+
+export function getNeighborhoodContent(): Promise<NeighborhoodContent> {
+  return getSiteContentValue("neighborhood", DEFAULT_NEIGHBORHOOD_CONTENT);
 }
 
 // The public site's "Chat on WhatsApp" / "Contact Host" buttons link to

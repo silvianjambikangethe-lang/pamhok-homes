@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { ForkKnife, Info, Ticket } from "@phosphor-icons/react/dist/ssr";
-import PlaceholderImage from "@/components/PlaceholderImage";
+import RoomPhoto from "@/components/RoomPhoto";
 import PageBanner from "@/components/PageBanner";
+import { getNeighborhoodContent } from "@/lib/data";
+import type { NeighborhoodItem } from "@/lib/supabase/types";
 
 export const metadata: Metadata = {
   title: "Around the Neighborhood — Pamhok Homes",
@@ -9,45 +11,41 @@ export const metadata: Metadata = {
     "Food and recreation near Pamhok Homes, close to Thika Road Mall, Nairobi.",
 };
 
-const FOOD = [
-  {
-    name: "Beatus Restaurant",
-    detail: "Jewel Complex, next to TRM ground floor.",
-  },
-  {
-    name: "Artcaffe",
-    detail: "Casual cafe, good for coffee and breakfast.",
-  },
-  {
-    name: "Café Kigwa",
-    detail: "Kenyan cuisine at Safari Park Hotel, garden setting.",
-  },
-  {
-    name: "Garden City Mall",
-    detail: "Broader dining mix, including Ethiopian cuisine options.",
-  },
-];
+function NeighborhoodGrid({ items }: { items: NeighborhoodItem[] }) {
+  if (items.length === 0) {
+    return (
+      <p className="mt-6 text-body-sm text-ink/65">
+        Recommendations coming soon — check back shortly.
+      </p>
+    );
+  }
 
-const RECREATION = [
-  {
-    name: "TRM (Thika Road Mall)",
-    detail: "Typically has a cinema and family entertainment inside the mall.",
-  },
-  {
-    name: "Moi International Sports Centre, Kasarani",
-    detail: "~7 min drive; sports events and activities.",
-  },
-  {
-    name: "Sportsview Hotel Kasarani",
-    detail: "Spa, pools, and a nightclub.",
-  },
-  {
-    name: "Garden City Mall",
-    detail: "Also has a waterpark — good for guests with kids.",
-  },
-];
+  return (
+    <div className="mt-6 grid gap-5 sm:grid-cols-2">
+      {items.map((item, index) => (
+        <div
+          key={`${item.name}-${index}`}
+          className="flex gap-4 rounded-2xl border border-gold-500/20 bg-surface p-5 shadow-card"
+        >
+          <RoomPhoto
+            url={item.photo_url ?? undefined}
+            label={item.name}
+            seed={item.name}
+            className="h-20 w-20 shrink-0 rounded-xl"
+          />
+          <div>
+            <p className="font-serif text-h3 text-ink">{item.name}</p>
+            <p className="mt-1 text-body-sm text-ink/65">{item.detail}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-export default function NeighborhoodPage() {
+export default async function NeighborhoodPage() {
+  const content = await getNeighborhoodContent();
+
   return (
     <div>
       <PageBanner
@@ -73,28 +71,7 @@ export default function NeighborhoodPage() {
             Food
           </h2>
         </div>
-        <div className="mt-6 grid gap-5 sm:grid-cols-2">
-          {FOOD.map((item) => (
-            <div
-              key={item.name}
-              className="flex gap-4 rounded-2xl border border-gold-500/20 bg-surface p-5 shadow-card"
-            >
-              <PlaceholderImage
-                label={item.name}
-                seed={item.name}
-                className="h-20 w-20 shrink-0 rounded-xl"
-              />
-              <div>
-                <p className="font-serif text-h3 text-ink">
-                  {item.name}
-                </p>
-                <p className="mt-1 text-body-sm text-ink/65">
-                  {item.detail}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <NeighborhoodGrid items={content.food} />
       </section>
 
       <section className="bg-surface py-12 sm:py-16">
@@ -105,28 +82,7 @@ export default function NeighborhoodPage() {
               Recreation
             </h2>
           </div>
-          <div className="mt-6 grid gap-5 sm:grid-cols-2">
-            {RECREATION.map((item) => (
-              <div
-                key={item.name}
-                className="flex gap-4 rounded-2xl border border-gold-500/20 bg-page p-5 shadow-card"
-              >
-                <PlaceholderImage
-                  label={item.name}
-                  seed={item.name}
-                  className="h-20 w-20 shrink-0 rounded-xl"
-                />
-                <div>
-                  <p className="font-serif text-h3 text-ink">
-                    {item.name}
-                  </p>
-                  <p className="mt-1 text-body-sm text-ink/65">
-                    {item.detail}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <NeighborhoodGrid items={content.recreation} />
         </div>
       </section>
     </div>
