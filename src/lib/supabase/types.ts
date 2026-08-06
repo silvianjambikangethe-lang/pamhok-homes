@@ -175,9 +175,19 @@ export type NeighborhoodContent = {
   recreation: NeighborhoodItem[];
 };
 
+export type SiteStatus = {
+  is_open: boolean;
+};
+
 export type SiteContent = {
-  key: "homepage" | "about" | "amenities" | "contact" | "neighborhood";
-  value: HomepageContent | AboutContent | AmenityItem[] | ContactContent | NeighborhoodContent;
+  key: "homepage" | "about" | "amenities" | "contact" | "neighborhood" | "site_status";
+  value:
+    | HomepageContent
+    | AboutContent
+    | AmenityItem[]
+    | ContactContent
+    | NeighborhoodContent
+    | SiteStatus;
   updated_at: string;
 };
 

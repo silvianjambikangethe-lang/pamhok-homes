@@ -12,6 +12,7 @@ import type {
   Review,
   Room,
   SiteContent,
+  SiteStatus,
   SocialLink,
 } from "@/lib/supabase/types";
 
@@ -304,6 +305,8 @@ const DEFAULT_NEIGHBORHOOD_CONTENT: NeighborhoodContent = {
   recreation: [],
 };
 
+const DEFAULT_SITE_STATUS: SiteStatus = { is_open: true };
+
 async function getSiteContentValue<T>(key: SiteContent["key"], fallback: T): Promise<T> {
   if (!isSupabaseConfigured()) return fallback;
 
@@ -331,6 +334,10 @@ export function getAmenitiesContent(): Promise<AmenityItem[]> {
 
 export function getContactContent(): Promise<ContactContent> {
   return getSiteContentValue("contact", DEFAULT_CONTACT_CONTENT);
+}
+
+export function getSiteStatus(): Promise<SiteStatus> {
+  return getSiteContentValue("site_status", DEFAULT_SITE_STATUS);
 }
 
 export function getNeighborhoodContent(): Promise<NeighborhoodContent> {
