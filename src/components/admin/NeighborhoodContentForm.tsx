@@ -78,7 +78,9 @@ function CategoryEditor({
               />
               <p className="mt-1 text-xs text-ink/65">
                 Adds a &quot;Get Directions from Pamhok Homes&quot; button for
-                this place on the public page.
+                this place on the public page. Paste either the place&apos;s
+                own Google Maps pin, or a &quot;Directions from Pamhok
+                Homes&quot; link shared straight from Maps — both work.
               </p>
             </div>
             <div className="mt-3 flex items-end justify-between gap-3">

@@ -28,8 +28,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing link." }, { status: 400 });
   }
 
-  const coords = await resolveMapsLink(url);
-  if (!coords) {
+  const resolved = await resolveMapsLink(url);
+  if (!resolved) {
     return NextResponse.json(
       {
         error:
@@ -39,5 +39,5 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json(coords);
+  return NextResponse.json(resolved);
 }

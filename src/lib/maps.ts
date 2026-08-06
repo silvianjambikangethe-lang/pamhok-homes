@@ -2,6 +2,12 @@
 // google.com/maps URLs) encode the pinned point's coordinates in a few
 // different ways depending on how the link was generated. Tried in order
 // of precision/reliability; the first match wins.
+//
+// Note: the "@lat,lng,zoom" pattern is only reliable on a plain place-view
+// URL, where it IS the pin. On a /maps/dir/ (directions) URL it's the map
+// viewport's camera center for the route, not the destination — so it must
+// never be used there. resolveMapsLink() checks for a directions URL and
+// short-circuits before this ambiguity can bite.
 const COORD_PATTERNS = [
   /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // place detail permalink (most precise)
   /@(-?\d+\.\d+),(-?\d+\.\d+),/, // map view URL with a zoom level
@@ -19,11 +25,19 @@ export function extractLatLng(url: string): { lat: number; lng: number } | null 
   return null;
 }
 
+export type ResolvedMapsLink =
+  | { kind: "coords"; lat: number; lng: number }
+  | { kind: "directions"; directionsUrl: string };
+
 // Follows redirects on a Google Maps share link (e.g. maps.app.goo.gl/xxx)
-// to reach the final URL, then pulls the pinned coordinates out of it.
-export async function resolveMapsLink(
-  url: string,
-): Promise<{ lat: number; lng: number } | null> {
+// to reach the final URL. Two shapes are supported:
+//  - a plain pin/place link -> pull its coordinates out, so a directions
+//    route can be built from them later (see buildDirectionsUrl)
+//  - an already-complete "from A to B" directions link (e.g. one shared
+//    straight from Google Maps' own Directions feature) -> use Google's
+//    resolved route URL as-is, since it's more precise than anything we'd
+//    reconstruct from extracted coordinates
+export async function resolveMapsLink(url: string): Promise<ResolvedMapsLink | null> {
   let resolvedUrl: string;
   try {
     const res = await fetch(url, { redirect: "follow" });
@@ -31,7 +45,14 @@ export async function resolveMapsLink(
   } catch {
     return null;
   }
-  return extractLatLng(resolvedUrl);
+
+  if (resolvedUrl.includes("/maps/dir/")) {
+    return { kind: "directions", directionsUrl: resolvedUrl };
+  }
+
+  const coords = extractLatLng(resolvedUrl);
+  if (!coords) return null;
+  return { kind: "coords", lat: coords.lat, lng: coords.lng };
 }
 
 export function buildDirectionsUrl(

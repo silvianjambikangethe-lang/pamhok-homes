@@ -33,10 +33,17 @@ function NeighborhoodGrid({
   return (
     <div className="mt-6 grid gap-5 sm:grid-cols-2">
       {items.map((item, index) => {
+        // Two ways a place ends up with a directions link: its own pin was
+        // resolved to coordinates and we build the route from Pamhok's
+        // coordinates to those (below), or the admin pasted an already-
+        // complete "from Pamhok to here" directions link, which is stored
+        // as-is in maps_url and used directly — see resolveMapsLink().
         const directionsUrl =
           pamhokLat != null && pamhokLng != null && item.lat != null && item.lng != null
             ? buildDirectionsUrl(pamhokLat, pamhokLng, item.lat, item.lng)
-            : null;
+            : item.maps_url?.includes("/maps/dir/")
+              ? item.maps_url
+              : null;
 
         return (
           <div

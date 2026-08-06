@@ -56,7 +56,14 @@ export default function MapsLinkField({
         return;
       }
       setStatus("ok");
-      onChange({ maps_url: trimmed, lat: data.lat, lng: data.lng });
+      if (data.kind === "directions") {
+        // Already a complete "from A to B" route (e.g. shared straight from
+        // Google Maps' own Directions feature) — store Google's resolved
+        // URL as-is rather than reconstructing our own from coordinates.
+        onChange({ maps_url: data.directionsUrl, lat: null, lng: null });
+      } else {
+        onChange({ maps_url: trimmed, lat: data.lat, lng: data.lng });
+      }
     } catch {
       setStatus("error");
       setError("Could not reach the server to check this link.");
