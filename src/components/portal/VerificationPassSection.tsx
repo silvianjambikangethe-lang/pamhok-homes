@@ -21,7 +21,7 @@ export default function VerificationPassSection({
 }) {
   if (!isReady) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-gold-500/25 bg-page p-5 text-sm text-ink/80 shadow-card">
+      <div className="flex items-start gap-3 rounded-2xl border border-taupe/25 bg-page p-5 text-sm text-ink/80 shadow-card">
         <Info size={20} className="mt-0.5 shrink-0 text-terracotta-600" />
         <p>
           Your verification pass will be available once your ID is confirmed
@@ -54,7 +54,7 @@ export default function VerificationPassSection({
         />
       </div>
 
-      <div className="mt-5 border-t border-gold-500/20 pt-4 text-sm text-ink/80">
+      <div className="mt-5 border-t border-taupe/20 pt-4 text-sm text-ink/80">
         Confirm with the host: {SITE.phone} · {SITE.contactEmail}
       </div>
     </div>

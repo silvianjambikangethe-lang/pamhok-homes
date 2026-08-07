@@ -45,7 +45,7 @@ export default function CurrencySelector({
         value={currency}
         onChange={(e) => handleChange(e.target.value as DisplayCurrency)}
         aria-label="Display currency"
-        className="focus-ring ml-1 rounded-md border border-gold-500/25 bg-page px-1.5 py-0.5 text-small text-ink/80"
+        className="focus-ring ml-1 rounded-md border border-taupe/25 bg-page px-1.5 py-0.5 text-small text-ink/80"
       >
         {OPTIONS.map((c) => (
           <option key={c} value={c}>

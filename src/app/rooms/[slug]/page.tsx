@@ -42,20 +42,20 @@ export default async function RoomDetailPage({
           url={room.photo_urls?.[0]}
           label={room.photo_labels?.[0] ?? room.name}
           seed={`${room.slug}-0`}
-          className="aspect-[4/3] rounded-2xl sm:col-span-2 sm:aspect-[16/10]"
+          className="photo-frame aspect-[4/3] rounded-2xl sm:col-span-2 sm:aspect-[16/10]"
         />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-1">
           <RoomPhoto
             url={room.photo_urls?.[1]}
             label={room.photo_labels?.[1] ?? room.name}
             seed={`${room.slug}-1`}
-            className="aspect-square rounded-2xl"
+            className="photo-frame aspect-square rounded-2xl"
           />
           <RoomPhoto
             url={room.photo_urls?.[2]}
             label={room.photo_labels?.[2] ?? room.name}
             seed={`${room.slug}-2`}
-            className="aspect-square rounded-2xl"
+            className="photo-frame aspect-square rounded-2xl"
           />
         </div>
       </div>

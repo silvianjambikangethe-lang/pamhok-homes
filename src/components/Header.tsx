@@ -10,7 +10,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gold-500/25 bg-page/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-taupe/25 bg-page/90 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between sm:h-20">
         <Link
           href="/"
@@ -44,7 +44,7 @@ export default function Header() {
           <ThemeToggle />
           <Link
             href="/rooms"
-            className="focus-ring inline-flex items-center rounded-full bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-white shadow-card transition-colors hover:bg-terracotta-600"
+            className="focus-ring inline-flex items-center rounded-full bg-mocha-500 dark:bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-mousse dark:text-white shadow-card transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
           >
             Check Availability
           </Link>
@@ -65,7 +65,7 @@ export default function Header() {
       </div>
 
       {open && (
-        <nav className="border-t border-gold-500/25 bg-page lg:hidden">
+        <nav className="border-t border-taupe/25 bg-page lg:hidden">
           <div className="container-page flex flex-col gap-1 py-4">
             {NAV_LINKS.map((link) => (
               <Link
@@ -80,7 +80,7 @@ export default function Header() {
             <Link
               href="/rooms"
               onClick={() => setOpen(false)}
-              className="focus-ring mt-2 inline-flex items-center justify-center rounded-full bg-terracotta-500 px-5 py-3 text-sm font-semibold text-white"
+              className="focus-ring mt-2 inline-flex items-center justify-center rounded-full bg-mocha-500 dark:bg-terracotta-500 px-5 py-3 text-sm font-semibold text-mousse dark:text-white"
             >
               Check Availability
             </Link>

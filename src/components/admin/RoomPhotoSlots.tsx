@@ -35,7 +35,7 @@ export default function RoomPhotoSlots({
             value={photoLabels[i] ?? ""}
             onChange={(e) => onLabelChange(i, e.target.value)}
             placeholder="Name tag (e.g. Bedroom)"
-            className="focus-ring w-full rounded-lg border border-gold-500/25 bg-page px-3 py-2 text-xs text-ink"
+            className="focus-ring w-full rounded-lg border border-taupe/25 bg-page px-3 py-2 text-xs text-ink"
           />
         </div>
       ))}

@@ -17,7 +17,7 @@ export default async function ContactPage() {
 
   return (
     <div>
-      <PageBanner color="espresso" eyebrow="Get in touch" title="We're here for you" />
+      <PageBanner color="cocoa" eyebrow="Get in touch" title="We're here for you" />
 
       <div className="container-page py-16 sm:py-20">
       <div className="text-center">
@@ -28,7 +28,7 @@ export default async function ContactPage() {
 
       <div className="mt-12 grid gap-10 lg:grid-cols-5 lg:gap-12">
         <div className="lg:col-span-2">
-          <div className="rounded-2xl border border-gold-500/20 bg-surface p-7 shadow-card">
+          <div className="rounded-2xl border border-taupe/20 bg-surface p-7 shadow-card">
             <ul className="space-y-5 text-sm text-ink/80">
               <li className="flex items-start gap-3">
                 <MapPin size={20} className="mt-0.5 shrink-0 text-terracotta-600" />
@@ -64,7 +64,7 @@ export default async function ContactPage() {
           </div>
 
           {content.maps_url && (
-            <div className="mt-6 overflow-hidden rounded-2xl border border-gold-500/20 shadow-card">
+            <div className="mt-6 overflow-hidden rounded-2xl border border-taupe/20 shadow-card">
               <div className="flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-surface p-6 text-center text-ink/65">
                 <MapPin size={32} weight="light" className="text-terracotta-600" />
                 <p className="max-w-[220px] text-sm">

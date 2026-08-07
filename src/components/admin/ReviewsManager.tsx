@@ -72,7 +72,7 @@ function ReviewRow({
       className={`rounded-2xl border p-5 shadow-card transition-colors ${
         review.featured
           ? "border-terracotta-500 bg-terracotta-50/40 dark:bg-terracotta-700/10"
-          : "border-gold-500/20 bg-surface"
+          : "border-taupe/20 bg-surface"
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -93,8 +93,8 @@ function ReviewRow({
             disabled={busy}
             className={`focus-ring flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-60 ${
               review.featured
-                ? "border-terracotta-500 bg-terracotta-500 text-white hover:bg-terracotta-600"
-                : "border-gold-500/25 text-ink/80 hover:border-terracotta-300"
+                ? "border-mocha-500 dark:border-terracotta-500 bg-mocha-500 dark:bg-terracotta-500 text-mousse dark:text-white hover:bg-mocha-600 dark:hover:bg-terracotta-600"
+                : "border-taupe/25 text-ink/80 hover:border-terracotta-300"
             }`}
           >
             <Star size={14} weight={review.featured ? "fill" : "regular"} />
@@ -154,7 +154,7 @@ export default function ReviewsManager({ reviews: initialReviews }: { reviews: R
 
   if (reviews.length === 0) {
     return (
-      <p className="rounded-2xl border border-dashed border-gold-500/40 bg-page p-6 text-center text-sm text-ink/65">
+      <p className="rounded-2xl border border-dashed border-taupe/40 bg-page p-6 text-center text-sm text-ink/65">
         No reviews yet — guests can leave one from their portal once checked out.
       </p>
     );

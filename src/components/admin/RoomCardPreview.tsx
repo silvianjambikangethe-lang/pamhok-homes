@@ -39,7 +39,7 @@ export default function RoomCardPreview({
         <Eye size={14} />
         How this looks to guests on /rooms
       </p>
-      <div className="flex max-w-sm flex-col overflow-hidden rounded-2xl border border-gold-500/20 bg-surface shadow-card">
+      <div className="flex max-w-sm flex-col overflow-hidden rounded-2xl border border-taupe/20 bg-surface shadow-card">
         <RoomPhoto
           url={photoUrl}
           label={photoLabel || name}
@@ -55,7 +55,7 @@ export default function RoomCardPreview({
             <UsersThree size={16} />
             Up to {maxGuests} guests · {bedConfig || "Bed configuration not set"}
           </div>
-          <div className="mt-4 flex items-baseline justify-between border-t border-gold-500/20 pt-4">
+          <div className="mt-4 flex items-baseline justify-between border-t border-taupe/20 pt-4">
             <span className="font-serif text-price text-terracotta-600">
               {Number.isFinite(pricePerNight) ? formatCurrency(pricePerNight, currency) : "—"}
               <span className="text-small font-normal text-ink/65"> / night</span>

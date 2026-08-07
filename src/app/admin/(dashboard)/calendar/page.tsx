@@ -59,7 +59,7 @@ export default async function AdminCalendarPage() {
         </span>
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-gold-500/20 bg-surface shadow-card">
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-taupe/20 bg-surface shadow-card">
         <table className="border-collapse text-xs">
           <thead>
             <tr>
@@ -80,7 +80,7 @@ export default async function AdminCalendarPage() {
           </thead>
           <tbody>
             {(rooms ?? []).map((room) => (
-              <tr key={room.id} className="border-t border-gold-500/10">
+              <tr key={room.id} className="border-t border-taupe/10">
                 <td className="sticky left-0 z-10 bg-surface px-4 py-2 font-medium text-ink/80 whitespace-nowrap">
                   {room.name}
                 </td>

@@ -14,16 +14,17 @@ export default async function AmenitiesPage() {
 
   return (
     <div>
-      <PageBanner color="espresso" eyebrow="Comfort, covered" title="Amenities" />
+      <PageBanner color="espressoAmenities" eyebrow="Comfort, covered" title="Amenities" />
 
       <section className="container-page py-16 sm:py-20">
+        <div className="section-texture rounded-2xl bg-surface p-6 sm:p-8">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {amenities.map(({ icon, title, description }) => {
             const Icon = getAmenityIcon(icon);
             return (
               <div
                 key={title}
-                className="flex flex-col gap-4 rounded-2xl border border-gold-500/20 bg-surface p-7 shadow-card"
+                className="flex flex-col gap-4 rounded-2xl border border-taupe/20 bg-page p-7 shadow-depth transition-all duration-300 hover:-translate-y-0.5 hover:shadow-depth-hover"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-terracotta-50 text-terracotta-600 dark:bg-terracotta-700/30 dark:text-terracotta-300">
                   <Icon size={26} weight="light" />
@@ -37,6 +38,7 @@ export default async function AmenitiesPage() {
               </div>
             );
           })}
+        </div>
         </div>
       </section>
     </div>

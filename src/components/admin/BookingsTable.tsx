@@ -27,17 +27,17 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 const PAYMENT_BADGE: Record<string, string> = {
-  Pending: "bg-gold-500 text-espresso",
-  Paid: "bg-forest-500 text-ivory-dark dark:bg-sage-500 dark:text-espresso",
-  Failed: "bg-danger text-white",
+  Pending: "bg-[#A7866A] text-cocoa dark:bg-gold-500 dark:text-espresso",
+  Paid: "bg-forest-500 text-mousse dark:bg-sage-500 dark:text-espresso",
+  Failed: "bg-danger text-mousse dark:text-white",
   Refunded: "bg-ink/10 text-ink/80",
 };
 
 const BOOKING_BADGE: Record<string, string> = {
-  Confirmed: "bg-forest-500 text-ivory-dark dark:bg-sage-500 dark:text-espresso",
-  Cancelled: "bg-danger text-white",
+  Confirmed: "bg-forest-500 text-mousse dark:bg-sage-500 dark:text-espresso",
+  Cancelled: "bg-danger text-mousse dark:text-white",
   Blocked: "bg-ink/10 text-ink/80",
-  "Pending Verification": "bg-gold-500 text-espresso",
+  "Pending Verification": "bg-[#A7866A] text-cocoa dark:bg-gold-500 dark:text-espresso",
 };
 
 export default function BookingsTable({ bookings }: { bookings: AdminBookingRow[] }) {
@@ -56,10 +56,10 @@ export default function BookingsTable({ bookings }: { bookings: AdminBookingRow[
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-gold-500/20 bg-surface shadow-card">
+    <div className="overflow-x-auto rounded-2xl border border-taupe/20 bg-surface shadow-card">
       <table className="w-full min-w-[720px] text-left text-sm">
         <thead>
-          <tr className="border-b border-gold-500/20 text-xs uppercase tracking-wide text-ink/65">
+          <tr className="border-b border-taupe/20 text-xs uppercase tracking-wide text-ink/65">
             <th className="px-5 py-3 font-semibold">Reference</th>
             <th className="px-5 py-3 font-semibold">Guest</th>
             <th className="px-5 py-3 font-semibold">Room</th>
@@ -79,7 +79,7 @@ export default function BookingsTable({ bookings }: { bookings: AdminBookingRow[
             </tr>
           )}
           {bookings.map((b) => (
-            <tr key={b.id} className="border-b border-gold-500/10 last:border-0">
+            <tr key={b.id} className="border-b border-taupe/10 last:border-0">
               <td className="px-5 py-4 font-mono text-xs text-ink/65">
                 {b.booking_reference ?? "—"}
               </td>

@@ -16,7 +16,7 @@ export default async function RoomsPage() {
 
   return (
     <div>
-      <PageBanner color="forest" eyebrow="Rooms" title="Find your room" />
+      <PageBanner color="cocoa" eyebrow="Rooms" title="Find your room" />
 
       <div className="container-page py-16 sm:py-20">
       <div className="text-center">

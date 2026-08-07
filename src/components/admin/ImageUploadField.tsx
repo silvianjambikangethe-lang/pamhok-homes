@@ -57,10 +57,10 @@ export default function ImageUploadField({
           <img
             src={currentUrl}
             alt=""
-            className="h-20 w-20 rounded-lg border border-gold-500/25 object-cover"
+            className="h-20 w-20 rounded-lg border border-taupe/25 object-cover"
           />
         ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-gold-500/40 text-ink/40">
+          <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-taupe/40 text-ink/40">
             <ImageIcon size={24} />
           </div>
         )}
@@ -70,7 +70,7 @@ export default function ImageUploadField({
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="focus-ring rounded-full border border-gold-500/25 bg-page px-4 py-2 text-xs font-semibold text-ink/80 transition-colors hover:border-terracotta-300 disabled:opacity-60"
+              className="focus-ring rounded-full border border-taupe/25 bg-page px-4 py-2 text-xs font-semibold text-ink/80 transition-colors hover:border-terracotta-300 disabled:opacity-60"
             >
               {uploading ? "Uploading…" : currentUrl ? "Replace Image" : "Upload Image"}
             </button>

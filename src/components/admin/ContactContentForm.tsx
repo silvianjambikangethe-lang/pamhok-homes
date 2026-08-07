@@ -37,7 +37,7 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card"
+      className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card"
     >
       <h2 className="font-serif text-lg font-semibold text-ink">Contact & Location</h2>
 
@@ -51,7 +51,7 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
               setValue({ ...value, address_text: e.target.value });
               setSaved(false);
             }}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -63,7 +63,7 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
               setValue({ ...value, address_note: e.target.value });
               setSaved(false);
             }}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -91,7 +91,7 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
               setValue({ ...value, intro_line: e.target.value });
               setSaved(false);
             }}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
       </div>
@@ -101,7 +101,7 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
         <button
           type="submit"
           disabled={submitting}
-          className="focus-ring rounded-full bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+          className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Save Changes"}
         </button>

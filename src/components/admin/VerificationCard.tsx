@@ -48,7 +48,7 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
   }
 
   return (
-    <div className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card">
+    <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="font-semibold text-ink">{row.guestName ?? "Guest"}</p>
@@ -63,7 +63,7 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
             <button
               onClick={() => handleView("id")}
               disabled={loadingDoc === "id"}
-              className="focus-ring flex items-center gap-2 rounded-full border border-gold-500/25 px-4 py-2 text-sm font-semibold text-ink/80 hover:border-terracotta-500"
+              className="focus-ring flex items-center gap-2 rounded-full border border-taupe/25 px-4 py-2 text-sm font-semibold text-ink/80 hover:border-terracotta-500"
             >
               <Eye size={16} />
               {loadingDoc === "id" ? "Loading…" : "View ID"}
@@ -73,7 +73,7 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
             <button
               onClick={() => handleView("selfie")}
               disabled={loadingDoc === "selfie"}
-              className="focus-ring flex items-center gap-2 rounded-full border border-gold-500/25 px-4 py-2 text-sm font-semibold text-ink/80 hover:border-terracotta-500"
+              className="focus-ring flex items-center gap-2 rounded-full border border-taupe/25 px-4 py-2 text-sm font-semibold text-ink/80 hover:border-terracotta-500"
             >
               <Eye size={16} />
               {loadingDoc === "selfie" ? "Loading…" : "View Selfie"}
@@ -108,7 +108,7 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
           <img
             src={docUrl}
             alt={`${row.guestName ?? "Guest"}'s ID document`}
-            className="max-h-96 w-full rounded-xl border border-gold-500/20 object-contain"
+            className="max-h-96 w-full rounded-xl border border-taupe/20 object-contain"
           />
         )}
         {selfieUrl && (
@@ -116,7 +116,7 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
           <img
             src={selfieUrl}
             alt={`${row.guestName ?? "Guest"}'s selfie`}
-            className="max-h-96 w-full rounded-xl border border-gold-500/20 object-contain"
+            className="max-h-96 w-full rounded-xl border border-taupe/20 object-contain"
           />
         )}
       </div>

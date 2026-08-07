@@ -50,7 +50,7 @@ export default function CheckoutSection({
       className={`rounded-2xl border p-6 shadow-card ${
         isCheckoutDay
           ? "border-gold-500/50 bg-gold-500/15"
-          : "border-gold-500/20 bg-surface"
+          : "border-taupe/20 bg-surface"
       }`}
     >
       <div className="flex items-center gap-2">
@@ -73,7 +73,7 @@ export default function CheckoutSection({
                 onChange={(e) =>
                   setChecked((prev) => prev.map((v, idx) => (idx === i ? e.target.checked : v)))
                 }
-                className="h-5 w-5 rounded border-gold-500/30 text-terracotta-500 focus:ring-terracotta-500"
+                className="h-5 w-5 rounded border-taupe/30 text-terracotta-500 focus:ring-terracotta-500"
               />
               {item}
             </label>
@@ -87,7 +87,7 @@ export default function CheckoutSection({
         type="button"
         onClick={handleConfirm}
         disabled={!allChecked || submitting}
-        className="focus-ring mt-5 inline-flex items-center gap-2 rounded-full bg-terracotta-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-50"
+        className="focus-ring mt-5 inline-flex items-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <CheckCircle size={18} weight="fill" />
         {submitting ? "Confirming…" : "Confirm Check-Out"}

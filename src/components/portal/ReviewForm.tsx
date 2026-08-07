@@ -37,7 +37,7 @@ export default function ReviewForm({ token }: { token: string }) {
 
   if (done) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border border-gold-500/20 bg-surface p-6 text-sm font-medium text-ink shadow-card">
+      <div className="flex items-center gap-2 rounded-2xl border border-taupe/20 bg-surface p-6 text-sm font-medium text-ink shadow-card">
         <CheckCircle size={20} weight="fill" className="text-success" />
         Thank you for your review!
       </div>
@@ -47,7 +47,7 @@ export default function ReviewForm({ token }: { token: string }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card"
+      className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card"
     >
       <h2 className="font-serif text-h3 text-ink">
         How was your stay?
@@ -76,13 +76,13 @@ export default function ReviewForm({ token }: { token: string }) {
         onChange={(e) => setComment(e.target.value)}
         rows={4}
         placeholder="Tell future guests about your stay…"
-        className="focus-ring mt-4 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+        className="focus-ring mt-4 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
       />
       {error && <p className="mt-2 text-sm text-danger">{error}</p>}
       <button
         type="submit"
         disabled={submitting}
-        className="focus-ring mt-4 rounded-full bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+        className="focus-ring mt-4 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
       >
         {submitting ? "Sending…" : "Submit Review"}
       </button>

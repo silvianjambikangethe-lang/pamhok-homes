@@ -38,7 +38,7 @@ export default function ChangePhoneForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-warm sm:p-8"
+      className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-warm sm:p-8"
     >
       <h2 className="font-serif text-lg font-semibold text-ink">Change WhatsApp Phone Number</h2>
       <p className="mt-1 text-sm text-ink/70">
@@ -58,7 +58,7 @@ export default function ChangePhoneForm() {
             value={currentPhone}
             onChange={(e) => setCurrentPhone(e.target.value)}
             placeholder="+254 7XX XXX XXX"
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -72,7 +72,7 @@ export default function ChangePhoneForm() {
             value={newPhone}
             onChange={(e) => setNewPhone(e.target.value)}
             placeholder="+254 7XX XXX XXX"
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function ChangePhoneForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="focus-ring rounded-full bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+          className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
         >
           {submitting ? "Updating…" : "Update Phone Number"}
         </button>

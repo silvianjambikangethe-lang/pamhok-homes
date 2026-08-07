@@ -16,19 +16,21 @@ export default async function AboutPage() {
 
   return (
     <div>
-      <PageBanner color="espresso" eyebrow="Our Story" title="A home we're proud to share" />
+      <PageBanner color="cocoa" eyebrow="Our Story" title="A home we're proud to share" />
 
-      <section className="container-page py-16 sm:py-20">
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16">
+      <section className="bg-surface py-16 sm:py-20">
+        <div className="container-page grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16">
           <div>
-            <div className="space-y-4 text-body text-ink/80">
-              {paragraphs.map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
+            <div className="rounded-2xl border-[1.5px] border-taupe bg-page px-7 py-8 shadow-frame">
+              <div className="space-y-4 text-body text-ink/80">
+                {paragraphs.map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+              </div>
             </div>
             <Link
               href="/rooms"
-              className="focus-ring mt-8 inline-flex items-center justify-center rounded-full bg-terracotta-500 px-7 py-3.5 text-btn text-white shadow-card transition-colors hover:bg-terracotta-600"
+              className="focus-ring mt-8 inline-flex items-center justify-center rounded-full bg-mocha-500 dark:bg-terracotta-500 px-7 py-3.5 text-btn text-mousse dark:text-white shadow-card transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
             >
               See Our Rooms
             </Link>
@@ -57,7 +59,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <section className="bg-surface py-16 sm:py-20">
+      <section className="py-16 sm:py-20">
         <div className="container-page grid gap-8 text-center sm:grid-cols-3">
           <div>
             <p className="font-serif text-h1 text-terracotta-600">

@@ -39,7 +39,7 @@ export default async function AdminVerificationsPage() {
 
       <div className="mt-6 space-y-4">
         {rows.length === 0 && (
-          <p className="rounded-2xl border border-gold-500/20 bg-surface p-6 text-sm text-ink/65 shadow-card">
+          <p className="rounded-2xl border border-taupe/20 bg-surface p-6 text-sm text-ink/65 shadow-card">
             Nothing pending review right now.
           </p>
         )}

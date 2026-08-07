@@ -4,15 +4,21 @@
 
 :root {
   /* Light mode — RGB triplets so Tailwind's `/opacity` modifiers work. */
-  --color-page: 245 239 230; /* Warm Ivory #F5EFE6 */
-  --color-surface: 237 228 214; /* deeper ivory #EDE4D6 */
-  --color-ink: 43 33 27; /* Deep Espresso #2B211B */
+  --color-page: 232 221 208; /* Creamy Mousse #E8DDD0 */
+  --color-surface: 203 184 162; /* Soft Beige #CBB8A2 */
+  --color-ink: 62 42 32; /* Rich Cocoa #3E2A20 */
+
+  /* Card/panel/input border — Warm Taupe in light. Dark keeps today's
+   * value (gold-500 #B08D57) exactly, so every border-gold-500/* site
+   * renamed to border-taupe/* renders byte-identical in dark mode. */
+  --color-border: 167 134 106; /* Warm Taupe #A7866A */
 }
 
 .dark {
   --color-page: 30 24 18; /* #1E1812 — warm brown-black, not pure black */
   --color-surface: 46 36 29; /* #2E241D */
   --color-ink: 240 233 221; /* Warm Ivory (dark-mode text) #F0E9DD */
+  --color-border: 176 141 87; /* gold-500 #B08D57 — unchanged from before */
 }
 
 body {
@@ -64,5 +70,32 @@ body {
 
   .focus-ring {
     @apply outline-none focus-visible:ring-2 focus-visible:ring-terracotta-500 focus-visible:ring-offset-2 focus-visible:ring-offset-page;
+  }
+
+  /* photo-frame-and-card-depth.md §1 — persistent frame on every photo
+   * card, glowing terracotta on hover. One shared class so new photo
+   * cards get this automatically instead of being restyled per section. */
+  .photo-frame {
+    border: 1.5px solid rgb(var(--color-border));
+    transition: border-color 280ms ease-out, box-shadow 280ms ease-out;
+  }
+
+  .photo-frame:hover {
+    border-color: #c4713c;
+    box-shadow: 0 0 16px rgba(196, 113, 60, 0.35);
+  }
+
+  /* photo-frame-and-card-depth.md §2 Layer 3 — very low-opacity grain
+   * behind card-grid section panels, so a flat Soft Beige band doesn't
+   * read as sterile. Tinted with each theme's ink color via feColorMatrix
+   * (Rich Cocoa in light, Warm Ivory in dark) so one technique covers
+   * both without two hand-picked assets. */
+  .section-texture {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.243 0 0 0 0 0.165 0 0 0 0 0.125 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 140px 140px;
+  }
+
+  .dark .section-texture {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.941 0 0 0 0 0.914 0 0 0 0 0.867 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 }

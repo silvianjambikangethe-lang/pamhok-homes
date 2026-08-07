@@ -42,7 +42,7 @@ export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
 
   if (requests.length === 0) {
     return (
-      <p className="rounded-2xl border border-gold-500/20 bg-surface p-6 text-sm text-ink/65 shadow-card">
+      <p className="rounded-2xl border border-taupe/20 bg-surface p-6 text-sm text-ink/65 shadow-card">
         No guest requests yet.
       </p>
     );
@@ -60,7 +60,7 @@ export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
             className={`flex flex-wrap items-start justify-between gap-4 rounded-2xl border p-5 shadow-card ${
               isOpenState
                 ? "border-terracotta-300 bg-terracotta-50/50 dark:border-terracotta-700/40 dark:bg-terracotta-700/10"
-                : "border-gold-500/20 bg-surface"
+                : "border-taupe/20 bg-surface"
             }`}
           >
             <div>
@@ -89,7 +89,7 @@ export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
                   value={r.status}
                   disabled={busyId === r.id}
                   onChange={(e) => handleLaundryStage(r.id, e.target.value)}
-                  className="focus-ring rounded-full border border-gold-500/25 bg-page px-3 py-1.5 text-xs font-semibold text-ink/80 disabled:opacity-50"
+                  className="focus-ring rounded-full border border-taupe/25 bg-page px-3 py-1.5 text-xs font-semibold text-ink/80 disabled:opacity-50"
                 >
                   {LAUNDRY_STAGES.map((stage) => (
                     <option key={stage} value={stage}>

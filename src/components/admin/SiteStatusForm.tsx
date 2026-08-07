@@ -38,7 +38,7 @@ export default function SiteStatusForm({ initial }: { initial: SiteStatus }) {
   return (
     <div
       className={`rounded-2xl border-2 p-6 shadow-card ${
-        isOpen ? "border-gold-500/20 bg-surface" : "border-danger/40 bg-danger/5"
+        isOpen ? "border-taupe/20 bg-surface" : "border-danger/40 bg-danger/5"
       }`}
     >
       <div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export default function SiteStatusForm({ initial }: { initial: SiteStatus }) {
             type="button"
             onClick={() => setStatus(true)}
             disabled={submitting}
-            className="focus-ring rounded-full bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+            className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
           >
             {submitting ? "Reopening…" : "Reopen Website"}
           </button>

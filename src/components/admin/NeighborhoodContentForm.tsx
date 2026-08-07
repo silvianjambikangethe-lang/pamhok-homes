@@ -45,7 +45,7 @@ function CategoryEditor({
         {items.map((item, index) => (
           <div
             key={index}
-            className="rounded-xl border border-gold-500/20 bg-page p-4"
+            className="rounded-xl border border-taupe/20 bg-page p-4"
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
@@ -55,7 +55,7 @@ function CategoryEditor({
                   value={item.name}
                   onChange={(e) => updateItem(index, { name: e.target.value })}
                   placeholder="e.g. Artcaffe"
-                  className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-surface px-3 py-2 text-sm text-ink"
+                  className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
                 />
               </div>
               <div>
@@ -65,7 +65,7 @@ function CategoryEditor({
                   value={item.detail}
                   onChange={(e) => updateItem(index, { detail: e.target.value })}
                   placeholder="e.g. 5 min drive, great for breakfast"
-                  className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-surface px-3 py-2 text-sm text-ink"
+                  className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
                 />
               </div>
             </div>
@@ -107,7 +107,7 @@ function CategoryEditor({
       <button
         type="button"
         onClick={addItem}
-        className="focus-ring mt-3 flex items-center gap-1.5 rounded-full border border-gold-500/25 px-4 py-2 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
+        className="focus-ring mt-3 flex items-center gap-1.5 rounded-full border border-taupe/25 px-4 py-2 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
       >
         <Plus size={14} /> Add {title === "Food" ? "Place" : "Location"}
       </button>
@@ -151,7 +151,7 @@ export default function NeighborhoodContentForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card"
+      className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card"
     >
       <h2 className="font-serif text-lg font-semibold text-ink">Neighborhood</h2>
       <p className="mt-1 text-xs text-ink/65">
@@ -185,7 +185,7 @@ export default function NeighborhoodContentForm({
         <button
           type="submit"
           disabled={submitting}
-          className="focus-ring rounded-full bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+          className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Save Changes"}
         </button>

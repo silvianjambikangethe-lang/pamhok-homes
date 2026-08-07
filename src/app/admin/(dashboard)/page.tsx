@@ -114,7 +114,7 @@ export default async function AdminOverviewPage() {
         {stats.map(({ label, value, icon: Icon }) => (
           <div
             key={label}
-            className="@container min-w-0 rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card"
+            className="@container min-w-0 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card"
           >
             <div className="flex min-w-0 flex-col items-start gap-3 @[13rem]:flex-row @[13rem]:items-center @[13rem]:gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-terracotta-50 text-terracotta-600 dark:bg-terracotta-700/30 dark:text-terracotta-300">
@@ -136,7 +136,7 @@ export default async function AdminOverviewPage() {
           className={`rounded-2xl border p-6 shadow-card ${
             pendingVerifications && pendingVerifications.length > 0
               ? "border-danger/30 bg-danger/5"
-              : "border-gold-500/20 bg-surface"
+              : "border-taupe/20 bg-surface"
           }`}
         >
           <div className="flex items-center justify-between">
@@ -178,7 +178,7 @@ export default async function AdminOverviewPage() {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card">
+        <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-serif text-lg font-semibold text-ink">
               <ChatCircleDots size={20} className="text-terracotta-600" />
@@ -213,7 +213,7 @@ export default async function AdminOverviewPage() {
           className={`rounded-2xl border p-6 shadow-card ${
             refundsNeeded && refundsNeeded.length > 0
               ? "border-danger/30 bg-danger/5"
-              : "border-gold-500/20 bg-surface"
+              : "border-taupe/20 bg-surface"
           }`}
         >
           <div className="flex items-center justify-between">
@@ -254,7 +254,7 @@ export default async function AdminOverviewPage() {
           className={`rounded-2xl border p-6 shadow-card ${
             renewalsDueSoon && renewalsDueSoon.length > 0
               ? "border-danger/30 bg-danger/5"
-              : "border-gold-500/20 bg-surface"
+              : "border-taupe/20 bg-surface"
           }`}
         >
           <div className="flex items-center justify-between">

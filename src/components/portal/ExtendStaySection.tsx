@@ -83,7 +83,7 @@ export default function ExtendStaySection({
       className={`rounded-2xl border p-5 shadow-card ${
         isUrgent
           ? "border-gold-500/50 bg-gold-500/15"
-          : "border-gold-500/20 bg-surface"
+          : "border-taupe/20 bg-surface"
       }`}
     >
       {isUrgent && (
@@ -117,7 +117,7 @@ export default function ExtendStaySection({
                 setNights(Number(e.target.value));
                 setQuote(null);
               }}
-              className="focus-ring rounded-md border border-gold-500/25 bg-page px-2 py-1 text-sm text-ink"
+              className="focus-ring rounded-md border border-taupe/25 bg-page px-2 py-1 text-sm text-ink"
             >
               {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                 <option key={n} value={n}>
@@ -129,7 +129,7 @@ export default function ExtendStaySection({
               type="button"
               onClick={handleCheck}
               disabled={checking}
-              className="focus-ring rounded-full border border-gold-500/25 px-4 py-1.5 text-sm font-semibold text-ink/80 hover:border-terracotta-500 disabled:opacity-60"
+              className="focus-ring rounded-full border border-taupe/25 px-4 py-1.5 text-sm font-semibold text-ink/80 hover:border-terracotta-500 disabled:opacity-60"
             >
               {checking ? "Checking…" : "Check Availability"}
             </button>
@@ -145,7 +145,7 @@ export default function ExtendStaySection({
                 type="button"
                 onClick={handleConfirm}
                 disabled={confirming}
-                className="focus-ring rounded-full bg-terracotta-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-terracotta-600 disabled:opacity-60"
+                className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-4 py-1.5 text-xs font-semibold text-mousse dark:text-white hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
               >
                 {confirming ? "Confirming…" : "Confirm Extension"}
               </button>

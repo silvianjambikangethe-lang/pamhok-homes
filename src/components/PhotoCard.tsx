@@ -16,7 +16,7 @@ export default function PhotoCard({
 }) {
   return (
     <div
-      className={`group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-warm ${className}`}
+      className={`photo-frame group overflow-hidden transition-all duration-300 hover:-translate-y-1 ${className}`}
     >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element

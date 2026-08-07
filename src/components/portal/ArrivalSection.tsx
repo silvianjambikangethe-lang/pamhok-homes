@@ -28,7 +28,7 @@ export default function ArrivalSection({
   onCloseArrival: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card">
+    <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
       <div className="flex items-center gap-2">
         <MapPinLine size={22} className="text-terracotta-600" />
         <h2 className="font-serif text-h3 text-ink">On your way?</h2>
@@ -42,7 +42,7 @@ export default function ArrivalSection({
         <button
           type="button"
           onClick={onShowArrival}
-          className="focus-ring flex items-center justify-center gap-2 rounded-full bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600"
+          className="focus-ring flex items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
         >
           I&apos;ve Arrived
         </button>
@@ -73,7 +73,7 @@ export default function ArrivalSection({
               Show this pass to building security or reception to be let in.
             </p>
 
-            <div className="mt-5 border-t border-gold-500/20 pt-5">
+            <div className="mt-5 border-t border-taupe/20 pt-5">
               <PassDetails
                 guestDisplayName={guestDisplayName}
                 roomName={roomName}

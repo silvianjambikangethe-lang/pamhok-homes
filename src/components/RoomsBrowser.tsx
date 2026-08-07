@@ -57,7 +57,7 @@ export default function RoomsBrowser({
 
   return (
     <>
-      <div className="mx-auto max-w-md rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card">
+      <div className="mx-auto max-w-md rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
         <p className="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-ink/80">
           <CalendarBlank size={18} />
           Select your dates to see available rooms
@@ -81,7 +81,7 @@ export default function RoomsBrowser({
           <button
             type="button"
             onClick={() => setSelection({ checkIn: null, checkOut: null })}
-            className="focus-ring mt-4 rounded-full border border-gold-500/25 px-5 py-2 text-sm font-semibold text-ink/80 hover:border-terracotta-300"
+            className="focus-ring mt-4 rounded-full border border-taupe/25 px-5 py-2 text-sm font-semibold text-ink/80 hover:border-terracotta-300"
           >
             Clear dates and try again
           </button>
@@ -89,18 +89,19 @@ export default function RoomsBrowser({
       )}
 
       {datesSelected && availableRooms.length > 0 && (
-        <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="section-texture mt-12 rounded-2xl bg-surface p-6 sm:p-8">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {availableRooms.map((room) => (
             <Link
               key={room.id}
               href={`/rooms/${room.slug}${dateQuery}`}
-              className="focus-ring group flex cursor-default flex-col overflow-hidden rounded-2xl border border-gold-500/20 bg-surface shadow-card transition-all duration-300 active:-translate-y-1 active:shadow-warm md:cursor-pointer md:hover:-translate-y-1 md:hover:shadow-warm"
+              className="focus-ring group flex cursor-default flex-col overflow-hidden rounded-2xl border border-taupe/20 bg-page shadow-depth transition-all duration-300 active:-translate-y-0.5 active:shadow-depth-hover md:cursor-pointer md:hover:-translate-y-0.5 md:hover:shadow-depth-hover"
             >
               <RoomPhoto
                 url={room.photo_urls?.[0]}
                 label={room.photo_labels?.[0] ?? room.name}
                 seed={room.slug}
-                className="aspect-[4/3] w-full transition-transform duration-300 group-active:scale-105 md:group-hover:scale-105"
+                className="photo-frame aspect-[4/3] w-full transition-transform duration-300 group-active:scale-105 md:group-hover:scale-105"
               />
               <div className="flex flex-1 flex-col p-6">
                 <h2 className="font-serif text-h3 text-ink group-active:text-terracotta-600 md:group-hover:text-terracotta-600">
@@ -113,7 +114,7 @@ export default function RoomsBrowser({
                   <UsersThree size={16} />
                   Up to {room.max_guests} guests · {room.bed_config}
                 </div>
-                <div className="mt-4 flex items-baseline justify-between border-t border-gold-500/20 pt-4">
+                <div className="mt-4 flex items-baseline justify-between border-t border-taupe/20 pt-4">
                   <span className="font-serif text-price text-terracotta-600">
                     {formatCurrency(room.price_per_night, room.currency)}
                     <span className="text-small font-normal text-ink/65">
@@ -128,6 +129,7 @@ export default function RoomsBrowser({
               </div>
             </Link>
           ))}
+          </div>
         </div>
       )}
     </>

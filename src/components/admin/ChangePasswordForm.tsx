@@ -40,7 +40,7 @@ export default function ChangePasswordForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-warm sm:p-8"
+      className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-warm sm:p-8"
     >
       <h2 className="font-serif text-lg font-semibold text-ink">Change Password</h2>
       <p className="mt-1 text-sm text-ink/70">
@@ -59,7 +59,7 @@ export default function ChangePasswordForm() {
             autoComplete="current-password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -74,7 +74,7 @@ export default function ChangePasswordForm() {
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
           <p className="mt-1 text-xs text-ink/55">At least 8 characters.</p>
         </div>
@@ -89,7 +89,7 @@ export default function ChangePasswordForm() {
             autoComplete="new-password"
             value={confirmNewPassword}
             onChange={(e) => setConfirmNewPassword(e.target.value)}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function ChangePasswordForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="focus-ring rounded-full bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+          className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
         >
           {submitting ? "Updating…" : "Update Password"}
         </button>

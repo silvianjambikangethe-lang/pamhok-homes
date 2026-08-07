@@ -39,7 +39,7 @@ export default async function MaintenancePage() {
           )}
           <a
             href={`tel:${SITE.phone}`}
-            className="focus-ring flex items-center justify-center gap-2 rounded-full border border-gold-500/25 px-5 py-3 text-sm font-semibold text-ink/80 transition-colors hover:border-terracotta-300"
+            className="focus-ring flex items-center justify-center gap-2 rounded-full border border-taupe/25 px-5 py-3 text-sm font-semibold text-ink/80 transition-colors hover:border-terracotta-300"
           >
             <Phone size={18} />
             Call {SITE.phone}

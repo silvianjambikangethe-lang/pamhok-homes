@@ -116,7 +116,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
   return (
     <div className="space-y-4">
       {expenses.length === 0 && (
-        <p className="rounded-2xl border border-gold-500/20 bg-surface p-6 text-sm text-ink/65 shadow-card">
+        <p className="rounded-2xl border border-taupe/20 bg-surface p-6 text-sm text-ink/65 shadow-card">
           No expenses tracked yet.
         </p>
       )}
@@ -128,7 +128,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
           <div
             key={expense.id}
             className={`rounded-2xl border p-5 shadow-card ${
-              dueSoon ? "border-danger/30 bg-danger/5" : "border-gold-500/20 bg-surface"
+              dueSoon ? "border-danger/30 bg-danger/5" : "border-taupe/20 bg-surface"
             }`}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -147,7 +147,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
                           );
                         }
                       }}
-                      className="focus-ring mt-1 w-full rounded-lg border border-gold-500/25 bg-page px-3 py-2 text-sm text-ink"
+                      className="focus-ring mt-1 w-full rounded-lg border border-taupe/25 bg-page px-3 py-2 text-sm text-ink"
                     />
                   </div>
                   <div>
@@ -167,7 +167,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
                             );
                           }
                         }}
-                        className="focus-ring w-full rounded-lg border border-gold-500/25 bg-page px-2.5 py-2 text-sm text-ink"
+                        className="focus-ring w-full rounded-lg border border-taupe/25 bg-page px-2.5 py-2 text-sm text-ink"
                       />
                       <input
                         type="text"
@@ -181,7 +181,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
                             );
                           }
                         }}
-                        className="focus-ring w-16 shrink-0 rounded-lg border border-gold-500/25 bg-page px-2 py-2 text-sm text-ink"
+                        className="focus-ring w-16 shrink-0 rounded-lg border border-taupe/25 bg-page px-2 py-2 text-sm text-ink"
                       />
                     </div>
                   </div>
@@ -196,7 +196,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
                           (ok) => ok && updateLocal(expense.id, { billing_cycle: value }),
                         );
                       }}
-                      className="focus-ring mt-1 w-full rounded-lg border border-gold-500/25 bg-page px-2.5 py-2 text-sm text-ink"
+                      className="focus-ring mt-1 w-full rounded-lg border border-taupe/25 bg-page px-2.5 py-2 text-sm text-ink"
                     >
                       {CYCLES.map((c) => (
                         <option key={c.value} value={c.value}>
@@ -222,7 +222,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
                           );
                         }
                       }}
-                      className="focus-ring mt-1 w-full rounded-lg border border-gold-500/25 bg-page px-2.5 py-2 text-sm text-ink"
+                      className="focus-ring mt-1 w-full rounded-lg border border-taupe/25 bg-page px-2.5 py-2 text-sm text-ink"
                     />
                   </div>
                   <div>
@@ -240,7 +240,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
                           );
                         }
                       }}
-                      className="focus-ring mt-1 w-full rounded-lg border border-gold-500/25 bg-page px-3 py-2 text-sm text-ink"
+                      className="focus-ring mt-1 w-full rounded-lg border border-taupe/25 bg-page px-3 py-2 text-sm text-ink"
                     />
                   </div>
                 </div>
@@ -271,7 +271,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
 
       <form
         onSubmit={handleAdd}
-        className="rounded-2xl border border-gold-500/20 bg-surface p-5 shadow-card"
+        className="rounded-2xl border border-taupe/20 bg-surface p-5 shadow-card"
       >
         <h2 className="font-serif text-base font-semibold text-ink">Add an expense</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-[2fr_1fr_1fr_1fr]">
@@ -281,7 +281,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="e.g. Domain (.store)"
-            className="focus-ring rounded-lg border border-gold-500/25 bg-page px-3 py-2 text-sm text-ink"
+            className="focus-ring rounded-lg border border-taupe/25 bg-page px-3 py-2 text-sm text-ink"
           />
           <input
             type="number"
@@ -289,19 +289,19 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
             value={newAmount}
             onChange={(e) => setNewAmount(e.target.value)}
             placeholder="Amount"
-            className="focus-ring rounded-lg border border-gold-500/25 bg-page px-3 py-2 text-sm text-ink"
+            className="focus-ring rounded-lg border border-taupe/25 bg-page px-3 py-2 text-sm text-ink"
           />
           <input
             type="text"
             value={newCurrency}
             onChange={(e) => setNewCurrency(e.target.value)}
             placeholder="Currency"
-            className="focus-ring rounded-lg border border-gold-500/25 bg-page px-3 py-2 text-sm text-ink"
+            className="focus-ring rounded-lg border border-taupe/25 bg-page px-3 py-2 text-sm text-ink"
           />
           <select
             value={newCycle}
             onChange={(e) => setNewCycle(e.target.value as BillingCycle)}
-            className="focus-ring rounded-lg border border-gold-500/25 bg-page px-2.5 py-2 text-sm text-ink"
+            className="focus-ring rounded-lg border border-taupe/25 bg-page px-2.5 py-2 text-sm text-ink"
           >
             {CYCLES.map((c) => (
               <option key={c.value} value={c.value}>
@@ -316,14 +316,14 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
             required
             value={newDueDate}
             onChange={(e) => setNewDueDate(e.target.value)}
-            className="focus-ring rounded-lg border border-gold-500/25 bg-page px-2.5 py-2 text-sm text-ink"
+            className="focus-ring rounded-lg border border-taupe/25 bg-page px-2.5 py-2 text-sm text-ink"
           />
           <input
             type="text"
             value={newNotes}
             onChange={(e) => setNewNotes(e.target.value)}
             placeholder="Notes (optional)"
-            className="focus-ring rounded-lg border border-gold-500/25 bg-page px-3 py-2 text-sm text-ink"
+            className="focus-ring rounded-lg border border-taupe/25 bg-page px-3 py-2 text-sm text-ink"
           />
         </div>
 
@@ -332,7 +332,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
         <button
           type="submit"
           disabled={busyId === "new"}
-          className="focus-ring mt-4 flex items-center gap-1.5 rounded-full bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-terracotta-600 disabled:opacity-60"
+          className="focus-ring mt-4 flex items-center gap-1.5 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-mousse dark:text-white hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
         >
           <Plus size={14} /> {busyId === "new" ? "Adding…" : "Add Expense"}
         </button>

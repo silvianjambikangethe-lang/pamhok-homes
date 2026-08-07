@@ -47,7 +47,7 @@ export default function WhatsappSetupForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mx-auto max-w-sm rounded-2xl border border-gold-500/20 bg-surface p-8 shadow-warm"
+      className="mx-auto max-w-sm rounded-2xl border border-taupe/20 bg-surface p-8 shadow-warm"
     >
       <div className="flex justify-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-forest-700 text-white">
@@ -77,7 +77,7 @@ export default function WhatsappSetupForm({
             setSaved(false);
           }}
           placeholder="+254 7XX XXX XXX"
-          className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+          className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
         />
       </div>
 
@@ -87,7 +87,7 @@ export default function WhatsappSetupForm({
         <button
           type="submit"
           disabled={submitting}
-          className="focus-ring flex-1 rounded-full bg-terracotta-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+          className="focus-ring flex-1 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
         >
           {submitting ? "Saving…" : required ? "Save & Continue" : "Save"}
         </button>

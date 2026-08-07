@@ -58,10 +58,10 @@ export default function IdUploadForm({
   }
 
   return (
-    // Step 1 (not yet submitted): Sage wash in light mode, Deep Forest
-    // wash in dark mode — Sage is too faint to read against a dark
-    // background, so the "calm/inactive" signal swaps to Forest instead.
-    <div className="rounded-2xl border border-sage-500/30 bg-sage-500/15 p-6 shadow-card dark:border-forest-500/40 dark:bg-forest-500/20">
+    // Step 1 (not yet submitted): Warm Taupe wash in light mode (per
+    // master-color-scheme.md), Deep Forest wash in dark mode, unchanged —
+    // the old Sage-in-light wash is gone but dark keeps its own signal.
+    <div className="rounded-2xl border border-taupe/30 bg-taupe/15 p-6 shadow-card dark:border-forest-500/40 dark:bg-forest-500/20">
       <h2 className="font-serif text-h3 text-ink">
         {attemptsLeft !== undefined
           ? "Let's try that again"
@@ -78,7 +78,7 @@ export default function IdUploadForm({
       </p>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gold-500/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
           <UploadSimple size={28} className="text-terracotta-600" />
           <span className="text-sm font-medium text-ink/80">
             {idFileName ?? "Click to choose your ID (JPG, PNG, or PDF)"}
@@ -92,7 +92,7 @@ export default function IdUploadForm({
           />
         </label>
 
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gold-500/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
           <UploadSimple size={28} className="text-terracotta-600" />
           <span className="text-sm font-medium text-ink/80">
             {selfieFileName ?? "Click to choose a selfie (JPG, PNG, or WebP)"}
@@ -115,7 +115,7 @@ export default function IdUploadForm({
         <button
           type="submit"
           disabled={submitting}
-          className="focus-ring w-full rounded-full bg-terracotta-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+          className="focus-ring w-full rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
         >
           {submitting ? "Verifying…" : "Upload & Verify"}
         </button>

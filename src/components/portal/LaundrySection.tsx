@@ -42,7 +42,7 @@ export default function LaundrySection({
 
   if (!isActiveStay) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-gold-500/20 bg-page px-4 py-3 text-sm text-ink/65">
+      <div className="flex items-center gap-3 rounded-xl border border-taupe/20 bg-page px-4 py-3 text-sm text-ink/65">
         <TShirt size={20} className="shrink-0 opacity-60" />
         Request Laundry Pickup — available once your stay begins.
       </div>
@@ -81,7 +81,7 @@ export default function LaundrySection({
   }
 
   return (
-    <div className="rounded-xl border border-gold-500/20 bg-page px-4 py-3">
+    <div className="rounded-xl border border-taupe/20 bg-page px-4 py-3">
       {hasActiveRequest ? (
         <div className="flex items-center gap-3 text-sm text-ink">
           <TShirt size={20} className="shrink-0 text-terracotta-600" />
@@ -98,7 +98,7 @@ export default function LaundrySection({
               value={itemCount}
               onChange={(e) => setItemCount(e.target.value)}
               placeholder="e.g. 1 bag"
-              className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-surface px-3 py-2 text-sm text-ink"
+              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
             />
           </div>
           <div>
@@ -111,7 +111,7 @@ export default function LaundrySection({
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="e.g. delicates, please wash cold"
-              className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-surface px-3 py-2 text-sm text-ink"
+              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
             />
           </div>
           {error && (
@@ -123,7 +123,7 @@ export default function LaundrySection({
             <button
               type="submit"
               disabled={submitting}
-              className="focus-ring rounded-full bg-terracotta-500 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+              className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-5 py-2 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
             >
               {submitting ? "Sending…" : "Request Pickup"}
             </button>

@@ -54,7 +54,7 @@ export default function GetDirectionsButton({
       <button
         type="button"
         onClick={handleClick}
-        className={`focus-ring flex items-center justify-center gap-2 rounded-full border border-gold-500/25 px-5 py-2.5 text-sm font-semibold text-ink/80 transition-colors hover:border-terracotta-300 ${className}`}
+        className={`focus-ring flex items-center justify-center gap-2 rounded-full border border-taupe/25 px-5 py-2.5 text-sm font-semibold text-ink/80 transition-colors hover:border-terracotta-300 ${className}`}
       >
         <NavigationArrow size={18} weight="fill" className="text-terracotta-600" />
         {label}
@@ -67,7 +67,7 @@ export default function GetDirectionsButton({
           aria-label="Location permission"
           className="fixed inset-0 z-50 flex items-center justify-center bg-espresso/60 p-4"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-warm">
+          <div className="w-full max-w-sm rounded-2xl border border-taupe/20 bg-surface p-6 shadow-warm">
             <MapPin size={28} weight="fill" className="text-terracotta-600" />
             <h2 className="mt-3 font-serif text-h3 text-ink">Enable location?</h2>
             <p className="mt-2 text-sm text-ink/80">
@@ -78,7 +78,7 @@ export default function GetDirectionsButton({
               <button
                 type="button"
                 onClick={handleAllow}
-                className="focus-ring rounded-full bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600"
+                className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
               >
                 Allow Location &amp; Open Maps
               </button>

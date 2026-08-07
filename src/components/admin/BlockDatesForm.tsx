@@ -44,7 +44,7 @@ export default function BlockDatesForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card"
+      className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card"
     >
       <h2 className="font-serif text-lg font-semibold text-ink">
         Block dates (maintenance / personal use)
@@ -55,7 +55,7 @@ export default function BlockDatesForm({
           <select
             value={roomId}
             onChange={(e) => setRoomId(e.target.value)}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3 py-2.5 text-sm text-ink"
           >
             {rooms.map((r) => (
               <option key={r.id} value={r.id}>
@@ -71,7 +71,7 @@ export default function BlockDatesForm({
             required
             value={checkIn}
             onChange={(e) => setCheckIn(e.target.value)}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -81,7 +81,7 @@ export default function BlockDatesForm({
             required
             value={checkOut}
             onChange={(e) => setCheckOut(e.target.value)}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -91,7 +91,7 @@ export default function BlockDatesForm({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="e.g. Maintenance"
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3 py-2.5 text-sm text-ink"
           />
         </div>
       </div>
@@ -99,7 +99,7 @@ export default function BlockDatesForm({
       <button
         type="submit"
         disabled={submitting || !roomId}
-        className="focus-ring mt-4 rounded-full bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+        className="focus-ring mt-4 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
       >
         {submitting ? "Blocking…" : "Block Dates"}
       </button>

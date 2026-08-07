@@ -39,7 +39,7 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-gold-500/20 bg-surface p-8 shadow-warm">
+      <div className="w-full max-w-sm rounded-2xl border border-taupe/20 bg-surface p-8 shadow-warm">
         <div className="flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={SITE.logoIconUrl} alt={SITE.name} className="h-16 w-16 rounded-xl object-cover" />
@@ -70,7 +70,7 @@ function LoginForm() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
             />
           </div>
           <div>
@@ -84,7 +84,7 @@ function LoginForm() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
             />
           </div>
 
@@ -97,7 +97,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="focus-ring w-full rounded-full bg-terracotta-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+            className="focus-ring w-full rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
           >
             {submitting ? "Signing in…" : "Sign In"}
           </button>

@@ -107,7 +107,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card"
+      className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-serif text-lg font-semibold text-ink">{room.name}</h3>
@@ -115,7 +115,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
           <button
             type="button"
             onClick={() => setShowPreview((v) => !v)}
-            className="focus-ring flex items-center gap-1.5 rounded-full border border-gold-500/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
+            className="focus-ring flex items-center gap-1.5 rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
           >
             {showPreview ? <EyeSlash size={14} /> : <Eye size={14} />}
             {showPreview ? "Hide Preview" : "Preview"}
@@ -124,7 +124,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
             href={`/rooms/${room.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="focus-ring flex items-center gap-1.5 rounded-full border border-gold-500/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
+            className="focus-ring flex items-center gap-1.5 rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
           >
             <ArrowSquareOut size={14} />
             View Live Page
@@ -133,7 +133,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
       </div>
 
       {showPreview && (
-        <div className="mt-4 rounded-xl border border-dashed border-gold-500/40 bg-page p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-taupe/40 bg-page p-4">
           <RoomCardPreview
             name={name}
             description={description}
@@ -162,7 +162,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
               setName(e.target.value);
               markDirty();
             }}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -178,7 +178,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
               setPricePerNight(e.target.value);
               markDirty();
             }}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -194,7 +194,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
               markDirty();
             }}
             placeholder="e.g. 1"
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
         <div className="sm:col-span-3">
@@ -206,7 +206,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
               setDescription(e.target.value);
               markDirty();
             }}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
       </div>
@@ -234,7 +234,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
               markDirty();
             }}
             placeholder="Not set"
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -249,7 +249,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
               markDirty();
             }}
             placeholder="Not set"
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
         <div>
@@ -264,7 +264,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
               markDirty();
             }}
             placeholder="Not set"
-            className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
       </div>
@@ -274,7 +274,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
         <button
           type="submit"
           disabled={submitting}
-          className="focus-ring rounded-full bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+          className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Save"}
         </button>

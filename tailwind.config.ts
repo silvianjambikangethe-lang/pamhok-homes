@@ -17,6 +17,7 @@ const config: Config = {
         page: "rgb(var(--color-page) / <alpha-value>)",
         surface: "rgb(var(--color-surface) / <alpha-value>)",
         ink: "rgb(var(--color-ink) / <alpha-value>)",
+        taupe: "rgb(var(--color-border) / <alpha-value>)",
 
         // Static brand colors — same hex in both themes. Where a role
         // swaps between themes (secondary button, "Paid" badge, locked
@@ -63,6 +64,20 @@ const config: Config = {
         ivory: {
           DEFAULT: "#F5EFE6",
           dark: "#F0E9DD",
+        },
+
+        // Light-mode-only additions (master-color-scheme.md light mode
+        // revision). Static hex, same in both themes by design — every
+        // call site that needs these to differ in dark mode carries an
+        // explicit dark: override rather than these tokens changing
+        // meaning, matching the convention used above for terracotta/
+        // gold/forest/etc.
+        mousse: "#E8DDD0", // Creamy Mousse — light text on a dark/mid fill
+        cocoa: "#3E2A20", // Rich Cocoa — dark text on a light/mid fill
+        mocha: {
+          DEFAULT: "#6F4E37",
+          500: "#6F4E37",
+          600: "#5E422F",
         },
 
         success: "#3F6A4C",
@@ -166,6 +181,13 @@ const config: Config = {
       boxShadow: {
         warm: "0 8px 30px -8px rgba(43, 33, 27, 0.35)",
         card: "0 2px 12px -2px rgba(43, 33, 27, 0.12)",
+        // Text-block frame (about-us-text-framing.md) — lighter than
+        // `card` since it's grounding static text, not lifting a photo.
+        frame: "0 4px 20px rgba(62, 42, 32, 0.10)",
+        // Photo/amenity card depth, resting and hover
+        // (photo-frame-and-card-depth.md Layer 2).
+        depth: "0 4px 20px rgba(62, 42, 32, 0.12)",
+        "depth-hover": "0 8px 28px rgba(62, 42, 32, 0.18)",
       },
       maxWidth: {
         "7xl": "80rem",

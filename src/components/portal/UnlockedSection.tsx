@@ -51,7 +51,7 @@ export default function UnlockedSection({
   }
 
   return (
-    <div className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card">
+    <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
       <div className="flex items-center gap-2">
         <CheckCircle size={22} weight="fill" className="text-success" />
         <h2 className="font-serif text-h3 text-ink">
@@ -99,7 +99,7 @@ export default function UnlockedSection({
         )}
       </div>
 
-      <div className="mt-6 border-t border-gold-500/20 pt-5">
+      <div className="mt-6 border-t border-taupe/20 pt-5">
         {sent ? (
           <p className="flex items-center gap-2 text-sm font-medium text-ink">
             <CheckCircle size={18} weight="fill" className="text-success" />
@@ -126,7 +126,7 @@ export default function UnlockedSection({
                   className={`focus-ring rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${
                     requestType === opt.value
                       ? "border-terracotta-500 bg-terracotta-500 text-white"
-                      : "border-gold-500/25 bg-page text-ink/80"
+                      : "border-taupe/25 bg-page text-ink/80"
                   }`}
                 >
                   {opt.label}
@@ -138,13 +138,13 @@ export default function UnlockedSection({
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
               placeholder="Tell us what you need…"
-              className="focus-ring w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+              className="focus-ring w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
             />
             {error && <p className="text-sm text-danger">{error}</p>}
             <button
               type="submit"
               disabled={submitting}
-              className="focus-ring rounded-full bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600 disabled:opacity-60"
+              className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
             >
               {submitting ? "Sending…" : "Call for Assistance"}
             </button>

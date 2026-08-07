@@ -39,16 +39,16 @@ export default async function HomePage() {
           <Eyebrow className={content.hero_image_url ? "text-ivory" : "text-gold-500"}>
             {content.eyebrow}
           </Eyebrow>
-          <h1 className="max-w-2xl font-serif text-display leading-tight text-ivory-dark">
+          <h1 className="max-w-2xl font-serif text-display leading-tight text-mousse dark:text-ivory-dark">
             {content.headline}
           </h1>
-          <p className="max-w-xl text-body text-ivory-dark/90">
+          <p className="max-w-xl text-body text-mousse/90 dark:text-ivory-dark/90">
             {content.subtext}
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
               href="/rooms"
-              className="focus-ring inline-flex items-center justify-center rounded-full bg-terracotta-500 px-7 py-3.5 text-btn text-white shadow-warm transition-colors hover:bg-terracotta-600"
+              className="focus-ring inline-flex items-center justify-center rounded-full bg-mocha-500 dark:bg-terracotta-500 px-7 py-3.5 text-btn text-mousse dark:text-white shadow-warm transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
             >
               Check Availability
             </Link>
@@ -121,7 +121,7 @@ export default async function HomePage() {
               return (
                 <div
                   key={title}
-                  className="flex flex-col items-center gap-3 rounded-2xl border border-gold-500/20 bg-page px-4 py-8 text-center shadow-card"
+                  className="flex flex-col items-center gap-3 rounded-2xl border border-taupe/20 bg-page px-4 py-8 text-center shadow-card"
                 >
                   <Icon size={28} weight="light" className="text-terracotta-600" />
                   <span className="text-body-sm font-medium text-ink/80">
@@ -155,7 +155,7 @@ export default async function HomePage() {
           {featuredReviews.map((review) => (
             <figure
               key={review.id}
-              className="flex flex-col gap-4 rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card"
+              className="flex flex-col gap-4 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card"
             >
               <div className="flex gap-1 text-gold-500" aria-hidden="true">
                 {Array.from({ length: review.rating }).map((_, i) => (
@@ -187,7 +187,7 @@ export default async function HomePage() {
           </p>
           <Link
             href="/rooms"
-            className="focus-ring mt-7 inline-flex items-center justify-center rounded-full bg-terracotta-500 px-8 py-3.5 text-btn text-white shadow-warm transition-colors hover:bg-terracotta-600"
+            className="focus-ring mt-7 inline-flex items-center justify-center rounded-full bg-mocha-500 dark:bg-terracotta-500 px-8 py-3.5 text-btn text-mousse dark:text-white shadow-warm transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
           >
             Book Now
           </Link>

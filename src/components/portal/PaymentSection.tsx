@@ -138,7 +138,7 @@ export default function PaymentSection({
           type="checkbox"
           checked={agreedToTerms}
           onChange={(e) => setAgreedToTerms(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold-500/40 text-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500"
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 text-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500"
         />
         <span>
           I have read and agree to the{" "}
@@ -170,7 +170,7 @@ export default function PaymentSection({
           className={`focus-ring flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
             activeMethod === "mpesa"
               ? "border-success bg-success text-white"
-              : "border-gold-500/25 bg-page text-ink/80 hover:border-success"
+              : "border-taupe/25 bg-page text-ink/80 hover:border-success"
           }`}
         >
           <DeviceMobile size={18} />
@@ -180,7 +180,7 @@ export default function PaymentSection({
           type="button"
           onClick={handlePaypalPayment}
           disabled={loading === "paypal" || !agreedToTerms}
-          className="focus-ring flex items-center justify-center gap-2 rounded-xl border border-gold-500/25 bg-page px-4 py-3 text-sm font-semibold text-ink/80 transition-colors hover:border-forest-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="focus-ring flex items-center justify-center gap-2 rounded-xl border border-taupe/25 bg-page px-4 py-3 text-sm font-semibold text-ink/80 transition-colors hover:border-forest-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CreditCard size={18} weight="fill" />
           {loading === "paypal" ? "Redirecting…" : "PayPal / Card"}
@@ -194,7 +194,7 @@ export default function PaymentSection({
       )}
 
       {activeMethod === "mpesa" && (
-        <form onSubmit={handleMpesa} className="mt-5 space-y-3 border-t border-gold-500/20 pt-5">
+        <form onSubmit={handleMpesa} className="mt-5 space-y-3 border-t border-taupe/20 pt-5">
           {awaitingMpesa ? (
             <p className="flex items-center gap-2 text-sm font-medium text-ink">
               <span className="h-2 w-2 animate-pulse rounded-full bg-success" />
@@ -213,7 +213,7 @@ export default function PaymentSection({
                   value={mpesaPhone}
                   onChange={(e) => setMpesaPhone(e.target.value)}
                   placeholder="07XX XXX XXX"
-                  className="focus-ring flex-1 rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+                  className="focus-ring flex-1 rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
                 />
                 <button
                   type="submit"

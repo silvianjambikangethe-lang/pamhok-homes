@@ -127,7 +127,7 @@ export default function SocialLinksForm({ initial }: { initial: SocialLink[] }) 
   }
 
   return (
-    <div className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card">
+    <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
       <h2 className="font-serif text-lg font-semibold text-ink">Social Links</h2>
       <p className="mt-1 text-xs text-ink/65">
         Shown as small icons in the site footer. Only active links are visible to guests.
@@ -144,14 +144,14 @@ export default function SocialLinksForm({ initial }: { initial: SocialLink[] }) 
           return (
             <div
               key={link.id}
-              className="flex flex-wrap items-center gap-2 rounded-xl border border-gold-500/20 bg-page p-3"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-taupe/20 bg-page p-3"
             >
               {Icon && <Icon size={20} className="shrink-0 text-terracotta-600" />}
               <select
                 value={link.platform}
                 onChange={(e) => handlePlatformChange(link, e.target.value)}
                 disabled={busy}
-                className="focus-ring rounded-lg border border-gold-500/25 bg-surface px-2.5 py-2 text-sm text-ink"
+                className="focus-ring rounded-lg border border-taupe/25 bg-surface px-2.5 py-2 text-sm text-ink"
               >
                 {SOCIAL_PLATFORMS.map((p) => (
                   <option key={p.value} value={p.value}>
@@ -164,14 +164,14 @@ export default function SocialLinksForm({ initial }: { initial: SocialLink[] }) 
                 value={urlFor(link)}
                 onChange={(e) => setDrafts({ ...drafts, [link.id]: e.target.value })}
                 disabled={busy}
-                className="focus-ring min-w-[12rem] flex-1 rounded-lg border border-gold-500/25 bg-surface px-3 py-2 text-sm text-ink"
+                className="focus-ring min-w-[12rem] flex-1 rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
               />
               {urlFor(link) !== link.url && (
                 <button
                   type="button"
                   onClick={() => handleSaveUrl(link)}
                   disabled={busy}
-                  className="focus-ring rounded-full bg-terracotta-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-terracotta-600 disabled:opacity-60"
+                  className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-3 py-1.5 text-xs font-semibold text-mousse dark:text-white hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
                 >
                   Save
                 </button>
@@ -230,7 +230,7 @@ export default function SocialLinksForm({ initial }: { initial: SocialLink[] }) 
         <select
           value={newPlatform}
           onChange={(e) => setNewPlatform(e.target.value as typeof newPlatform)}
-          className="focus-ring rounded-lg border border-gold-500/25 bg-page px-2.5 py-2 text-sm text-ink"
+          className="focus-ring rounded-lg border border-taupe/25 bg-page px-2.5 py-2 text-sm text-ink"
         >
           {SOCIAL_PLATFORMS.map((p) => (
             <option key={p.value} value={p.value}>
@@ -244,12 +244,12 @@ export default function SocialLinksForm({ initial }: { initial: SocialLink[] }) 
           value={newUrl}
           onChange={(e) => setNewUrl(e.target.value)}
           placeholder="https://..."
-          className="focus-ring min-w-[12rem] flex-1 rounded-lg border border-gold-500/25 bg-page px-3 py-2 text-sm text-ink"
+          className="focus-ring min-w-[12rem] flex-1 rounded-lg border border-taupe/25 bg-page px-3 py-2 text-sm text-ink"
         />
         <button
           type="submit"
           disabled={busyId === "new"}
-          className="focus-ring flex items-center gap-1.5 rounded-full border border-gold-500/25 px-4 py-2 text-xs font-semibold text-ink/80 hover:border-terracotta-300 disabled:opacity-60"
+          className="focus-ring flex items-center gap-1.5 rounded-full border border-taupe/25 px-4 py-2 text-xs font-semibold text-ink/80 hover:border-terracotta-300 disabled:opacity-60"
         >
           <Plus size={14} /> Add Link
         </button>

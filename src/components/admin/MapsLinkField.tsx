@@ -80,7 +80,7 @@ export default function MapsLinkField({
           onChange={(e) => setUrl(e.target.value)}
           onBlur={() => resolve(url)}
           placeholder="https://maps.app.goo.gl/…"
-          className={`focus-ring w-full rounded-lg border border-gold-500/25 ${inputBg} px-3.5 py-2.5 text-sm text-ink`}
+          className={`focus-ring w-full rounded-lg border border-taupe/25 ${inputBg} px-3.5 py-2.5 text-sm text-ink`}
         />
         {status === "resolving" && (
           <span className="shrink-0 text-xs text-ink/55">Checking…</span>

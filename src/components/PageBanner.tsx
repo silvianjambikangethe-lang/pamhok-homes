@@ -18,29 +18,62 @@ const BANNER_STYLES = {
     heading: "text-ivory-dark",
     icon: "text-espresso/40",
   },
+  // Unchanged — not part of the light-mode banner revision (Privacy,
+  // Terms, and any other page not in the master-color-scheme.md table).
   espresso: {
     bg: "bg-espresso dark:bg-[#1A1108]",
     eyebrow: "text-gold-500",
     heading: "text-ivory-dark",
     icon: "text-white/30",
   },
+  // Neighborhood. bg/eyebrow already matched the revised palette exactly
+  // (Deep Forest #3B4A3A, Muted Gold) — only heading text moves to mousse.
   forest: {
     bg: "bg-forest-500",
     eyebrow: "text-gold-500",
-    heading: "text-ivory-dark",
+    heading: "text-mousse dark:text-ivory-dark",
     icon: "text-white/30",
   },
+  // Rooms & Availability. bg already matched (Muted Gold) — text moves to
+  // cocoa, dark preserved as the espresso it already was.
   gold: {
     bg: "bg-gold-500",
-    eyebrow: "text-espresso",
-    heading: "text-espresso",
-    icon: "text-espresso/40",
+    eyebrow: "text-cocoa dark:text-espresso",
+    heading: "text-cocoa dark:text-espresso",
+    icon: "text-cocoa/40 dark:text-espresso/40",
   },
+  // Unchanged — verify/[token] only, not part of the light-mode banner
+  // revision (Guest Portal moved to taupePortal below instead).
   sage: {
     bg: "bg-sage-500",
     eyebrow: "text-espresso",
     heading: "text-espresso",
     icon: "text-espresso/40",
+  },
+  // About Us, Contact & Location. Same dark treatment as the old espresso
+  // variant these replace (#1A1108 bg, gold eyebrow, ivory heading) — only
+  // the light-mode bg/text move to Rich Cocoa / Creamy Mousse.
+  cocoa: {
+    bg: "bg-cocoa dark:bg-[#1A1108]",
+    eyebrow: "text-gold-500",
+    heading: "text-mousse dark:text-ivory-dark",
+    icon: "text-white/30",
+  },
+  // Amenities. Espresso bg with Ivory/Creamy Mousse text for both eyebrow
+  // and heading (not the gold-eyebrow espresso pairing used elsewhere).
+  espressoAmenities: {
+    bg: "bg-espresso dark:bg-[#1A1108]",
+    eyebrow: "text-mousse dark:text-gold-500",
+    heading: "text-mousse dark:text-ivory-dark",
+    icon: "text-white/30",
+  },
+  // Guest Portal. Same dark treatment as the old sage variant this
+  // replaces (sage bg, espresso text, unchanged between modes already).
+  taupePortal: {
+    bg: "bg-[#A7866A] dark:bg-sage-500",
+    eyebrow: "text-cocoa dark:text-espresso",
+    heading: "text-cocoa dark:text-espresso",
+    icon: "text-cocoa/40 dark:text-espresso/40",
   },
 } as const;
 
