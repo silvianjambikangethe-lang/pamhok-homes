@@ -205,14 +205,29 @@ This is the most important section to get right for whoever picks this up.
 
 ## Still to do (priority order)
 
-1. **Deploy somewhere + set a real domain.** Blocks almost everything
-   else below. `NEXT_PUBLIC_SITE_URL` is still `http://localhost:3000` —
-   baked into PayPal/M-Pesa callback URLs, QR-code verification links, and
-   portal links. `MPESA_CALLBACK_URL` and `CRON_SECRET` are also still
-   blank.
-2. **Submit the M-Pesa Go-Live request** — needs deployment done first
-   (real callback URL) and M-Pesa Portal Admin access confirmed. See the
-   M-Pesa section above for the exact process.
+1. ~~Deploy somewhere + set a real domain~~ — **done.** Live at
+   **https://pamhok-homes.vercel.app** (Vercel account
+   `silvianjambikangethe-8696`, project `pamhok-homes`). All 9 real
+   `.env.local` secrets pushed to Vercel's Production environment,
+   `NEXT_PUBLIC_SITE_URL` set to the real domain, and a fresh
+   `CRON_SECRET` generated (was blank before — nothing reused from
+   `.env.local`). Verified live: homepage renders, `/rooms` pulls real
+   Supabase data (no "sample rooms" fallback banner), no console errors.
+   `MPESA_CALLBACK_URL` is still unset, but turns out that's fine as-is —
+   the Supabase Edge Function defaults it to its own function URL
+   (`*.supabase.co/functions/v1/mpesa-callback`) when unset, which is
+   already a real public HTTPS endpoint regardless of where the frontend
+   is hosted. It was never actually blocked on this deploy.
+   ⚠️ **Not yet done as part of this deploy**: the local git repo has
+   ~55 modified files (the full color-scheme/photo-frame redesign, the
+   booking-reference fix, Terms checkbox, footer links) that are now
+   *live on Vercel* but **not yet committed or pushed to GitHub** — Vercel
+   CLI deploys from the local filesystem, not from git, so production and
+   the GitHub repo have diverged. Commit and push before doing anything
+   else in this repo, or the two will drift further.
+2. **Submit the M-Pesa Go-Live request** — deployment's done; still needs
+   M-Pesa Portal Admin access confirmed. See the M-Pesa section above for
+   the exact process.
 3. **Go live with PayPal** — same-day, self-serve, whenever the owner is
    ready. See above for the exact steps.
 4. **Feature real guest reviews as they come in** — the mechanism is built
@@ -226,11 +241,21 @@ This is the most important section to get right for whoever picks this up.
    no amount, so the "Renewals due soon" dashboard alert will fire on the
    wrong date until corrected in `/admin/expenses`.
 7. **Production credentials for Smile ID** — still sandbox.
-8. **Consider rotating exposed secrets** — see the security note in the
-   M-Pesa/PayPal section above. Owner's call, not urgent, not a code bug.
-9. **Set up a GitHub remote** if/when the owner wants an off-machine
-   backup — local git is done, this is the only remaining piece from the
-   original "set up version control" ask.
+8. ~~Rotate exposed secrets~~ — **assessed, deferred, not a code fix.**
+   The exposure (Supabase service role key, PayPal sandbox client
+   ID/secret, Smile ID API key) was local terminal output only, never
+   transmitted anywhere, and two of the three are sandbox-scoped to begin
+   with. No Claude session can rotate these directly — that needs the
+   owner's own login on each provider's dashboard, and doing it blind
+   would break live integrations until every place using the old key
+   (Edge Function secrets, `.env.local`) gets updated in step. Judgment
+   call: not worth the disruption right now. Natural point to rotate
+   instead is **deployment** (item 1) — production secrets get set fresh
+   there anyway. Revisit immediately, ahead of that, only if anything
+   suspicious ever turns up on the Supabase project specifically (it's
+   the one real, non-sandbox key of the three).
+9. ~~Set up a GitHub remote~~ — **done.** Repo is
+   `silvianjambikangethe-lang/pamhok-homes` on GitHub, pushed and current.
 
 ---
 
