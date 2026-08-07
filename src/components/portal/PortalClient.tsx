@@ -27,17 +27,10 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  Pending: "bg-gold-500 text-espresso",
-  Paid: "bg-forest-500 text-ivory-dark dark:bg-sage-500 dark:text-espresso",
-  Failed: "bg-danger text-white",
+  Pending: "bg-[#A7866A] text-cocoa dark:bg-gold-500 dark:text-espresso",
+  Paid: "bg-forest-500 text-mousse dark:bg-sage-500 dark:text-espresso",
+  Failed: "bg-danger text-mousse dark:text-white",
 };
-
-// e.g. check-in 7 Aug 2026, room display_order 4 -> "REF8/7-4-26"
-function formatPassReference(checkIn: string, roomDisplayOrder: number | undefined) {
-  if (roomDisplayOrder == null) return null;
-  const date = parseISO(checkIn);
-  return `REF${format(date, "M")}/${format(date, "d")}-${roomDisplayOrder}-${format(date, "yy")}`;
-}
 
 export default function PortalClient({
   booking,
@@ -60,18 +53,18 @@ export default function PortalClient({
   const isPassReady =
     booking.payment_status === "Paid" && booking.id_verification_status === "Verified";
   const isVerifiedAndActive = isPassReady && !booking.checked_out_at;
-  const passReference = formatPassReference(booking.check_in, booking.room?.display_order);
+  const passReference = booking.pass_reference;
 
   return (
     <div>
       <PageBanner
-        color="sage"
+        color="taupePortal"
         eyebrow="Your Stay"
         title={booking.room?.name ?? "Pamhok Homes"}
       />
 
       <div className="container-page max-w-3xl py-12 sm:py-16">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-card">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
         <div className="flex items-center gap-2 text-sm text-ink/80">
           <CalendarBlank size={18} className="text-terracotta-600" />
           {format(parseISO(booking.check_in), "EEE, d MMM yyyy")} →{" "}
@@ -169,10 +162,10 @@ export default function PortalClient({
         {booking.id_verification_status === "Pending" &&
           booking.booking_status === "Pending Verification" && (
             <>
-              <div className="flex items-start gap-3 rounded-2xl border border-gold-500/40 bg-gold-500/15 p-5 text-sm text-espresso shadow-card dark:bg-gold-500/20">
-                <Info size={20} className="mt-0.5 shrink-0 text-espresso" />
+              <div className="flex items-start gap-3 rounded-2xl border border-gold-500/40 bg-gold-500/15 p-5 text-sm text-cocoa dark:text-espresso shadow-card dark:bg-gold-500/20">
+                <Info size={20} className="mt-0.5 shrink-0 text-cocoa dark:text-espresso" />
                 <div>
-                  <p className="font-semibold text-espresso">Your ID is under review</p>
+                  <p className="font-semibold text-cocoa dark:text-espresso">Your ID is under review</p>
                   <p className="mt-1">
                     We weren&apos;t able to verify your ID automatically, so your
                     host will review it manually and confirm shortly. Your dates
@@ -189,7 +182,7 @@ export default function PortalClient({
                   </p>
                   <a
                     href={`tel:${adminPhone}`}
-                    className="focus-ring flex shrink-0 items-center gap-2 rounded-full bg-terracotta-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-terracotta-600"
+                    className="focus-ring flex shrink-0 items-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-4 py-2 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
                   >
                     <Phone size={16} weight="fill" />
                     Call {adminPhone}

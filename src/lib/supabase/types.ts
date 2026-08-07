@@ -79,6 +79,7 @@ export type Booking = {
   guest_id: string | null;
   access_token: string;
   booking_reference: string | null;
+  pass_reference: string | null;
   check_in: string;
   check_out: string;
   total_amount: number;
