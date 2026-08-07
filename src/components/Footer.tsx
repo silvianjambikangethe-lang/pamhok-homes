@@ -11,7 +11,7 @@ export default async function Footer() {
     // Dark mode: no section gets its own accent-color background — the
     // footer drops to the same near-black as the page (a touch darker, to
     // recede) instead of a full Forest fill.
-    <footer className="border-t border-gold-500/20 bg-forest-700 text-white/80 dark:bg-[#191410]">
+    <footer className="border-t border-taupe/20 bg-forest-700 text-white/80 dark:bg-[#191410]">
       <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Link href="/" className="focus-ring inline-block rounded-md">
@@ -83,9 +83,17 @@ export default async function Footer() {
         )}
       </div>
 
-      <div className="border-t border-gold-500/20">
+      <div className="border-t border-taupe/20">
         <div className="container-page flex flex-col items-center justify-between gap-3 py-5 text-xs text-white/50 sm:flex-row">
           <p>© {new Date().getFullYear()} {SITE.name}. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="focus-ring rounded hover:text-white/80">
+              Terms &amp; Conditions
+            </Link>
+            <Link href="/privacy" className="focus-ring rounded hover:text-white/80">
+              Privacy Policy
+            </Link>
+          </div>
           {socialLinks.length > 0 && (
             <div className="flex items-center gap-4">
               {socialLinks.map((link) => {

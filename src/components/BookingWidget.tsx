@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { differenceInCalendarDays, format, isAfter, isBefore, isValid, parseISO, startOfDay } from "date-fns";
 import { CalendarBlank, UsersThree, Warning } from "@phosphor-icons/react";
@@ -82,6 +83,7 @@ export default function BookingWidget({
   }
   const [guestCount, setGuestCount] = useState<1 | 2 | "other" | null>(null);
   const [guest, setGuest] = useState({ fullName: "", email: "", phone: "" });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,6 +99,7 @@ export default function BookingWidget({
     guest.fullName.trim() &&
     guest.email.trim() &&
     guest.phone.trim() &&
+    agreedToTerms &&
     !submitting;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -134,7 +137,7 @@ export default function BookingWidget({
   }
 
   return (
-    <div className="rounded-2xl border border-gold-500/20 bg-surface p-6 shadow-warm sm:p-8">
+    <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-warm sm:p-8">
       <div className="flex items-baseline justify-between">
         <p className="font-serif text-price text-ink">
           {formatCurrency(room.price_per_night, room.currency)}
@@ -161,7 +164,7 @@ export default function BookingWidget({
       </div>
 
       {datesSelected && (
-        <div className="mt-6 border-t border-gold-500/20 pt-6">
+        <div className="mt-6 border-t border-taupe/20 pt-6">
           <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink/80">
             <UsersThree size={18} />
             How many guests?
@@ -175,7 +178,7 @@ export default function BookingWidget({
                 className={`focus-ring rounded-full border px-5 py-2 text-sm font-semibold transition-colors ${
                   guestCount === option
                     ? "border-terracotta-500 bg-terracotta-500 text-white"
-                    : "border-gold-500/25 bg-page text-ink/80 hover:border-terracotta-300"
+                    : "border-taupe/25 bg-page text-ink/80 hover:border-terracotta-300"
                 }`}
               >
                 {option === "other" ? "Other" : `${option} Guest${option > 1 ? "s" : ""}`}
@@ -194,7 +197,7 @@ export default function BookingWidget({
       )}
 
       {showGuestDetails && (
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4 border-t border-gold-500/20 pt-6">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4 border-t border-taupe/20 pt-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label htmlFor="fullName" className="text-sm font-medium text-ink/80">
@@ -205,7 +208,7 @@ export default function BookingWidget({
               required
               value={guest.fullName}
               onChange={(e) => setGuest((g) => ({ ...g, fullName: e.target.value }))}
-              className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
               placeholder="Jane Doe"
               autoComplete="name"
             />
@@ -220,7 +223,7 @@ export default function BookingWidget({
               required
               value={guest.email}
               onChange={(e) => setGuest((g) => ({ ...g, email: e.target.value }))}
-              className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
               placeholder="jane@example.com"
               autoComplete="email"
             />
@@ -235,7 +238,7 @@ export default function BookingWidget({
               required
               value={guest.phone}
               onChange={(e) => setGuest((g) => ({ ...g, phone: e.target.value }))}
-              className="focus-ring mt-1.5 w-full rounded-lg border border-gold-500/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
               placeholder="+254 7XX XXX XXX"
               autoComplete="tel"
             />
@@ -254,6 +257,28 @@ export default function BookingWidget({
           </div>
         )}
 
+        <label htmlFor="agreedToTerms" className="flex items-start gap-2.5 text-sm text-ink/80">
+          <input
+            id="agreedToTerms"
+            type="checkbox"
+            required
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 text-terracotta-500 focus:ring-terracotta-500"
+          />
+          <span>
+            I agree to the{" "}
+            <Link
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus-ring rounded font-medium text-terracotta-600 underline hover:text-terracotta-700"
+            >
+              Terms &amp; Conditions
+            </Link>
+          </span>
+        </label>
+
         {error && (
           <p role="alert" className="flex items-center gap-2 text-sm text-danger">
             <Warning size={16} />
@@ -264,7 +289,7 @@ export default function BookingWidget({
         <button
           type="submit"
           disabled={!canSubmit}
-          className="focus-ring w-full rounded-full bg-terracotta-500 px-6 py-3.5 text-btn text-white transition-colors hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="focus-ring w-full rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3.5 text-btn text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Reserving…" : "Reserve — Continue to Payment"}
         </button>
