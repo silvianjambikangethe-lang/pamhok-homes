@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
 import WhatsappFloatButton from "@/components/WhatsappFloatButton";
+import { WhatsappVisibilityProvider } from "@/components/WhatsappVisibilityContext";
 import { getAdminContactPhone } from "@/lib/data";
 
 // The typography brief specifies "General Sans" for body text, but it's a
@@ -52,10 +53,12 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans bg-page text-ink">
         <ThemeProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <WhatsappFloatButton phone={adminPhone} />
+          <WhatsappVisibilityProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <WhatsappFloatButton phone={adminPhone} />
+          </WhatsappVisibilityProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { WhatsappLogo } from "@phosphor-icons/react";
 import { whatsappLink } from "@/lib/site";
+import { useWhatsappVisibility } from "@/components/WhatsappVisibilityContext";
 
 const GREETING = "Hello there. Welcome to Pamhok Homes. How may I help you?";
 
 export default function WhatsappFloatButton({ phone }: { phone: string | null }) {
   const pathname = usePathname();
+  const { hidden } = useWhatsappVisibility();
   const [pastHero, setPastHero] = useState(false);
 
   useEffect(() => {
@@ -21,8 +23,9 @@ export default function WhatsappFloatButton({ phone }: { phone: string | null })
   }, []);
 
   // Guest-facing only — the host doesn't need a "chat with us" bubble on
-  // their own dashboard.
-  if (!phone || pathname?.startsWith("/admin")) return null;
+  // their own dashboard. `hidden` lets a specific step (the portal's
+  // payment-pending / ID-verification state) suppress it too.
+  if (!phone || hidden || pathname?.startsWith("/admin")) return null;
 
   return (
     <a

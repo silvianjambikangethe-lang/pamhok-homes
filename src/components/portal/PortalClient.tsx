@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format, isPast, parseISO, startOfDay } from "date-fns";
 import { CalendarBlank, Info, Phone, WhatsappLogo } from "@phosphor-icons/react";
 import type { PortalBooking } from "@/lib/portal";
 import type { DisplayCurrency } from "@/lib/currency";
 import { whatsappLink } from "@/lib/site";
+import { useWhatsappVisibility } from "@/components/WhatsappVisibilityContext";
 import PageBanner from "@/components/PageBanner";
 import PaymentSection from "@/components/portal/PaymentSection";
 import IdUploadForm from "@/components/portal/IdUploadForm";
@@ -16,6 +17,7 @@ import CheckoutSection from "@/components/portal/CheckoutSection";
 import ReviewForm from "@/components/portal/ReviewForm";
 import VerificationPassSection from "@/components/portal/VerificationPassSection";
 import ArrivalSection from "@/components/portal/ArrivalSection";
+import CheckInConfirmationMessage from "@/components/portal/CheckInConfirmationMessage";
 import { firstNameLastInitial } from "@/lib/guest-display-name";
 
 function formatCurrency(amount: number, currency: string) {
@@ -55,6 +57,15 @@ export default function PortalClient({
   const isVerifiedAndActive = isPassReady && !booking.checked_out_at;
   const passReference = booking.pass_reference;
 
+  const { setHidden } = useWhatsappVisibility();
+  // Hide the floating WhatsApp button only on the payment-pending / ID-
+  // verification step — everywhere else on the site (and everywhere else
+  // in the portal, once verified) it stays visible.
+  useEffect(() => {
+    setHidden(!isPassReady);
+    return () => setHidden(false);
+  }, [isPassReady, setHidden]);
+
   return (
     <div>
       <PageBanner
@@ -84,6 +95,12 @@ export default function PortalClient({
           </span>
         )}
       </div>
+
+      {!booking.checked_out_at && (
+        <div className="mt-6">
+          <CheckInConfirmationMessage checkIn={booking.check_in} />
+        </div>
+      )}
 
       {adminPhone && (
         <a
