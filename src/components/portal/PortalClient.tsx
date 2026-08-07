@@ -96,13 +96,13 @@ export default function PortalClient({
         )}
       </div>
 
-      {!booking.checked_out_at && (
+      {isPassReady && !booking.checked_out_at && (
         <div className="mt-6">
           <CheckInConfirmationMessage checkIn={booking.check_in} />
         </div>
       )}
 
-      {adminPhone && (
+      {isPassReady && adminPhone && (
         <a
           href={whatsappLink(
             adminPhone,
