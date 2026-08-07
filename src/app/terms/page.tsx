@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PageBanner from "@/components/PageBanner";
+import { CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions — Pamhok Homes",
@@ -67,10 +68,10 @@ export default function TermsPage() {
               password, are provided once verification is complete.
             </li>
             <li>
-              <strong className="text-ink">Check-in time: 12:00 PM (noon)</strong>
+              <strong className="text-ink">Check-in time: {CHECK_IN_TIME}</strong>
             </li>
             <li>
-              <strong className="text-ink">Check-out time: 10:00 AM</strong>
+              <strong className="text-ink">Check-out time: {CHECK_OUT_TIME}</strong>
             </li>
             <li>
               Check-out must be confirmed through the guest portal, including

@@ -12,6 +12,12 @@ export const SITE = {
     "https://ajxijucojqkxszfkepqr.supabase.co/storage/v1/object/public/site-images/branding/icon.png",
 };
 
+// Single source of truth for check-in/check-out times — reference these
+// instead of hardcoding the time as a string wherever it's mentioned
+// (terms, house rules, confirmation messages, etc).
+export const CHECK_IN_TIME = "1:00 PM";
+export const CHECK_OUT_TIME = "10:00 AM";
+
 export const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/rooms", label: "Rooms" },
