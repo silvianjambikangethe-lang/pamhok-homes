@@ -1,6 +1,7 @@
 "use client";
 
 import { Confetti, MapPinLine, X } from "@phosphor-icons/react";
+import { SITE } from "@/lib/site";
 import GetDirectionsButton from "@/components/GetDirectionsButton";
 import PassDetails from "@/components/portal/PassDetails";
 
@@ -12,6 +13,7 @@ export default function ArrivalSection({
   checkOut,
   bookingReference,
   qrDataUrl,
+  adminPhone,
   showArrival,
   onShowArrival,
   onCloseArrival,
@@ -23,6 +25,7 @@ export default function ArrivalSection({
   checkOut: string;
   bookingReference: string | null;
   qrDataUrl: string | null;
+  adminPhone: string | null;
   showArrival: boolean;
   onShowArrival: () => void;
   onCloseArrival: () => void;
@@ -83,6 +86,12 @@ export default function ArrivalSection({
                 qrDataUrl={qrDataUrl}
               />
             </div>
+
+            {adminPhone && (
+              <div className="mt-5 border-t border-taupe/20 pt-4 text-sm text-ink/80">
+                Confirm with the host: {adminPhone} · {SITE.contactEmail}
+              </div>
+            )}
           </div>
         </div>
       )}

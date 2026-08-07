@@ -120,15 +120,7 @@ export default function PortalClient({
       )}
 
       <div className="mt-8 space-y-6">
-        <VerificationPassSection
-          isReady={isPassReady}
-          guestDisplayName={firstNameLastInitial(booking.guest?.full_name)}
-          roomName={booking.room?.name ?? "Pamhok Homes"}
-          checkIn={booking.check_in}
-          checkOut={booking.check_out}
-          bookingReference={passReference}
-          qrDataUrl={isPassReady ? qrDataUrl : null}
-        />
+        <VerificationPassSection isReady={isPassReady} />
 
         {isVerifiedAndActive && (
           <ArrivalSection
@@ -139,6 +131,7 @@ export default function PortalClient({
             checkOut={booking.check_out}
             bookingReference={passReference}
             qrDataUrl={qrDataUrl}
+            adminPhone={adminPhone}
             showArrival={showArrival}
             onShowArrival={() => setShowArrival(true)}
             onCloseArrival={() => setShowArrival(false)}
