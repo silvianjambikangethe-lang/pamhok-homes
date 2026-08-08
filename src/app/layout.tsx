@@ -12,17 +12,23 @@ import { getAdminContactPhone } from "@/lib/data";
 // Fontshare-exclusive font, not actually published on Google Fonts (checked
 // against Next.js's font catalog) — Plus Jakarta Sans substitutes as the
 // closest same-mood humanist grotesk available via next/font/google.
+// Weight 700 dropped from both — audited every actual computed
+// font-weight rendered across the site (headings, body text, buttons,
+// admin dashboard) and nothing ever uses bold; the type scale in
+// tailwind.config.ts tops out at 600 (h3), and no component reaches
+// for a bare `font-bold` utility anywhere. One fewer weight file to
+// download per family.
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
   style: ["normal"],
 });
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
 });
 
 const cormorant = Cormorant({

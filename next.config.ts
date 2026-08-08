@@ -29,6 +29,18 @@ const CSP = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  images: {
+    // next/image requires every external domain it optimizes to be
+    // explicitly allowlisted — this is the only one the app ever loads
+    // photos from (room/site photos in the "site-images" bucket).
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "ajxijucojqkxszfkepqr.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
   typescript: {
     // This machine's Application Control policy blocks native SWC bindings,
     // and the WASM SWC fallback's type-check pass crashes ("invalid type:

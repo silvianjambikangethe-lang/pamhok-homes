@@ -252,6 +252,13 @@ create index if not exists idx_bookings_room_dates on bookings (room_id, check_i
 create index if not exists idx_bookings_status on bookings (booking_status);
 create index if not exists idx_bookings_payment_status on bookings (payment_status);
 create index if not exists idx_bookings_access_token on bookings (access_token);
+-- FK-covering indexes flagged by Supabase's performance advisor —
+-- guest_id has no app query yet but is still the FK Postgres checks on
+-- every guest write; the other two back real queries (portal.ts's
+-- latestLaundryRequest lookup, the review-exists/review-count checks).
+create index if not exists idx_bookings_guest_id on bookings (guest_id);
+create index if not exists idx_guest_requests_booking_id on guest_requests (booking_id);
+create index if not exists idx_reviews_booking_id on reviews (booking_id);
 
 -- ============================================================
 -- Row Level Security

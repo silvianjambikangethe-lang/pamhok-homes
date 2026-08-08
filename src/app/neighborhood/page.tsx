@@ -13,6 +13,10 @@ export const metadata: Metadata = {
     "Food and recreation near Pamhok Homes, close to Thika Road Mall, Nairobi.",
 };
 
+// Admin-editable copy that changes rarely — ISR instead of hitting
+// Supabase on every request. See amenities/page.tsx for the same note.
+export const revalidate = 300;
+
 function NeighborhoodGrid({
   items,
   pamhokLat,

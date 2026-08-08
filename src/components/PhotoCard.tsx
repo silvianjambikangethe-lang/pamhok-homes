@@ -1,3 +1,4 @@
+import Image from "next/image";
 import PlaceholderImage from "@/components/PlaceholderImage";
 
 // Shared hover treatment for photo-grid slots on Home/About: the card
@@ -16,14 +17,15 @@ export default function PhotoCard({
 }) {
   return (
     <div
-      className={`photo-frame group overflow-hidden transition-all duration-300 hover:-translate-y-1 ${className}`}
+      className={`photo-frame group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 ${className}`}
     >
       {url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={url}
           alt={label}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          fill
+          sizes="(min-width: 1024px) 33vw, 100vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
       ) : (
         <PlaceholderImage

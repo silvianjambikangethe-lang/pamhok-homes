@@ -10,6 +10,10 @@ export const metadata: Metadata = {
     "The story behind Pamhok Homes — a boutique, host-run stay near Thika Road Mall, Nairobi.",
 };
 
+// Admin-editable copy that changes rarely — ISR instead of hitting
+// Supabase on every request. See amenities/page.tsx for the same note.
+export const revalidate = 300;
+
 export default async function AboutPage() {
   const content = await getAboutContent();
   const paragraphs = content.body.split(/\n{2,}/).filter(Boolean);

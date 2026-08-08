@@ -9,6 +9,12 @@ export const metadata: Metadata = {
     "Free WiFi, free parking, a full kitchen, an in-room safe, and dry cleaning — everything you need for a comfortable stay at Pamhok Homes.",
 };
 
+// Admin-editable copy that changes rarely — ISR instead of hitting
+// Supabase on every request. An admin edit shows up within 5 minutes
+// rather than instantly; unlike Rooms (live availability) or the
+// dashboard, that's the right tradeoff here.
+export const revalidate = 300;
+
 export default async function AmenitiesPage() {
   const amenities = await getAmenitiesContent();
 
