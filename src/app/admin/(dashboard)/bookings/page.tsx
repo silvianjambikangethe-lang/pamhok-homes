@@ -23,7 +23,7 @@ export default async function AdminBookingsPage() {
     // they actually confirm checkout).
     supabase
       .from("bookings")
-      .select("room_id, check_out, guest:guests(full_name, phone)")
+      .select("id, room_id, check_out, guest:guests(full_name, phone)")
       .eq("booking_status", "Confirmed")
       .is("checked_out_at", null)
       .lte("check_in", today)
@@ -34,6 +34,7 @@ export default async function AdminBookingsPage() {
     (activeStays ?? []).map((b) => [
       b.room_id,
       {
+        bookingId: b.id,
         guestName: (b as unknown as { guest?: { full_name?: string } }).guest?.full_name ?? null,
         guestPhone: (b as unknown as { guest?: { phone?: string } }).guest?.phone ?? null,
         checkOut: b.check_out,
@@ -44,6 +45,7 @@ export default async function AdminBookingsPage() {
   const roomStatuses: RoomStatus[] = (rooms ?? []).map((room) => ({
     id: room.id,
     name: room.name,
+    bookingId: stayByRoomId.get(room.id)?.bookingId ?? null,
     guestName: stayByRoomId.get(room.id)?.guestName ?? null,
     guestPhone: stayByRoomId.get(room.id)?.guestPhone ?? null,
     checkOut: stayByRoomId.get(room.id)?.checkOut ?? null,
