@@ -1,4 +1,4 @@
-import { format, parseISO } from "date-fns";
+import { differenceInCalendarDays, format, parseISO } from "date-fns";
 
 export interface GuestNotice {
   id: string;
@@ -39,4 +39,30 @@ export function getCheckoutNotices(checkOut: string, now: Date = new Date()): Gu
   }
 
   return [];
+}
+
+// Section 4: recurring cleaning notices for stays of 4+ nights, every 2
+// days starting day 2 (2, 4, 6...), skipping any day that lands exactly
+// on checkout (that's handled by the checkout flow, not a mid-stay
+// notice). Stays under 4 nights get no cleaning notices at all.
+export function getCleaningNotices(
+  checkIn: string,
+  checkOut: string,
+  now: Date = new Date(),
+): GuestNotice[] {
+  const checkInDate = parseISO(checkIn);
+  const checkOutDate = parseISO(checkOut);
+  const stayLength = differenceInCalendarDays(checkOutDate, checkInDate);
+  if (stayLength < 4) return [];
+
+  const todayOffset = differenceInCalendarDays(now, checkInDate);
+  const isCleaningDay = todayOffset >= 2 && todayOffset % 2 === 0 && todayOffset < stayLength;
+  if (!isCleaningDay) return [];
+
+  return [
+    {
+      id: `cleaning-day-${todayOffset}`,
+      message: "Cleaners are coming to clean your room today.",
+    },
+  ];
 }

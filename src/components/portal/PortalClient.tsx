@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format, isPast, parseISO, startOfDay } from "date-fns";
-import { CalendarBlank, ClockCountdown, Info, Phone, WhatsappLogo } from "@phosphor-icons/react";
+import { Broom, CalendarBlank, ClockCountdown, Info, Phone, WhatsappLogo } from "@phosphor-icons/react";
 import type { PortalBooking } from "@/lib/portal";
 import type { DisplayCurrency } from "@/lib/currency";
 import { whatsappLink } from "@/lib/site";
@@ -14,7 +14,7 @@ import UnlockedSection from "@/components/portal/UnlockedSection";
 import LaundrySection from "@/components/portal/LaundrySection";
 import ExtendStaySection from "@/components/portal/ExtendStaySection";
 import CheckoutSection from "@/components/portal/CheckoutSection";
-import { getCheckoutNotices } from "@/lib/guest-notices";
+import { getCheckoutNotices, getCleaningNotices } from "@/lib/guest-notices";
 import ReviewForm from "@/components/portal/ReviewForm";
 import VerificationPassSection from "@/components/portal/VerificationPassSection";
 import ArrivalSection from "@/components/portal/ArrivalSection";
@@ -54,6 +54,7 @@ export default function PortalClient({
   const checkOutDate = startOfDay(parseISO(booking.check_out));
   const isCheckoutDay = isPast(checkOutDate) || format(checkOutDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
   const checkoutNotices = getCheckoutNotices(booking.check_out);
+  const cleaningNotices = getCleaningNotices(booking.check_in, booking.check_out);
   const isPassReady =
     booking.payment_status === "Paid" && booking.id_verification_status === "Verified";
   const isVerifiedAndActive = isPassReady && !booking.checked_out_at;
@@ -233,6 +234,17 @@ export default function PortalClient({
         )}
 
         {isVerifiedAndActive && <ExtendStaySection token={token} checkOut={booking.check_out} />}
+
+        {isVerifiedAndActive &&
+          cleaningNotices.map((notice) => (
+            <div
+              key={notice.id}
+              className="flex items-start gap-3 rounded-2xl border border-forest-500/40 bg-forest-500/10 p-5 text-sm text-ink/80 shadow-card"
+            >
+              <Broom size={20} className="mt-0.5 shrink-0 text-forest-700 dark:text-sage-300" />
+              <p>{notice.message}</p>
+            </div>
+          ))}
 
         {isVerifiedAndActive &&
           checkoutNotices.map((notice) => (
