@@ -1,33 +1,14 @@
 import { NextResponse } from "next/server";
-import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/data";
+import { generateBookingReference, generatePassReference } from "@/lib/booking-reference";
 
 interface BookingRequestBody {
   roomId: string;
   checkIn: string;
   checkOut: string;
   guest: { fullName: string; email: string; phone: string };
-}
-
-const REFERENCE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-function generateBookingReference(): string {
-  let suffix = "";
-  for (let i = 0; i < 6; i++) {
-    suffix += REFERENCE_CHARS[Math.floor(Math.random() * REFERENCE_CHARS.length)];
-  }
-  return `PMH-${suffix}`;
-}
-
-// Shown only on the guest's verification pass. Computed once here, at
-// booking creation, and frozen in the row from then on — not derived live
-// from the room's current display_order, since that's admin-editable and
-// would otherwise let the same booking's reference silently change if
-// rooms are ever reordered later.
-function generatePassReference(checkIn: string, roomDisplayOrder: number): string {
-  const date = parseISO(checkIn);
-  return `REF${format(date, "M")}/${format(date, "d")}-${roomDisplayOrder}-${format(date, "yy")}`;
 }
 
 function isValidBody(body: unknown): body is BookingRequestBody {

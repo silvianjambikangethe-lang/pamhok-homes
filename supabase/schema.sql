@@ -41,7 +41,7 @@ create table if not exists rooms (
 create table if not exists guests (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
-  email text not null,
+  email text,                   -- optional: manual admin bookings may not collect one
   phone text,                   -- nulled out after checkout (privacy cleanup)
   created_at timestamptz default now()
 );

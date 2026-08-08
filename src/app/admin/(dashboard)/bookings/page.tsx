@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import BookingsTable, { type AdminBookingRow } from "@/components/admin/BookingsTable";
 import BlockDatesForm from "@/components/admin/BlockDatesForm";
+import ManualBookingForm from "@/components/admin/ManualBookingForm";
 import RoomStatusGrid, { type RoomStatus } from "@/components/admin/RoomStatusGrid";
 
 export default async function AdminBookingsPage() {
@@ -75,6 +76,8 @@ export default async function AdminBookingsPage() {
       <RoomStatusGrid rooms={roomStatuses} />
 
       <BookingsTable bookings={rows} />
+
+      <ManualBookingForm rooms={rooms ?? []} />
 
       <BlockDatesForm rooms={rooms ?? []} />
     </div>

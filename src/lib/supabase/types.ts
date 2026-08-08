@@ -61,7 +61,7 @@ export type Room = {
 export type Guest = {
   id: string;
   full_name: string;
-  email: string;
+  email: string | null;
   phone: string | null;
   created_at: string;
 };
