@@ -1,6 +1,6 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-08-07. Written for continuing this project in a
+Last updated: 2026-08-08. Written for continuing this project in a
 **new chat** — paste a link to this file (or its contents) so the new session
 has full context. This supersedes the previous version of this file (dated
 2026-08-06, morning) — that one's content is folded into this one, updated
@@ -218,30 +218,38 @@ This is the most important section to get right for whoever picks this up.
    (`*.supabase.co/functions/v1/mpesa-callback`) when unset, which is
    already a real public HTTPS endpoint regardless of where the frontend
    is hosted. It was never actually blocked on this deploy.
-   ⚠️ **Not yet done as part of this deploy**: the local git repo has
-   ~55 modified files (the full color-scheme/photo-frame redesign, the
-   booking-reference fix, Terms checkbox, footer links) that are now
-   *live on Vercel* but **not yet committed or pushed to GitHub** — Vercel
-   CLI deploys from the local filesystem, not from git, so production and
-   the GitHub repo have diverged. Commit and push before doing anything
-   else in this repo, or the two will drift further.
-2. **Submit the M-Pesa Go-Live request** — deployment's done; still needs
+   Local, GitHub, and the live Vercel deployment are all in sync as of
+   this update — everything through the guest-experience feature build
+   (Sections 1–6, 8 below) is committed, pushed, and deployed.
+2. **Email notifications (guest build spec §7) — blocked on the owner.**
+   Everything else in the guest-experience feature build is done and
+   live (see below) — this is the one piece I can't do myself. Needs:
+   (a) the owner signs up at resend.com and hands over an API key (I
+   can't create third-party accounts), (b) I wire up booking-confirmation
+   + checkout-reminder + cleaning-notice emails using Resend's default
+   `onboarding@resend.dev` sender so nothing's blocked on domain
+   verification, reusing the exact day/time-math already built in
+   `src/lib/guest-notices.ts` for the My Booking page, (c) a Vercel Cron
+   job to actually trigger the time-based ones daily. Swapping to
+   `bookings@pamhok.com` later, once the owner adds pamhok.com's DNS
+   records to Resend, is a one-line `EMAIL_FROM_ADDRESS` env var change.
+3. **Submit the M-Pesa Go-Live request** — deployment's done; still needs
    M-Pesa Portal Admin access confirmed. See the M-Pesa section above for
    the exact process.
-3. **Go live with PayPal** — same-day, self-serve, whenever the owner is
+4. **Go live with PayPal** — same-day, self-serve, whenever the owner is
    ready. See above for the exact steps.
-4. **Feature real guest reviews as they come in** — the mechanism is built
+5. **Feature real guest reviews as they come in** — the mechanism is built
    (`/admin/reviews`) but there are zero real reviews yet, so the homepage
    is still showing fake sample testimonials by design.
-5. **Fill in remaining placeholder photos** — Living Room / Bedroom /
+6. **Fill in remaining placeholder photos** — Living Room / Bedroom /
    Kitchen (homepage) and Coffee Corner / Reading Nook (About) — still
    empty, unchanged this session, wired up and ready in Edit Content.
-6. **Update business expense placeholders** — Domain (.store), Vercel Pro,
+7. **Update business expense placeholders** — Domain (.store), Vercel Pro,
    Supabase Pro all still have placeholder renewal dates (2026-09-03) and
    no amount, so the "Renewals due soon" dashboard alert will fire on the
    wrong date until corrected in `/admin/expenses`.
-7. **Production credentials for Smile ID** — still sandbox.
-8. ~~Rotate exposed secrets~~ — **assessed, deferred, not a code fix.**
+8. **Production credentials for Smile ID** — still sandbox.
+9. ~~Rotate exposed secrets~~ — **assessed, deferred, not a code fix.**
    The exposure (Supabase service role key, PayPal sandbox client
    ID/secret, Smile ID API key) was local terminal output only, never
    transmitted anywhere, and two of the three are sandbox-scoped to begin
@@ -254,7 +262,7 @@ This is the most important section to get right for whoever picks this up.
    there anyway. Revisit immediately, ahead of that, only if anything
    suspicious ever turns up on the Supabase project specifically (it's
    the one real, non-sandbox key of the three).
-9. ~~Set up a GitHub remote~~ — **done.** Repo is
+10. ~~Set up a GitHub remote~~ — **done.** Repo is
    `silvianjambikangethe-lang/pamhok-homes` on GitHub, pushed and current.
 
 ---
