@@ -6,6 +6,90 @@ has full context. This supersedes the previous version of this file (dated
 2026-08-06, morning) — that one's content is folded into this one, updated
 for everything since.
 
+---
+
+## ⚠️ PENDING ISSUES — full summary (start here)
+
+Everything below is consolidated from across this doc, in one place, with
+what's actually needed to close each one. Nothing here is duplicated
+detail-for-detail elsewhere without a pointer back to the fuller
+explanation.
+
+### Blocked on the owner specifically (Claude can't do these)
+
+1. **Domain ownership check.** The site now runs on a real custom
+   domain, **www.pamhokhomes.com**, aliased in Vercel — but this
+   happened **independently of any Claude session**, discovered
+   2026-08-08 when the old `.vercel.app` URL started 404ing.
+   **Confirm who purchased pamhokhomes.com and that its DNS/renewal is
+   being tracked somewhere** — a `buy_domain` tool exists in this
+   environment, so it's plausible another Claude session bought it, but
+   that's unconfirmed. `/admin/expenses` still has a placeholder entry
+   for a *different* domain (a ".store" one) that no longer matches
+   what's actually live — needs correcting either way. See "Still to
+   do" item 1 for the full story.
+2. **Email notifications** (guest-experience feature spec, section 7).
+   Sign up at resend.com, hand over an API key. Until then this is the
+   only piece of that feature build left undone — everything else
+   (checkout/cleaning reminders on the My Booking page, manual booking,
+   room status, stale-checkout flagging, etc.) is live. See "Still to
+   do" item 2.
+3. **M-Pesa Go-Live submission.** Confirm you have M-Pesa Portal
+   **Admin/Business Manager** access (separate from the Daraja
+   developer account) — email m-pesabusiness@safaricom.co.ke if not.
+   Deployment (the other blocker) is done. See the M-Pesa section above
+   for the full process.
+4. **PayPal go-live.** Same-day, self-serve, whenever you're ready —
+   flip sandbox→live on developer.paypal.com/dashboard. No credentials
+   handed over yet.
+5. **Enable Leaked Password Protection** — Supabase Dashboard →
+   Authentication → Policies. Currently off (protects the admin
+   password against HaveIBeenPwned-listed passwords). No tool/API
+   access to toggle this — dashboard only.
+6. **Confirm your Supabase backup tier/settings** — Dashboard →
+   Database → Backups. Paid-tier feature; no tool exposes current
+   status.
+7. **Production Smile ID credentials** — still sandbox.
+8. **Add remaining placeholder photos** — Living Room/Bedroom/Kitchen
+   (homepage), Coffee Corner/Reading Nook (About) — empty slots, wired
+   up and ready in `/admin/content` whenever you have the photos.
+9. **Fix business expense placeholders** in `/admin/expenses` — wrong
+   domain type (see item 1) and placeholder renewal dates (2026-09-03)
+   with no amount for Vercel Pro/Supabase Pro, which will trigger a
+   wrong "renewal due" dashboard alert until corrected.
+
+### Needs your decision, not urgent
+
+10. **Feature real guest reviews** as they come in — mechanism's built
+    (`/admin/reviews`), zero real reviews exist yet so the homepage
+    still shows sample testimonials by design.
+11. **Rotate the 3 exposed secrets** (Supabase service role key, PayPal
+    sandbox client ID/secret, Smile ID API key) — exposed once in a
+    local terminal transcript only, never transmitted. Assessed as
+    low-priority/deferred; natural point to rotate is alongside any
+    future credential refresh. Only urgent if anything suspicious ever
+    turns up on the Supabase project specifically.
+12. **~40 deferred RLS performance optimizations** flagged by Supabase's
+    advisor (`auth.uid()` re-evaluated per row; multiple permissive
+    policies per table) — genuinely low-priority at 2 real bookings'
+    worth of traffic. Revisit if traffic grows; full list via the
+    Supabase MCP `get_advisors` (performance) tool.
+
+### Untested, not code issues — just flagging
+
+13. **Smile ID's success path** — only the failure path has ever been
+    exercised.
+14. **M-Pesa's real "Paid" outcome** — STK push plumbing is proven
+    correct against sandbox, but no real phone has completed one yet.
+15. **An unexplained RLS anomaly** from early in the project (a
+    textbook-correct insert policy still rejected `anon` inserts on a
+    fresh table) — worked around via the service-role client
+    everywhere writes happen; root cause never found. Worth a Supabase
+    support ticket independent of this project if it's ever worth
+    chasing down.
+
+---
+
 ## Website URL
 
 **Not deployed anywhere yet — still local only.** Run it with:
