@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     typeof body.checkIn !== "string" ||
     typeof body.checkOut !== "string" ||
     typeof body.guestName !== "string" ||
-    !body.guestName.trim()
+    !body.guestName.trim() ||
+    body.guestName.trim().length > 200
   ) {
     return NextResponse.json({ error: "Missing fields." }, { status: 400 });
   }

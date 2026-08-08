@@ -217,6 +217,12 @@ export type LoginAttempt = {
   last_attempt_at: string;
 };
 
+export type RateLimit = {
+  key: string;
+  attempt_count: number;
+  window_started_at: string;
+};
+
 export type BillingCycle = "monthly" | "annual" | "one-time";
 
 export type BusinessExpense = {
@@ -328,6 +334,12 @@ export interface Database {
         Row: LoginAttempt;
         Insert: Partial<LoginAttempt>;
         Update: Partial<LoginAttempt>;
+        Relationships: [];
+      };
+      rate_limits: {
+        Row: RateLimit;
+        Insert: Partial<RateLimit>;
+        Update: Partial<RateLimit>;
         Relationships: [];
       };
     };

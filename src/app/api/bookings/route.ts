@@ -12,6 +12,9 @@ interface BookingRequestBody {
   guest: { fullName: string; email: string; phone: string };
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^[0-9+()\-\s]{7,20}$/;
+
 function isValidBody(body: unknown): body is BookingRequestBody {
   if (!body || typeof body !== "object") return false;
   const b = body as Record<string, unknown>;
@@ -23,10 +26,11 @@ function isValidBody(body: unknown): body is BookingRequestBody {
     !!guest &&
     typeof guest.fullName === "string" &&
     guest.fullName.trim().length > 0 &&
+    guest.fullName.trim().length <= 200 &&
     typeof guest.email === "string" &&
-    guest.email.trim().length > 0 &&
+    EMAIL_RE.test(guest.email.trim()) &&
     typeof guest.phone === "string" &&
-    guest.phone.trim().length > 0
+    PHONE_RE.test(guest.phone.trim())
   );
 }
 
