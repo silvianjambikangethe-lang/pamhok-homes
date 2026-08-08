@@ -190,6 +190,94 @@ This is the most important section to get right for whoever picks this up.
 
 ---
 
+## Security & performance hardening pass (2026-08-08)
+
+Full audit against `performance-and-security-hardening.md`. Everything
+below is committed, pushed, and deployed to production unless noted.
+
+**Critical checks (explicitly requested) — both clean:**
+- `.env.local` never committed, never tracked, doesn't appear anywhere
+  in git history on any branch.
+- `service_role` key: zero client-side exposure, confirmed 3 ways —
+  every usage is a server-only route/lib file, all three lib files
+  using it have `import "server-only"` (hard build failure if ever
+  imported client-side), and the env var itself isn't `NEXT_PUBLIC_`
+  prefixed.
+
+**Security fixes:**
+- **`availability_view` SECURITY DEFINER (Supabase advisor ERROR)** —
+  was bypassing `bookings`' own RLS entirely. `anon` had blanket
+  table-level SELECT on `bookings` at the Postgres grant level with
+  only the view standing in the way. Fixed: narrowed to a real
+  column-level grant (room_id/check_in/check_out/booking_status only)
+  plus a matching row policy, view now runs `security_invoker`.
+  Verified live with an anon-key client — availability check still
+  works, direct query for guest_id/payment_status/id_document_path now
+  gets a hard permission-denied.
+- **Rate limiting** added to booking, contact, and review forms (5/10min
+  per IP, same fixed-window pattern as the existing admin login
+  lockout) — previously only admin login had it. Verified live on all
+  three (6th attempt in the window correctly 429s).
+- **Input validation** strengthened: contact form and both booking
+  paths (public + admin manual) now validate email/phone format
+  server-side, not just "non-empty string". File uploads (ID docs, room
+  photos) were already properly validated (type allowlist + size cap)
+  — no changes needed there.
+- **Security headers** added via `next.config.ts`: CSP (audited what
+  the browser actually loads — same-origin + Supabase Storage/auth
+  only; no third-party scripts/iframes anywhere, PayPal is a full
+  redirect so needs no CSP allowance), X-Frame-Options: DENY, HSTS,
+  X-Content-Type-Options: nosniff, Referrer-Policy. Verified present on
+  the live response, zero console/CSP violation errors on any page.
+- **`npm audit`**: 1 high-severity transitive vuln (nanoid, via
+  postcss) — fixed via `npm audit fix`, 0 vulnerabilities now.
+- **⚠️ Two items only the owner can check** (no tool/API access to
+  either): enable "Leaked Password Protection" in Supabase Dashboard →
+  Authentication → Policies (currently disabled, WARN-level advisor
+  finding — protects the admin password against HaveIBeenPwned-listed
+  passwords); confirm Supabase's automatic backup tier/settings
+  (Dashboard → Database → Backups, paid-tier feature, not exposed via
+  any available tool).
+
+**Performance fixes:**
+- `next/image` migration for the two real-photo-heavy components
+  (`PhotoCard`: homepage hero + About Us; `RoomPhoto`: Rooms grid/
+  detail, Neighborhood) — automatic resizing/lazy-loading/modern
+  formats. Left admin-only chrome (nav/login logos, ID-verification
+  review thumbnails, an upload-preview `blob:` URL next/image can't
+  handle) as plain `<img>` — not worth the complexity there.
+- Amenities/About Us/Neighborhood switched to ISR (`revalidate = 300`)
+  instead of hitting Supabase on every request — verified none of the
+  three need per-request data (plain anon client, no cookies/headers).
+  Rooms/homepage/admin dashboard stay live-fetched, matching their
+  actual freshness needs.
+- Dropped the unused 700 (bold) weight from Fraunces and Plus Jakarta
+  Sans — audited every actual computed font-weight rendered site-wide;
+  nothing ever reaches 700. `font-display: swap` was already the
+  default (next/font/google) — confirmed directly against the
+  generated `@font-face` rules, not assumed.
+- Code-splitting: confirmed no guest-facing page imports anything from
+  `@/components/admin` — Next.js App Router's automatic per-route
+  bundling already keeps admin code out of guest bundles. No changes
+  needed, just verified.
+- 3 missing FK-covering indexes added (`bookings.guest_id`,
+  `guest_requests.booking_id`, `reviews.booking_id`) — the latter two
+  back real, active queries (portal.ts's laundry lookup, the
+  review-exists/count checks).
+- **Deferred, low-priority**: Supabase's advisor also flags ~40
+  RLS-performance items (`auth.uid()` re-evaluated per row instead of
+  `(select auth.uid())`; multiple permissive policies per table/action)
+  across nearly every table. All pre-existing, all WARN/INFO level, and
+  genuinely not worth the risk of rewriting every RLS policy in the
+  schema for a site with 2 real bookings so far. Revisit if traffic
+  ever grows enough for it to matter — `get_advisors` (performance)
+  via the Supabase MCP tool surfaces the full current list.
+
+**Also discovered mid-pass, unrelated to the hardening work itself**:
+the site now has a real custom domain — see item 1 above.
+
+---
+
 ## Known unresolved issues (carried over from before, still true)
 
 1. **A genuine unexplained RLS anomaly** from early in the project (a
@@ -205,22 +293,38 @@ This is the most important section to get right for whoever picks this up.
 
 ## Still to do (priority order)
 
-1. ~~Deploy somewhere + set a real domain~~ — **done.** Live at
-   **https://pamhok-homes.vercel.app** (Vercel account
-   `silvianjambikangethe-8696`, project `pamhok-homes`). All 9 real
-   `.env.local` secrets pushed to Vercel's Production environment,
-   `NEXT_PUBLIC_SITE_URL` set to the real domain, and a fresh
-   `CRON_SECRET` generated (was blank before — nothing reused from
+1. ~~Deploy somewhere + set a real domain~~ — **done, and upgraded.**
+   Real custom domain is live: **https://www.pamhokhomes.com** (Vercel
+   account `silvianjambikangethe-8696`, project `pamhok-homes`). Note:
+   the domain purchase/DNS/alias setup happened **independently of any
+   Claude session doing this work** — discovered mid-session on
+   2026-08-08 when `pamhok-homes.vercel.app` (the domain used earlier
+   this session) started 404ing; `vercel alias ls` showed pamhokhomes.com
+   and www.pamhokhomes.com aliased ~5h earlier, apex redirecting to
+   www. `NEXT_PUBLIC_SITE_URL` was still pointing at the old
+   `.vercel.app` URL when this was found — a real live bug (PayPal
+   returns, portal links, WhatsApp share text all would've pointed at a
+   dead domain for any real guest) — fixed immediately and redeployed.
+   If pamhokhomes.com ever needs revisiting: check who/how it was
+   purchased (a `buy_domain` Vercel MCP tool exists and is available in
+   this environment, so it's plausible another session used it) and
+   confirm DNS/renewal is something the owner is tracking, since
+   `/admin/expenses` still has placeholder renewal dates for a ".store"
+   domain that no longer matches what's actually in use.
+   All 9 real `.env.local` secrets are in Vercel's Production
+   environment, plus a fresh `CRON_SECRET` (never reused from
    `.env.local`). Verified live: homepage renders, `/rooms` pulls real
-   Supabase data (no "sample rooms" fallback banner), no console errors.
-   `MPESA_CALLBACK_URL` is still unset, but turns out that's fine as-is —
-   the Supabase Edge Function defaults it to its own function URL
-   (`*.supabase.co/functions/v1/mpesa-callback`) when unset, which is
-   already a real public HTTPS endpoint regardless of where the frontend
-   is hosted. It was never actually blocked on this deploy.
+   Supabase data (no "sample rooms" fallback banner), no console errors,
+   security headers all present on the real domain (see item 11 below).
+   `MPESA_CALLBACK_URL` is still unset, but that's fine as-is — the
+   Supabase Edge Function defaults it to its own function URL
+   (`*.supabase.co/functions/v1/mpesa-callback`) when unset, already a
+   real public HTTPS endpoint regardless of frontend domain. Never
+   actually blocked on deployment.
    Local, GitHub, and the live Vercel deployment are all in sync as of
    this update — everything through the guest-experience feature build
-   (Sections 1–6, 8 below) is committed, pushed, and deployed.
+   (Sections 1–6, 8 below) plus the security/performance hardening pass
+   (item 11) is committed, pushed, and deployed.
 2. **Email notifications (guest build spec §7) — blocked on the owner.**
    Everything else in the guest-experience feature build is done and
    live (see below) — this is the one piece I can't do myself. Needs:
