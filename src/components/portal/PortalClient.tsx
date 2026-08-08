@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format, isPast, parseISO, startOfDay } from "date-fns";
-import { CalendarBlank, Info, Phone, WhatsappLogo } from "@phosphor-icons/react";
+import { CalendarBlank, ClockCountdown, Info, Phone, WhatsappLogo } from "@phosphor-icons/react";
 import type { PortalBooking } from "@/lib/portal";
 import type { DisplayCurrency } from "@/lib/currency";
 import { whatsappLink } from "@/lib/site";
@@ -14,6 +14,7 @@ import UnlockedSection from "@/components/portal/UnlockedSection";
 import LaundrySection from "@/components/portal/LaundrySection";
 import ExtendStaySection from "@/components/portal/ExtendStaySection";
 import CheckoutSection from "@/components/portal/CheckoutSection";
+import { getCheckoutNotices } from "@/lib/guest-notices";
 import ReviewForm from "@/components/portal/ReviewForm";
 import VerificationPassSection from "@/components/portal/VerificationPassSection";
 import ArrivalSection from "@/components/portal/ArrivalSection";
@@ -52,6 +53,7 @@ export default function PortalClient({
   const [showArrival, setShowArrival] = useState(false);
   const checkOutDate = startOfDay(parseISO(booking.check_out));
   const isCheckoutDay = isPast(checkOutDate) || format(checkOutDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+  const checkoutNotices = getCheckoutNotices(booking.check_out);
   const isPassReady =
     booking.payment_status === "Paid" && booking.id_verification_status === "Verified";
   const isVerifiedAndActive = isPassReady && !booking.checked_out_at;
@@ -231,6 +233,17 @@ export default function PortalClient({
         )}
 
         {isVerifiedAndActive && <ExtendStaySection token={token} checkOut={booking.check_out} />}
+
+        {isVerifiedAndActive &&
+          checkoutNotices.map((notice) => (
+            <div
+              key={notice.id}
+              className="flex items-start gap-3 rounded-2xl border border-gold-500/50 bg-gold-500/15 p-5 text-sm text-cocoa shadow-card dark:text-espresso"
+            >
+              <ClockCountdown size={20} className="mt-0.5 shrink-0 text-gold-700 dark:text-gold-300" />
+              <p>{notice.message}</p>
+            </div>
+          ))}
 
         {isVerifiedAndActive && (
           <CheckoutSection token={token} isCheckoutDay={isCheckoutDay} />
