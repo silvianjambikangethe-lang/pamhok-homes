@@ -3,6 +3,7 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/data";
 import { generateBookingReference, generatePassReference } from "@/lib/booking-reference";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 interface BookingRequestBody {
   roomId: string;
@@ -37,6 +38,17 @@ export async function POST(request: Request) {
           "The booking system isn't connected yet — please check back soon, or message us on WhatsApp to book directly.",
       },
       { status: 503 },
+    );
+  }
+
+  const rateLimit = await checkRateLimit("booking", getClientIp(request), {
+    maxAttempts: 5,
+    windowMinutes: 10,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: `Too many booking attempts. Please try again in ${rateLimit.retryAfterMinutes} minute${rateLimit.retryAfterMinutes === 1 ? "" : "s"}.` },
+      { status: 429 },
     );
   }
 

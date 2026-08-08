@@ -76,6 +76,18 @@ create table if not exists login_attempts (
 );
 
 -- ------------------------------------------------------------
+-- Basic fixed-window rate limiting for public forms (booking, contact,
+-- review) - same pattern as login_attempts, generalized to any
+-- (route, identifier) pair. Written exclusively via the service-role
+-- client from the relevant API routes.
+-- ------------------------------------------------------------
+create table if not exists rate_limits (
+  key text primary key,        -- e.g. "booking:203.0.113.5"
+  attempt_count int not null default 1,
+  window_started_at timestamptz not null default now()
+);
+
+-- ------------------------------------------------------------
 -- Core bookings table (drives calendar + payments + guest portal)
 -- ------------------------------------------------------------
 create table if not exists bookings (
@@ -254,6 +266,7 @@ alter table site_content enable row level security;
 alter table social_links enable row level security;
 alter table business_expenses enable row level security;
 alter table login_attempts enable row level security;
+alter table rate_limits enable row level security;
 
 -- --- site_content: public can read; only admins can write ---
 create policy "anyone can view site content" on site_content
@@ -330,7 +343,22 @@ create policy "admins manage reviews" on reviews
 -- ============================================================
 -- Availability — public can see booked/blocked date ranges per
 -- room ONLY (no guest details, no payment/ID info).
+--
+-- The view runs security_invoker (not the default security_definer),
+-- so it only ever sees what anon itself is allowed to see below — a
+-- real column-level grant plus a row-level policy, not a permission
+-- bypass. Nothing else in the app queries bookings as anon (every other
+-- read/write goes through the service-role client or an authenticated
+-- admin session), so this is the only door anon has into the table.
 -- ============================================================
+revoke select on bookings from anon;
+grant select (room_id, check_in, check_out, booking_status) on bookings to anon;
+
+create policy "anon can view availability rows" on bookings
+  for select
+  to anon
+  using (booking_status in ('Confirmed', 'Blocked', 'Pending Verification'));
+
 create or replace view availability_view as
   select room_id, check_in, check_out, booking_status
   from bookings

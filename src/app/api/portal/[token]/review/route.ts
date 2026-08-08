@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
+  const rateLimit = await checkRateLimit("review", getClientIp(request), {
+    maxAttempts: 5,
+    windowMinutes: 10,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: `Too many attempts. Please try again in ${rateLimit.retryAfterMinutes} minute${rateLimit.retryAfterMinutes === 1 ? "" : "s"}.` },
+      { status: 429 },
+    );
+  }
+
   const { token } = await params;
   const body = await request.json().catch(() => null);
   const rating = Number(body?.rating);
