@@ -74,23 +74,25 @@ needed). Selecting a currency there also decides what PayPal actually
 charges; M-Pesa and Pesapal always charge KES regardless of the display
 currency.
 
-## Automated ID verification
+## ID verification (manual)
 
 Guests upload a photo of their national ID/passport **and** a selfie
-(`IdUploadForm`). If `SMILE_ID_PARTNER_ID`/`SMILE_ID_API_KEY` are set in
-`.env.local`, `src/lib/smileid.ts` runs a real-time Smile ID Document
-Verification job (their sandbox contract — signing, the upload/zip/poll
-flow — was confirmed directly against `testapi.smileidentity.com` while
-building this). A selfie is required: Smile ID's own backend rejects a
-job submitted with only an ID image. On a pass, `id_verification_status`
-is auto-set to `Verified` and the door code/WiFi unlock in
-`src/lib/unlock.ts` fires immediately (still gated on payment also being
-`Paid`). On a fail, error, or missing Smile ID config, the booking stays
-`Pending` exactly as before — the admin's existing Approve/Reject buttons
-on `/admin/verifications` are the manual override, and that page now also
-shows the Smile ID result (and both images) so the host knows why the
-auto-check didn't pass. Get sandbox credentials at
-[usesmileid.com](https://usesmileid.com).
+(`IdUploadForm`). There is currently no automated verification provider
+configured, so every upload sets `id_verification_status` to `Pending`
+and `booking_status` to `Pending Verification`, landing it on
+`/admin/verifications` for the host to Approve/Reject by eye — that
+decision drives the door code/WiFi unlock in `src/lib/unlock.ts` (still
+gated on payment also being `Paid`).
+
+The schema keeps a ready hook for plugging an automated provider back in
+later: `id_verification_method` accepts `'automatic' | 'manual_override'`,
+`id_verification_attempts` counts automated retries, and
+`id_verification_result` (jsonb: `{ success, resultCode, resultText,
+actions, checkedAt }`) is a provider-agnostic slot for that job's result —
+all currently unused. A previous version of this used Smile ID; that
+integration (`src/lib/smileid.ts`, `src/lib/zip.ts`) was removed since it
+required Smile ID specifically. To wire up a new provider, populate those
+same three fields from `/api/portal/[token]/upload-id/route.ts`.
 
 ## Laundry requests
 

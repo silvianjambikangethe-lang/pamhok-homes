@@ -64,9 +64,9 @@ export default function PrivacyPage() {
         <Section title="How We Handle Your ID Document">
           <ul className="list-disc space-y-1.5 pl-5">
             <li>
-              Your ID is verified automatically through a third-party
-              verification service (Smile ID) and is never publicly visible
-              or shared beyond what is necessary for verification.
+              Your ID is reviewed by our team to verify your identity and is
+              never publicly visible or shared beyond what is necessary for
+              verification.
             </li>
             <li>
               <strong className="text-ink">

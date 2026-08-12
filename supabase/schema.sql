@@ -136,18 +136,18 @@ create table if not exists bookings (
   id_selfie_path text,          -- private storage path for the matching selfie
   id_verification_status text not null default 'Not Submitted',
   -- 'Not Submitted' | 'Pending' | 'Verified' | 'Rejected'
-  -- Auto-set to 'Verified' when the Smile ID Document Verification job
-  -- passes on upload; stays 'Pending' (admin override via the verify
-  -- route) when it fails, errors, or Smile ID isn't configured.
+  -- No automated verification provider is currently configured — every
+  -- upload lands as 'Pending' for manual admin review (see the verify
+  -- route). 'automatic' below is a ready hook for a future provider:
+  -- would auto-set 'Verified' on a pass, leaving 'Pending' otherwise.
   id_verification_method text,  -- 'automatic' | 'manual_override', set once a status is reached
-  -- Counts failed automated Smile ID attempts (upload-id route). Below 3,
-  -- the guest portal offers a self-serve "try again"; at 3 it stops and
-  -- booking_status flips to 'Pending Verification' for admin review — see
-  -- /api/portal/[token]/upload-id/route.ts. A PDF upload or an
-  -- unreachable/unconfigured Smile ID skips straight to admin review
-  -- without spending an attempt, since there's no automated check to retry.
+  -- Counts failed automated verification attempts (upload-id route), for
+  -- whenever an automated provider is wired up again — unused while
+  -- verification is manual-only; every upload goes straight to admin
+  -- review without spending an attempt. See
+  -- /api/portal/[token]/upload-id/route.ts.
   id_verification_attempts int not null default 0,
-  smile_id_result jsonb,         -- { success, resultCode, resultText, actions, checkedAt }
+  id_verification_result jsonb,  -- { success, resultCode, resultText, actions, checkedAt } — provider-agnostic, unused until an automated provider is configured
 
   -- Refund bookkeeping — set when an admin rejects a booking that was
   -- already paid (see /api/admin/bookings/[id]/verify). refund_status is

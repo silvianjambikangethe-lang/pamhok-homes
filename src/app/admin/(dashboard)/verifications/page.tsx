@@ -7,12 +7,11 @@ export default async function AdminVerificationsPage() {
   const { data: bookings } = await supabase
     .from("bookings")
     .select(
-      "id, check_in, check_out, id_document_path, id_selfie_path, smile_id_result, id_verification_attempts, guest:guests(full_name), room:rooms(name)",
+      "id, check_in, check_out, id_document_path, id_selfie_path, id_verification_result, id_verification_attempts, guest:guests(full_name), room:rooms(name)",
     )
     .eq("id_verification_status", "Pending")
-    // Only bookings that have exhausted their 3 self-serve retry attempts
-    // (or had no automated check to retry, e.g. a PDF upload) land here —
-    // guests still mid-retry aren't the admin's problem yet.
+    // No automated provider is configured, so every upload lands straight
+    // here for manual review.
     .eq("booking_status", "Pending Verification")
     .order("created_at", { ascending: true });
 
@@ -24,7 +23,7 @@ export default async function AdminVerificationsPage() {
     roomName: (b as unknown as { room?: { name?: string } }).room?.name ?? null,
     hasDocument: Boolean(b.id_document_path),
     hasSelfie: Boolean(b.id_selfie_path),
-    smileIdResult: b.smile_id_result,
+    verificationResult: b.id_verification_result,
     attempts: b.id_verification_attempts,
   }));
 
@@ -32,9 +31,8 @@ export default async function AdminVerificationsPage() {
     <div>
       <h1 className="font-serif text-h2 text-ink">ID Verifications</h1>
       <p className="mt-1 text-sm text-ink/80">
-        Most guests are verified automatically — these are the ones where the
-        automated check didn&apos;t pass, or Smile ID wasn&apos;t reachable.
-        Review and override below if you can confirm they&apos;re legitimate.
+        No automated verification provider is configured, so every guest ID
+        upload lands here for you to review and approve or reject below.
       </p>
 
       <div className="mt-6 space-y-4">

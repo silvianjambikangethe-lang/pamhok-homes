@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { isSmileIdConfigured, runDocumentVerification } from "@/lib/smileid";
-import type { SmileIdResult } from "@/lib/supabase/types";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ID_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-// Selfies must be a real photo — Smile ID can't process a PDF as a face image.
+// Selfies must be a real photo — a face image is required for manual review.
 const SELFIE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_ATTEMPTS = 3;
 
 function validateFile(file: unknown, allowedTypes: string[]): file is File {
   return (
@@ -26,7 +23,7 @@ export async function POST(
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, booking_status, id_verification_status, id_verification_attempts")
+    .select("id")
     .eq("access_token", token)
     .maybeSingle();
 
@@ -72,79 +69,22 @@ export async function POST(
     return NextResponse.json({ error: "Upload failed. Please try again." }, { status: 500 });
   }
 
-  // Automated check first; if it can't run or doesn't pass, this falls back
-  // to the existing manual-review flow — the admin's Verify/Reject buttons
-  // on the ID Verifications page double as the override for that case.
-  const canRunAutomatedCheck = isSmileIdConfigured() && idFile.type !== "application/pdf";
-  let verificationStatus: "Pending" | "Verified" = "Pending";
-  let smileIdResult: SmileIdResult | null = null;
-
-  if (canRunAutomatedCheck) {
-    try {
-      const [idBuffer, selfieBuffer] = await Promise.all([
-        idFile.arrayBuffer().then((b) => Buffer.from(b)),
-        selfieFile.arrayBuffer().then((b) => Buffer.from(b)),
-      ]);
-
-      smileIdResult = await runDocumentVerification({
-        jobId: booking.id,
-        userId: booking.id,
-        idImage: { buffer: idBuffer, fileName: `id.${idExtension}` },
-        selfieImage: { buffer: selfieBuffer, fileName: `selfie.${selfieExtension}` },
-        // Pamhok Homes is Nairobi-based, so guests are assumed to present a
-        // Kenyan national ID — the guest portal doesn't currently ask for
-        // country/ID type since 100% of stays are local so far.
-        country: "KE",
-        idType: "NATIONAL_ID",
-      });
-
-      if (smileIdResult.success) {
-        verificationStatus = "Verified";
-      }
-    } catch (err) {
-      smileIdResult = {
-        success: false,
-        resultCode: null,
-        resultText: (err as Error).message || "Automated check failed to run.",
-        actions: null,
-        checkedAt: new Date().toISOString(),
-      };
-    }
-  }
-
-  const needsManualReview = verificationStatus === "Pending";
-
-  // Only count an attempt when a real automated check actually ran and
-  // failed — a PDF upload or an unreachable/unconfigured Smile ID means
-  // there was nothing for the guest to meaningfully retry against, so
-  // that case skips straight to manual review instead of burning one of
-  // their 3 tries.
-  let attempts = booking.id_verification_attempts;
-  let escalateToAdmin = false;
-
-  if (needsManualReview) {
-    if (canRunAutomatedCheck) {
-      attempts += 1;
-      escalateToAdmin = attempts >= MAX_ATTEMPTS;
-    } else {
-      escalateToAdmin = true;
-    }
-  }
-
+  // No automated verification provider is configured — every upload goes
+  // straight to manual review. id_verification_result/attempts/method
+  // ('automatic') are left as a ready hook for a future provider to fill
+  // in the same way Smile ID used to.
   const { error: updateError } = await supabase
     .from("bookings")
     .update({
       id_document_path: idPath,
       id_selfie_path: selfiePath,
-      id_verification_status: verificationStatus,
-      id_verification_method: needsManualReview ? null : "automatic",
-      id_verification_attempts: attempts,
-      smile_id_result: smileIdResult,
+      id_verification_status: "Pending",
+      id_verification_method: null,
       // Held distinctly from 'Confirmed' while it awaits manual review, so
       // the admin dashboard can tell paid-and-confirmed bookings apart from
       // ones still stuck in limbo. Already in availability_view alongside
       // 'Confirmed', so this never unlocks the calendar slot.
-      ...(escalateToAdmin ? { booking_status: "Pending Verification" } : {}),
+      booking_status: "Pending Verification",
     })
     .eq("id", booking.id);
 
@@ -152,9 +92,5 @@ export async function POST(
     return NextResponse.json({ error: "Could not save upload." }, { status: 500 });
   }
 
-  return NextResponse.json({
-    ok: true,
-    autoVerified: verificationStatus === "Verified",
-    attemptsRemaining: needsManualReview && !escalateToAdmin ? MAX_ATTEMPTS - attempts : 0,
-  });
+  return NextResponse.json({ ok: true });
 }

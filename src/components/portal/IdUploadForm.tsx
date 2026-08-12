@@ -74,7 +74,7 @@ export default function IdUploadForm({
           ? `We couldn't verify that automatically. Please upload a clearer photo of your ID and a selfie — you have ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} left before this needs a quick manual review from your host.`
           : rejected
             ? "Your previous upload couldn't be verified. Please upload a clear photo of your national ID or passport, plus a selfie."
-            : "Upload a clear photo of your national ID or passport, plus a quick selfie — we verify most guests automatically within seconds."}
+            : "Upload a clear photo of your national ID or passport, plus a quick selfie — your host will review it shortly."}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
@@ -117,7 +117,7 @@ export default function IdUploadForm({
           disabled={submitting}
           className="focus-ring w-full rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
         >
-          {submitting ? "Verifying…" : "Upload & Verify"}
+          {submitting ? "Uploading…" : "Upload for Verification"}
         </button>
       </form>
     </div>

@@ -9,9 +9,11 @@ export type IdVerificationStatus =
 export type IdVerificationMethod = "automatic" | "manual_override";
 // Only set while a refund needs attention — cleared once resolved.
 export type RefundStatus = "Needs Manual Refund" | "Refund Failed";
-// Summary of the automated Smile ID Document Verification job, stored for
-// the admin's manual-override decision when the auto-check doesn't pass.
-export type SmileIdResult = {
+// Summary of an automated ID verification job, stored for the admin's
+// manual-override decision when the auto-check doesn't pass. Provider-
+// agnostic shape — unused until an automated verification provider is
+// configured; every upload currently goes straight to manual review.
+export type IdVerificationResult = {
   success: boolean;
   resultCode: string | null;
   resultText: string | null;
@@ -95,7 +97,7 @@ export type Booking = {
   id_verification_status: IdVerificationStatus;
   id_verification_method: IdVerificationMethod | null;
   id_verification_attempts: number;
-  smile_id_result: SmileIdResult | null;
+  id_verification_result: IdVerificationResult | null;
   refund_status: RefundStatus | null;
   refund_amount: number | null;
   refund_reference: string | null;

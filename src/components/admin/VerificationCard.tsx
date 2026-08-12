@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { Eye, Warning } from "@phosphor-icons/react";
-import type { SmileIdResult } from "@/lib/supabase/types";
+import type { IdVerificationResult } from "@/lib/supabase/types";
 
 export interface VerificationRow {
   id: string;
@@ -14,7 +14,7 @@ export interface VerificationRow {
   roomName: string | null;
   hasDocument: boolean;
   hasSelfie: boolean;
-  smileIdResult: SmileIdResult | null;
+  verificationResult: IdVerificationResult | null;
   attempts: number;
 }
 
@@ -82,23 +82,22 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
         </div>
       </div>
 
-      {row.smileIdResult && (
+      {row.verificationResult && (
         <div className="mt-4 flex items-start gap-2 rounded-xl border border-gold-500/30 bg-gold-500/10 p-3.5 text-sm text-ink/80">
           <Warning size={16} className="mt-0.5 shrink-0 text-gold-700" />
           <div>
             <p className="font-semibold text-ink">
-              Automated check: {row.smileIdResult.success ? "Passed" : "Did not pass"}
+              Automated check: {row.verificationResult.success ? "Passed" : "Did not pass"}
               {row.attempts > 0 &&
                 ` (after ${row.attempts} attempt${row.attempts === 1 ? "" : "s"})`}
             </p>
-            {row.smileIdResult.resultText && <p className="mt-0.5">{row.smileIdResult.resultText}</p>}
+            {row.verificationResult.resultText && <p className="mt-0.5">{row.verificationResult.resultText}</p>}
           </div>
         </div>
       )}
-      {!row.smileIdResult && (
+      {!row.verificationResult && (
         <p className="mt-4 text-sm text-ink/65">
-          No automated check ran for this upload (e.g. a PDF, or Smile ID wasn&apos;t reachable) —
-          it came straight to manual review.
+          No automated verification is configured — this upload came straight to manual review.
         </p>
       )}
 

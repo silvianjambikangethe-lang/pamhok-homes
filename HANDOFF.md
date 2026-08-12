@@ -1,10 +1,87 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-08-08. Written for continuing this project in a
+Last updated: 2026-08-12. Written for continuing this project in a
 **new chat** — paste a link to this file (or its contents) so the new session
 has full context. This supersedes the previous version of this file (dated
-2026-08-06, morning) — that one's content is folded into this one, updated
-for everything since.
+2026-08-08) — that one's content is folded into this one, updated for
+everything since. See "Session update (2026-08-12)" below for what's new.
+
+---
+
+## Session update (2026-08-12)
+
+Fresh clone of the GitHub repo onto a new machine, brought back to a
+working local state, plus a new admin-login security feature. In order:
+
+1. **Cloned + installed.** `git clone`, `npm install` — clean, 0
+   vulnerabilities.
+2. **Fixed a real bug found on first run**, not just a config issue:
+   `getAdminContactPhone()` in `src/lib/data.ts` is called unconditionally
+   from `RootLayout`, and its own comment says it should degrade to `null`
+   until fully configured — but its guard only checked
+   `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`, not
+   `SUPABASE_SERVICE_ROLE_KEY`, which the admin client it calls actually
+   needs. Result: every page crashed with "Supabase admin client requires
+   ..." whenever the service-role key wasn't set yet, instead of just
+   hiding the WhatsApp button. Fixed by adding the missing check to that
+   one guard.
+3. **`.env.local` recreated** (gitignored, wasn't in the clone) — public
+   Supabase URL/anon key pulled via the Supabase MCP tools; PayPal/Smile
+   ID/cron secrets left blank (not required to browse the site).
+   `SUPABASE_SERVICE_ROLE_KEY` was later supplied directly by the owner in
+   chat and added — needed for `src/lib/supabase/admin.ts`, used by admin
+   routes, the login-attempt lockout table, and the recovery flow below.
+4. **Confirmed no drift**: the Supabase project's 5 migrations match
+   `supabase/migrations/` exactly. No Vercel project exists under the
+   connected account (`silvianjambikangethe-8696's projects`, zero
+   projects) — see the flag under "Website URL" below, this contradicts
+   an earlier note in this doc about a live custom domain.
+5. **New feature: admin login lockout dropped from 8 to 3 attempts, plus
+   a self-service email-based unlock/password-reset flow.** Full detail
+   in the new "Admin login: 3-attempt lockout + email recovery
+   (2026-08-12)" section below. Built, typechecked (`tsc --noEmit` clean),
+   linted (no new errors — the 4 pre-existing lint errors in
+   `CurrencySelector.tsx`/`ThemeToggle.tsx`/`AdminTextSizeContext.tsx`/
+   `tailwind.config.ts` are unrelated), and verified live in the browser:
+   logged in successfully with the reset credentials, landed on a
+   populated `/admin` dashboard.
+6. **Admin password was reset** at the owner's explicit request and
+   direction (they specified the new password) — done via direct SQL
+   against `auth.users` (using pgcrypto's `crypt()`/`gen_salt('bf')`,
+   since the service-role key wasn't available yet at that point in the
+   session), not through the app's own admin-update-user API. The
+   previous version of this doc deliberately kept the password unknown to
+   any Claude session "by design" — that principle was intentionally
+   broken this one time because the owner asked directly and supplied the
+   exact value. **The new password is not recorded anywhere in this repo,
+   in Claude's memory system, or in this file** — same as before, only
+   the owner knows it. If it needs to change again, prefer the new
+   `/admin/recover` flow (owner-driven, via the registered admin email)
+   over asking a Claude session to set it directly.
+7. **Smile ID removed entirely, at the owner's explicit request** (they're
+   sourcing a different ID-verification provider). Removed from local
+   code, Supabase, and `.env.local`; nothing to remove on Vercel since no
+   Vercel project currently exists (see item 1 below). Specifically:
+   `src/lib/smileid.ts` and its zip-only-used-by-it helper
+   `src/lib/zip.ts` deleted; the `upload-id` route no longer calls any
+   verification API and every guest ID upload now goes straight to
+   `/admin/verifications` for manual Approve/Reject; the `bookings`
+   column `smile_id_result` was renamed to `id_verification_result`
+   (provider-agnostic jsonb, currently unused — migration
+   `20260812141432_rename_smile_id_result_to_id_verification_result`,
+   applied to both the live Supabase project and
+   `supabase/migrations/`); `SmileIdResult` type renamed to
+   `IdVerificationResult`; `SMILE_ID_*` vars dropped from `.env.local`;
+   README/privacy-policy copy updated to stop naming Smile ID. **The
+   option is deliberately kept, not deleted**: `id_verification_method`
+   (`'automatic' | 'manual_override'`), `id_verification_attempts`, and
+   `id_verification_result` all still exist on `bookings` specifically so
+   a future provider can be wired into the same upload route the same
+   way Smile ID was, without a new migration. Zero real bookings existed
+   at removal time, so no historical verification data was lost. This
+   also fully retires pending items that used to reference Smile ID
+   specifically (production credentials, untested success path, the
+   exposed sandbox API key) — see the updated pending-issues list below.
 
 ---
 
@@ -17,17 +94,23 @@ explanation.
 
 ### Blocked on the owner specifically (Claude can't do these)
 
-1. **Domain ownership check.** The site now runs on a real custom
-   domain, **www.pamhokhomes.com**, aliased in Vercel — but this
-   happened **independently of any Claude session**, discovered
-   2026-08-08 when the old `.vercel.app` URL started 404ing.
-   **Confirm who purchased pamhokhomes.com and that its DNS/renewal is
-   being tracked somewhere** — a `buy_domain` tool exists in this
-   environment, so it's plausible another Claude session bought it, but
-   that's unconfirmed. `/admin/expenses` still has a placeholder entry
-   for a *different* domain (a ".store" one) that no longer matches
-   what's actually live — needs correcting either way. See "Still to
-   do" item 1 for the full story.
+1. **Domain ownership check — now actively contradicted, needs the
+   owner's eyes.** This doc has claimed since 2026-08-08 that the site
+   runs on a real custom domain, **www.pamhokhomes.com**, aliased in
+   Vercel. On 2026-08-12, checking the Vercel MCP connection (account
+   `silvianjambikangethe-8696's projects`) turned up **zero Vercel
+   projects** — no `pamhok-homes` project, nothing. Either (a) the
+   deployment exists under a different Vercel account/team than the one
+   currently connected, (b) it was deleted since 2026-08-08, or (c) the
+   original claim was never accurate (this doc itself flagged it as
+   "unconfirmed" and "independent of any Claude session" when first
+   written). **Owner: please confirm whether www.pamhokhomes.com is
+   actually live**, and if so, under which Vercel account. Until
+   confirmed, treat "Website URL" below (local-only) as the current
+   known-true state. `/admin/expenses` still has a placeholder entry for
+   a *different* domain (a ".store" one) that doesn't match either
+   story — needs correcting either way. See "Still to do" item 1 for the
+   fuller original story.
 2. **Email notifications** (guest-experience feature spec, section 7).
    Sign up at resend.com, hand over an API key. Until then this is the
    only piece of that feature build left undone — everything else
@@ -49,26 +132,32 @@ explanation.
 6. **Confirm your Supabase backup tier/settings** — Dashboard →
    Database → Backups. Paid-tier feature; no tool exposes current
    status.
-7. **Production Smile ID credentials** — still sandbox.
-8. **Add remaining placeholder photos** — Living Room/Bedroom/Kitchen
+7. **Add remaining placeholder photos** — Living Room/Bedroom/Kitchen
    (homepage), Coffee Corner/Reading Nook (About) — empty slots, wired
    up and ready in `/admin/content` whenever you have the photos.
-9. **Fix business expense placeholders** in `/admin/expenses` — wrong
+8. **Fix business expense placeholders** in `/admin/expenses` — wrong
    domain type (see item 1) and placeholder renewal dates (2026-09-03)
    with no amount for Vercel Pro/Supabase Pro, which will trigger a
    wrong "renewal due" dashboard alert until corrected.
+9. **Pick and wire up a new ID-verification provider** (or decide to stay
+   fully manual) — Smile ID was removed at your request (see the
+   2026-08-12 session update above); `/admin/verifications` manual
+   Approve/Reject works fine on its own in the meantime, and the schema
+   is ready for a new provider whenever you choose one (see that section
+   for exactly which fields to populate).
 
 ### Needs your decision, not urgent
 
 10. **Feature real guest reviews** as they come in — mechanism's built
     (`/admin/reviews`), zero real reviews exist yet so the homepage
     still shows sample testimonials by design.
-11. **Rotate the 3 exposed secrets** (Supabase service role key, PayPal
-    sandbox client ID/secret, Smile ID API key) — exposed once in a
-    local terminal transcript only, never transmitted. Assessed as
-    low-priority/deferred; natural point to rotate is alongside any
-    future credential refresh. Only urgent if anything suspicious ever
-    turns up on the Supabase project specifically.
+11. **Rotate the 2 exposed secrets** (Supabase service role key, PayPal
+    sandbox client ID/secret) — exposed once in a local terminal
+    transcript only, never transmitted. Assessed as low-priority/
+    deferred; natural point to rotate is alongside any future credential
+    refresh. Only urgent if anything suspicious ever turns up on the
+    Supabase project specifically. (A third exposed secret, the Smile ID
+    API key, is now moot — that integration was removed entirely.)
 12. **~40 deferred RLS performance optimizations** flagged by Supabase's
     advisor (`auth.uid()` re-evaluated per row; multiple permissive
     policies per table) — genuinely low-priority at 2 real bookings'
@@ -77,11 +166,9 @@ explanation.
 
 ### Untested, not code issues — just flagging
 
-13. **Smile ID's success path** — only the failure path has ever been
-    exercised.
-14. **M-Pesa's real "Paid" outcome** — STK push plumbing is proven
+13. **M-Pesa's real "Paid" outcome** — STK push plumbing is proven
     correct against sandbox, but no real phone has completed one yet.
-15. **An unexplained RLS anomaly** from early in the project (a
+14. **An unexplained RLS anomaly** from early in the project (a
     textbook-correct insert policy still rejected `anon` inserts on a
     fresh table) — worked around via the service-role client
     everywhere writes happen; root cause never found. Worth a Supabase
@@ -92,7 +179,10 @@ explanation.
 
 ## Website URL
 
-**Not deployed anywhere yet — still local only.** Run it with:
+**Confirmed local-only as of 2026-08-12** (see pending-issues item 1 above
+for why this contradicts an earlier claim in this doc about a live
+www.pamhokhomes.com on Vercel — that needs the owner to resolve, not
+assumed either way). Run it with:
 
 ```bash
 npm install   # if starting fresh
@@ -143,9 +233,11 @@ local-only reference file, not something `git status` will ever show).
 
 ## What's live and working right now (verified, not assumed)
 
-- **Core booking flow** — PayPal + M-Pesa, pay-and-verify gated unlock, ID
-  verification via Smile ID, refund logic — all unchanged from before this
-  session, still working.
+- **Core booking flow** — PayPal + M-Pesa, pay-and-verify gated unlock,
+  refund logic — all unchanged from before this session, still working.
+  ID verification is now fully manual (Smile ID removed 2026-08-12, see
+  the session update above) — every uploaded ID lands on
+  `/admin/verifications` for Approve/Reject.
 - **10 real rooms**, correctly numbered/ordered 1–10 on both `/admin/rooms`
   and the public `/rooms` page (new `display_order` field, admin-editable).
   Room order is **not** the same as price order — it's a manual field the
@@ -362,15 +454,76 @@ the site now has a real custom domain — see item 1 above.
 
 ---
 
+## Admin login: 3-attempt lockout + email recovery (2026-08-12)
+
+Owner asked for the login lockout to trigger after 3 failed attempts
+(down from the existing 8-attempt/15-minute lockout), with a way to
+unlock via confirmation from the registered admin email
+(`pamhokhomes@gmail.com`), then set a new password with no old-password
+check. Chose Supabase's built-in password-recovery **email link** over a
+typed 6-digit code — the latter would need either editing Supabase's
+email templates (dashboard-only, no MCP tool for it) or wiring up a
+third-party mailer (Resend isn't configured — see pending item 2). Owner
+picked the link option explicitly when asked.
+
+**Files changed:**
+- `src/app/api/admin/login/route.ts` — `MAX_ATTEMPTS` 8 → 3; both 429
+  responses now include a `locked: true` flag; message mentions the
+  email-reset option. The existing 15-minute timer lockout is untouched
+  and still applies — the email flow is a faster alternative, not a
+  replacement.
+- `src/app/api/admin/recover/request/route.ts` (new) — takes an email,
+  only actually sends Supabase's reset-password email if it matches
+  `admin_users` (checked via the service-role client), otherwise still
+  returns the same generic "if that email is registered..." message
+  either way (no account enumeration). Rate-limited 5/hour per IP via
+  the existing `checkRateLimit` helper.
+- `src/app/api/admin/recover/callback/route.ts` (new) — where the
+  emailed link lands; exchanges Supabase's one-time PKCE `code` for a
+  real session via `exchangeCodeForSession`. Redirects to
+  `/admin/recover?error=invalid-or-expired` on failure.
+- `src/app/api/admin/recover/set-password/route.ts` (new) — sets the new
+  password with **no current-password check** (the session from the
+  emailed link IS the identity proof), clears the `login_attempts` row
+  for that email, best-effort signs out other sessions. Mirrors
+  `api/admin/settings/password/route.ts`'s pattern minus the
+  current-password verification step.
+- `src/app/admin/recover/page.tsx` (new) — email-entry form, styled to
+  match `/admin/login`.
+- `src/app/admin/recover/set-password/page.tsx` (new, server component)
+  — gated by the existing `requireAdmin()` (same admin_users-membership
+  check every dashboard page uses; a session only exists here because of
+  the callback exchange above).
+- `src/components/admin/RecoverSetPasswordForm.tsx` (new) — the actual
+  new-password form, posts to `set-password` above.
+- `src/app/admin/login/page.tsx` — added a "Forgot password?" link
+  (becomes a prominent "Locked out? Reset your password via email" CTA
+  when the login response comes back `locked: true`).
+
+**Known limitation**: Supabase's PKCE flow ties the reset link to the
+browser that requested it (via a code-verifier cookie) — if the owner
+requests the reset from one browser but opens the email in a different
+browser/device, the link will show "invalid or expired" and they'll need
+to request a fresh one from that same browser. Standard tradeoff for
+`@supabase/ssr`-based apps; not worth working around for a single-admin
+site.
+
+**Verified working end-to-end in the browser** (2026-08-12, after the
+owner supplied `SUPABASE_SERVICE_ROLE_KEY`): logged in successfully with
+the reset password, reached a populated `/admin` dashboard. The
+lockout → email → reset cycle itself (3 wrong passwords, actually
+receiving and clicking the email) was **not** exercised this session —
+worth a real run-through next time someone's in the admin area.
+
+---
+
 ## Known unresolved issues (carried over from before, still true)
 
 1. **A genuine unexplained RLS anomaly** from early in the project (a
    fresh table with a textbook-correct insert policy still rejected `anon`
    inserts) — worked around via the service-role client, root cause never
    found. Worth a Supabase support ticket, independent of this project.
-2. **Smile ID's success path is still unverified** — only the failure path
-   has ever been tested. Not a code concern, just an untested path.
-3. **M-Pesa's real "Paid" outcome still needs a genuine test** — the STK
+2. **M-Pesa's real "Paid" outcome still needs a genuine test** — the STK
    push plumbing is proven correct against Safaricom's sandbox (a real
    `CheckoutRequestID` gets issued), but no real phone has ever completed
    one, so the actual success path is unconfirmed.
@@ -436,12 +589,13 @@ the site now has a real custom domain — see item 1 above.
    Supabase Pro all still have placeholder renewal dates (2026-09-03) and
    no amount, so the "Renewals due soon" dashboard alert will fire on the
    wrong date until corrected in `/admin/expenses`.
-8. **Production credentials for Smile ID** — still sandbox.
-9. ~~Rotate exposed secrets~~ — **assessed, deferred, not a code fix.**
+8. ~~Rotate exposed secrets~~ — **assessed, deferred, not a code fix.**
    The exposure (Supabase service role key, PayPal sandbox client
-   ID/secret, Smile ID API key) was local terminal output only, never
-   transmitted anywhere, and two of the three are sandbox-scoped to begin
-   with. No Claude session can rotate these directly — that needs the
+   ID/secret — the third exposed secret, the Smile ID API key, is now
+   moot since that integration was removed entirely on 2026-08-12) was
+   local terminal output only, never transmitted anywhere, and both
+   remaining ones are either sandbox-scoped or low-risk to begin with.
+   No Claude session can rotate these directly — that needs the
    owner's own login on each provider's dashboard, and doing it blind
    would break live integrations until every place using the old key
    (Edge Function secrets, `.env.local`) gets updated in step. Judgment
@@ -449,14 +603,31 @@ the site now has a real custom domain — see item 1 above.
    instead is **deployment** (item 1) — production secrets get set fresh
    there anyway. Revisit immediately, ahead of that, only if anything
    suspicious ever turns up on the Supabase project specifically (it's
-   the one real, non-sandbox key of the three).
-10. ~~Set up a GitHub remote~~ — **done.** Repo is
+   the one real, non-sandbox key of the two).
+9. ~~Set up a GitHub remote~~ — **done.** Repo is
    `silvianjambikangethe-lang/pamhok-homes` on GitHub, pushed and current.
+10. **Resolve the Vercel/domain contradiction** — see pending-issues
+    item 1. Needs the owner to confirm whether www.pamhokhomes.com is
+    actually live and under which account.
+11. **Exercise the new lockout → email-recovery cycle for real** — fail
+    login 3 times, confirm the reset email actually lands in
+    pamhokhomes@gmail.com, click through, confirm the new password
+    works. Only the "already logged in with a working password" half was
+    verified on 2026-08-12, not the failure/recovery path itself.
+12. **Pick and wire up a new ID-verification provider** (or stay fully
+    manual) — Smile ID was removed entirely at the owner's request; see
+    the 2026-08-12 session update for exactly which fields are ready for
+    a new provider.
 
 ---
 
 ## Reference: real admin account
 
-Admin email: `pamhokhomes@gmail.com` — login works, password already set
-by the owner (not known to any Claude session, by design — sessions can't
-and shouldn't ask for it or enter it).
+Admin email: `pamhokhomes@gmail.com` — login verified working as of
+2026-08-12. Password was reset that session at the owner's explicit
+request (they supplied the exact value; not known to this doc, this
+repo, or any Claude session's memory, by design). If it needs to change
+again, prefer the owner using the `/admin/recover` flow themselves (see
+above) over telling a Claude session the new value directly — that's a
+one-time exception, not the intended pattern going forward. Login is
+now locked out after **3** failed attempts (was 8).
