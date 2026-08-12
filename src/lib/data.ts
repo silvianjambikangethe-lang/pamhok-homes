@@ -390,7 +390,8 @@ export function getNeighborhoodContent(): Promise<NeighborhoodContent> {
 // lookups in @/lib/portal. Returns null (button simply doesn't render)
 // until an admin sets a number.
 export async function getAdminContactPhone(): Promise<string | null> {
-  if (!isSupabaseConfigured()) return null;
+  if (!isSupabaseConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY)
+    return null;
 
   const { data } = await createAdminSupabaseClient()
     .from("admin_users")

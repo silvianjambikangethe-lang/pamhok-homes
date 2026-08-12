@@ -14,11 +14,13 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+    setLocked(false);
 
     const res = await fetch("/api/admin/login", {
       method: "POST",
@@ -29,6 +31,7 @@ function LoginForm() {
     if (!res.ok) {
       const data = await res.json().catch(() => null);
       setError(data?.error ?? "Incorrect email or password.");
+      setLocked(Boolean(data?.locked));
       setSubmitting(false);
       return;
     }
@@ -102,6 +105,19 @@ function LoginForm() {
             {submitting ? "Signing in…" : "Sign In"}
           </button>
         </form>
+
+        <p className="mt-5 text-center text-sm">
+          <a
+            href="/admin/recover"
+            className={`focus-ring rounded font-medium ${
+              locked
+                ? "text-danger underline"
+                : "text-ink/60 hover:text-ink/80"
+            }`}
+          >
+            {locked ? "Locked out? Reset your password via email" : "Forgot password?"}
+          </a>
+        </p>
       </div>
     </div>
   );

@@ -4,17 +4,20 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 // Real server-side brute-force protection — the login page's obscurity
 // (a quiet footer link, not the nav) is just a UX convenience, not
-// security on its own. This is the actual gate: 8 wrong passwords for a
+// security on its own. This is the actual gate: 3 wrong passwords for a
 // given email locks that email out for 15 minutes, checked here before
 // Supabase Auth is even called. Keyed by email (not IP) since there's
 // only ever one real admin account — this stops password-guessing
 // against that one account, which is the actual threat model here.
-const MAX_ATTEMPTS = 8;
+// A lock can also be cleared early via the /admin/recover email flow
+// (see /api/admin/recover/*), which is the faster path for a genuine
+// forgotten password rather than waiting out the timer.
+const MAX_ATTEMPTS = 3;
 const LOCKOUT_MINUTES = 15;
 
 function lockoutMessage(lockedUntil: string) {
   const minutesLeft = Math.max(1, Math.ceil((new Date(lockedUntil).getTime() - Date.now()) / 60000));
-  return `Too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.`;
+  return `Too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}, or reset your password via email.`;
 }
 
 export async function POST(request: Request) {
@@ -35,7 +38,10 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (attempt?.locked_until && new Date(attempt.locked_until) > new Date()) {
-    return NextResponse.json({ error: lockoutMessage(attempt.locked_until) }, { status: 429 });
+    return NextResponse.json(
+      { error: lockoutMessage(attempt.locked_until), locked: true },
+      { status: 429 },
+    );
   }
 
   const supabase = await createServerSupabaseClient();
@@ -56,7 +62,10 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(
-      { error: justLocked ? lockoutMessage(lockedUntil!) : "Incorrect email or password." },
+      {
+        error: justLocked ? lockoutMessage(lockedUntil!) : "Incorrect email or password.",
+        locked: justLocked,
+      },
       { status: justLocked ? 429 : 401 },
     );
   }
