@@ -173,12 +173,25 @@ explanation.
    automatically assume the domain is gone; check the dashboard directly
    or retry. `/admin/expenses` still has a stale placeholder entry for a
    *different* domain (a ".store" one) — see item 8.
-2. **Email notifications** (guest-experience feature spec, section 7).
-   Sign up at resend.com, hand over an API key. Until then this is the
-   only piece of that feature build left undone — everything else
-   (checkout/cleaning reminders on the My Booking page, manual booking,
-   room status, stale-checkout flagging, etc.) is live. See "Still to
-   do" item 2.
+2. ~~Email notifications~~ — **code done, but real delivery is blocked on
+   a Resend domain verification, 2026-08-26.** Owner supplied a Resend API
+   key; wired up booking-confirmation, checkout-reminder, and
+   cleaning-notice emails (`src/lib/email.ts`, plus
+   `/api/cron/checkout-reminders` and the new `/api/cron/cleaning-notices`,
+   scheduled via `vercel.json`). **Discovered by actually sending a real
+   test email, not assumed**: Resend's shared `onboarding@resend.dev`
+   sender only works for accounts with a verified domain, or when sending
+   to the Resend account's own signup address
+   (`silvianjambikangethe@gmail.com`) — confirmed both ways (a send to
+   `pamhokhomes@gmail.com` was rejected with a 403 `validation_error`; the
+   identical send to the account's own address succeeded). **This means
+   no guest will actually receive any of these emails until the owner
+   verifies a domain (e.g. pamhok.com) at resend.com/domains** and
+   `EMAIL_FROM_ADDRESS` is set to an address on it. Until then the code
+   runs, calls Resend successfully, and silently fails to deliver to real
+   guests — `sendEmail()` swallows the error by design (a failed email
+   should never fail a booking), so this won't show up as a visible bug,
+   only as guests not receiving mail. See "Still to do" item 2.
 3. **M-Pesa (Jenga) is deployed but not yet functional — two things only
    you can finish.** The Jenga-based `mpesa-initiate`/`mpesa-callback`
    code is deployed to Supabase (confirmed `ACTIVE`) and merged to
@@ -699,16 +712,10 @@ worth a real run-through next time someone's in the admin area.
    this update — everything through the guest-experience feature build
    (Sections 1–6, 8 below) plus the security/performance hardening pass
    (item 11) is committed, pushed, and deployed.
-2. **Email notifications (guest build spec §7) — blocked on the owner.**
-   Everything else in the guest-experience feature build is done and
-   live (see below) — this is the one piece I can't do myself. Needs:
-   (a) the owner signs up at resend.com and hands over an API key (I
-   can't create third-party accounts), (b) I wire up booking-confirmation
-   + checkout-reminder + cleaning-notice emails using Resend's default
-   `onboarding@resend.dev` sender so nothing's blocked on domain
-   verification, reusing the exact day/time-math already built in
-   `src/lib/guest-notices.ts` for the My Booking page, (c) a Vercel Cron
-   job to actually trigger the time-based ones daily. Swapping to
+2. ~~Email notifications~~ — **code done 2026-08-26, delivery blocked on
+   a Resend domain verification.** See the pending-issues item above for
+   the full story — real guests won't receive these emails until the
+   owner verifies a domain at resend.com/domains. Swapping to
    `bookings@pamhok.com` later, once the owner adds pamhok.com's DNS
    records to Resend, is a one-line `EMAIL_FROM_ADDRESS` env var change.
 3. **Get M-Pesa (via Jenga) working in sandbox, then go live** — code is
