@@ -115,6 +115,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not start PayPal checkout." }, { status: 502 });
     }
 
+    // Bind this specific order to this specific booking so the capture step
+    // can verify a guest isn't paying for one (cheap) booking and using that
+    // order id to mark a completely different (expensive) booking Paid.
+    await supabase
+      .from("bookings")
+      .update({ payment_method: "paypal", payment_reference: order.id })
+      .eq("id", booking.id);
+
     return NextResponse.json({ url: approveLink.href, chargedCurrency: chargeCurrency });
   } catch {
     return NextResponse.json({ error: "Could not reach PayPal." }, { status: 502 });
