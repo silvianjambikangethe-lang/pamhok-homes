@@ -9,7 +9,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // gate: the dashboard must stay usable to reopen the site, server-to-server
 // callbacks (M-Pesa/PayPal) must keep working, and a guest already checked
 // in shouldn't lose their door code/WiFi because of an unrelated emergency.
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   if (
