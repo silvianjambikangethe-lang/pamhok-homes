@@ -18,7 +18,7 @@
 //        supabase functions deploy mpesa-initiate
 //        supabase functions deploy mpesa-callback --no-verify-jwt
 //        supabase secrets set JENGA_CONSUMER_KEY=... JENGA_CONSUMER_SECRET=...
-//          JENGA_ACCOUNT_NUMBER=... JENGA_ENV=sandbox \
+//          JENGA_MERCHANT_CODE=... JENGA_ACCOUNT_NUMBER=... JENGA_ENV=sandbox \
 //          JENGA_PRIVATE_KEY="$(cat private_pkcs8.pem)"
 //
 // ⚠️ UNCONFIRMED AGAINST A LIVE SANDBOX CALL — unlike the Daraja integration
@@ -27,12 +27,17 @@
 // Built from Jenga/Finserve's own public docs, which are genuinely
 // inconsistent across pages for this API generation. Test a real STK push
 // in sandbox before taking a live booking through this:
-//   - The token endpoint below is documented as needing merchantCode +
-//     consumerSecret + an Api-Key header — THREE values. This code guesses
-//     JENGA_ACCOUNT_NUMBER -> merchantCode and JENGA_CONSUMER_KEY -> the
-//     Api-Key header, since that's the only mapping that uses everything
-//     you gave me. Verify against your own Jenga onboarding docs/dashboard,
-//     not just this comment — a wrong mapping fails at the auth step.
+//   - The token endpoint below needs merchantCode + consumerSecret + an
+//     Api-Key header. **Confirmed against the owner's actual Jenga
+//     dashboard (2026-08-26)**: Merchant Code is a real, distinct value
+//     from the Equity account number — they are NOT the same thing (an
+//     earlier version of this code wrongly conflated them, guessing
+//     JENGA_ACCOUNT_NUMBER for both). Merchant Code now has its own
+//     JENGA_MERCHANT_CODE secret, used only for this auth call.
+//     JENGA_ACCOUNT_NUMBER is used only for the STK push's own
+//     merchant.accountNumber field and the Signature payload below — the
+//     account funds actually settle into, separate from the code that
+//     authenticates the request.
 //   - The Signature header (RSA-SHA256 over
 //     accountNumber+ref+mobileNumber+telco+amount+currency, per Jenga's
 //     API-explorer page for this exact STK/USSD-push endpoint) isn't
@@ -86,11 +91,12 @@ Deno.serve(async (req) => {
 
     const consumerKey = Deno.env.get("JENGA_CONSUMER_KEY");
     const consumerSecret = Deno.env.get("JENGA_CONSUMER_SECRET");
+    const merchantCode = Deno.env.get("JENGA_MERCHANT_CODE");
     const accountNumber = Deno.env.get("JENGA_ACCOUNT_NUMBER");
     const privateKeyPem = Deno.env.get("JENGA_PRIVATE_KEY");
     const jengaEnv = Deno.env.get("JENGA_ENV") ?? "sandbox";
 
-    if (!consumerKey || !consumerSecret || !accountNumber || !privateKeyPem) {
+    if (!consumerKey || !consumerSecret || !merchantCode || !accountNumber || !privateKeyPem) {
       return new Response(
         JSON.stringify({ error: "Payment method not yet configured.", configured: false }),
         { status: 501, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -145,11 +151,10 @@ Deno.serve(async (req) => {
 
     const base = finserveBase(jengaEnv);
 
-    // Best-guess credential mapping — see the file-level comment above.
     const authRes = await fetch(`${base}/authentication/api/v3/authenticate/merchant`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Api-Key": consumerKey },
-      body: JSON.stringify({ merchantCode: accountNumber, consumerSecret }),
+      body: JSON.stringify({ merchantCode, consumerSecret }),
     });
     if (!authRes.ok) throw new Error("Could not authenticate with Jenga.");
     const { accessToken } = await authRes.json();
