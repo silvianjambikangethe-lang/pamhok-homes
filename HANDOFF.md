@@ -385,6 +385,15 @@ local-only reference file, not something `git status` will ever show).
 
 ## What's live and working right now (verified, not assumed)
 
+- **Real human email via Zoho Mail** — `hello@pamhokhomes.com`, set up
+  2026-08-27. MX (3× `mx.zoho.com`/`mx2`/`mx3`), SPF
+  (`v=spf1 include:zohomail.com ~all`), and DKIM
+  (`zmail._domainkey.pamhokhomes.com`) all confirmed live via direct DNS
+  lookup and Zoho's own "Verify all records" check; owner confirmed
+  sending/receiving actually works. Runs entirely on the apex domain's
+  own DNS records, completely separate from Resend's setup (which lives
+  on the `send.pamhokhomes.com` subdomain) — no conflict between the two,
+  confirmed by checking both independently.
 - **Core booking flow** — PayPal + M-Pesa, pay-and-verify gated unlock,
   refund logic — all unchanged from before this session, still working.
   ID verification is now fully manual (Smile ID removed 2026-08-12, see
