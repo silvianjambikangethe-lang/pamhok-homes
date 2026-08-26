@@ -247,9 +247,12 @@ explanation.
 6. **Confirm your Supabase backup tier/settings** — Dashboard →
    Database → Backups. Paid-tier feature; no tool exposes current
    status.
-7. **Add remaining placeholder photos** — Living Room/Bedroom/Kitchen
-   (homepage), Coffee Corner/Reading Nook (About) — empty slots, wired
-   up and ready in `/admin/content` whenever you have the photos.
+7. ~~Add remaining placeholder photos~~ — **done, 2026-08-27.** Confirmed
+   via `site_content`: `homepage.living_room_image_url`,
+   `homepage.bedroom_image_url`, `homepage.kitchen_image_url`,
+   `about.reading_nook_image_url`, and `about.coffee_corner_image_url`
+   are all populated with real Supabase Storage URLs, no placeholders
+   left.
 8. **Fix business expense placeholders** in `/admin/expenses` — wrong
    domain type (see item 1) and placeholder renewal dates (2026-09-03)
    with no amount for Vercel Pro/Supabase Pro, which will trigger a
@@ -834,9 +837,9 @@ worth a real run-through next time someone's in the admin area.
 5. **Feature real guest reviews as they come in** — the mechanism is built
    (`/admin/reviews`) but there are zero real reviews yet, so the homepage
    is still showing fake sample testimonials by design.
-6. **Fill in remaining placeholder photos** — Living Room / Bedroom /
-   Kitchen (homepage) and Coffee Corner / Reading Nook (About) — still
-   empty, unchanged this session, wired up and ready in Edit Content.
+6. ~~Fill in remaining placeholder photos~~ — **done, 2026-08-27.** All
+   5 confirmed populated with real Supabase Storage URLs (see the
+   pending-issues item above).
 7. **Update business expense placeholders** — Domain (.store), Vercel Pro,
    Supabase Pro all still have placeholder renewal dates (2026-09-03) and
    no amount, so the "Renewals due soon" dashboard alert will fire on the
