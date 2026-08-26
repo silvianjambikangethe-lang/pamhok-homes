@@ -173,22 +173,21 @@ explanation.
    automatically assume the domain is gone; check the dashboard directly
    or retry. `/admin/expenses` still has a stale placeholder entry for a
    *different* domain (a ".store" one) — see item 8.
-2. ~~Email notifications~~ — **done, real delivery confirmed 2026-08-26.**
-   Owner supplied a Resend API key; wired up booking-confirmation,
-   checkout-reminder, and cleaning-notice emails (`src/lib/email.ts`, plus
-   `/api/cron/checkout-reminders` and the new `/api/cron/cleaning-notices`,
-   scheduled via `vercel.json`). First attempt hit a real limitation,
-   found by actually sending a test email rather than assuming it'd work:
-   Resend's shared `onboarding@resend.dev` sender only delivers to the
-   account's own signup address until a domain is verified — a send to
-   `pamhokhomes@gmail.com` was rejected (403). Turned out **pamhokhomes.com
-   was already verified on Resend** (17 days prior, independently of this
-   session) — once `EMAIL_FROM_ADDRESS` was set to
-   `Pamhok Homes <bookings@pamhokhomes.com>` and re-tested, delivery to
-   `pamhokhomes@gmail.com` succeeded for real. `EMAIL_FROM_ADDRESS` is set
-   in local `.env.local`; **still needs adding to Vercel's Production
-   environment variables** (dashboard only, no tool can do this) before
-   it's live for real guests — everything else about this feature is done.
+2. ~~Email notifications~~ — **7 trigger-specific emails, done
+   2026-08-26.** Real delivery confirmed working (pamhokhomes.com is
+   verified on Resend; `EMAIL_FROM_ADDRESS=Pamhok Homes
+   <bookings@pamhokhomes.com>`) — see the "Guest email notifications"
+   section below for the full trigger-by-trigger map, including one real
+   bug caught and fixed along the way (booking-confirmation was originally
+   wired to fire on booking *creation*, not on payment — corrected per the
+   owner's explicit spec, not left as a silent duplicate). Styled to match
+   the site's brand (Fraunces headings, terracotta buttons). Owner
+   supplied the Resend API key. **Still needs adding to Vercel's
+   Production environment variables** (`RESEND_API_KEY`,
+   `EMAIL_FROM_ADDRESS` — currently only in local `.env.local`) and, for
+   the M-Pesa side specifically, the same two as Supabase Edge Function
+   secrets (dashboard-only either way, no tool can do this) before any of
+   it reaches a real guest.
 3. ~~M-Pesa (Jenga) config~~ — **fully configured and confirmed,
    2026-08-26.** All six Supabase secrets are set (`JENGA_CONSUMER_KEY`,
    `JENGA_CONSUMER_SECRET`, `JENGA_MERCHANT_CODE=4390718704`,
@@ -210,6 +209,14 @@ explanation.
    in the real source — caught by re-reading the deployed function back
    with `get_edge_function` and comparing, then redeployed clean. Worth
    doing that comparison after any manual Edge Function deploy.)
+   Separately, the `expand-email-notifications` PR wires a
+   payment-confirmation/stay-extension email into the M-Pesa callback
+   itself (`supabase/functions/_shared/email.ts`) — that needs its own
+   `RESEND_API_KEY`/`EMAIL_FROM_ADDRESS` Supabase secrets (see item 2
+   above) on top of the six `JENGA_*` ones, or that specific email will
+   silently no-op. Its portal-link fallback was also fixed during PR
+   review (2026-08-26) to point at the real domain instead of
+   `localhost` if that secret is ever missing.
    What's left is a real sandbox STK push test before trusting this with
    an actual booking — see the M-Pesa section above for the specific
    unconfirmed assumptions still left in the code. After that, going to
@@ -538,6 +545,71 @@ This is the most important section to get right for whoever picks this up.
   number, and the live PayPal Client ID/Secret the owner pasted directly
   — the PayPal ones are real, non-sandbox credentials sitting in this
   conversation's history, worth being aware of.
+
+---
+
+## Guest email notifications — trigger map (2026-08-26)
+
+Owner specified 7 exact triggers; built to match, not guessed at. All
+templates live in `src/lib/email.ts` (Fraunces heading, terracotta button,
+`Plus Jakarta Sans` body — matches the site's own font choices). Every
+send is best-effort and swallows its own errors (`sendEmail()`/
+`sendPaymentSucceededEmail()`) — a failed email never fails the
+underlying booking/payment/admin action.
+
+1. **Booking Confirmation** — on `payment_status` becoming `'Paid'`, not
+   on booking creation. **This was a real bug, caught and fixed, not a
+   duplicate**: the first version of this feature (merged as PR #3) sent
+   it from `/api/bookings` at creation time — wrong per the owner's spec,
+   since a freshly created booking is still just an unpaid hold. Removed
+   from there; now fires from the single shared
+   `sendPaymentSucceededEmail()` in `src/lib/booking-emails.ts`, called
+   from all three places `payment_status` can actually become `'Paid'`:
+   `/api/payments/paypal/capture`, the Jenga M-Pesa callback (its own
+   duplicate implementation, `supabase/functions/_shared/email.ts` — Deno
+   can't import the Next.js lib), and the admin's manual
+   `/api/admin/bookings/[id]/mark-paid`. (The admin's *other* "mark paid
+   at creation" route, `/api/admin/bookings/manual`, was deliberately left
+   alone — it never collects a guest email at all, so there's nothing to
+   send to.)
+2. **ID Verification Result** — `/api/admin/bookings/[id]/verify`, both
+   branches. Rejected includes a refund line **only when
+   `payment_status` was actually `'Paid'` at rejection time** — most
+   rejections happen before payment (verification is required before
+   payment can even start), so most Rejected emails carry no refund
+   mention at all, matching the owner's exact spec.
+3. **Checkout Reminder, evening before (8 PM EAT)** — the existing
+   `checkout-reminders` cron, unchanged trigger, content updated to add
+   an "Extend my stay" button linking to the portal.
+4. **Checkout Reminder, morning of (9 AM EAT)** — same cron, more direct/
+   urgent copy ("Checkout is today"), CTA is "Confirm checkout" instead.
+   Both cron times were already correct in `vercel.json` from the earlier
+   session (17:00 UTC / 06:00 UTC = 8 PM / 9 AM EAT) — nothing to change
+   there.
+5. **Stay Extension Confirmation** — shares trigger #1's `payment_status
+   = 'Paid'` moment. Distinguished from a fresh booking's first payment by
+   checking whether `paid_at` was already set *before* this payment
+   (`extend/confirm/route.ts` resets `payment_status` to `'Pending'` on
+   top of an already-paid booking, so a second "Paid" transition can only
+   mean an extension re-payment). Copy deliberately says "total confirmed
+   for your stay," not "amount paid for the extension" — the schema
+   doesn't track the extension as a separate line item
+   (`extend/confirm/route.ts`'s own comment says so), so the email doesn't
+   claim a precision the system doesn't have.
+6. **Laundry Status Updates** — `/api/admin/requests/[id]/laundry-stage`,
+   fires only for the 4 stages the owner listed (Picked Up / Cleaning /
+   Ready / Returned) — not `Open` (guest already knows, they made the
+   request) or `Closed` (internal bookkeeping only).
+7. **Checkout Complete** — `/api/portal/[token]/checkout`, right after
+   `checked_out_at` is set, includes a "Leave a review" button to the
+   portal (reviews are submitted in-portal via `ReviewForm.tsx`, no
+   separate page). Sent after the route's existing privacy cleanup, which
+   is safe — that cleanup wipes the ID photos and phone number, not email.
+
+**Verified for real, not just typechecked**: sent actual test emails
+through the live Resend account for the base pipeline and for the most
+logically complex template (ID-verification-rejected-with-refund-note) —
+both delivered correctly to a real inbox.
 
 ---
 

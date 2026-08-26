@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getPaypalAccessToken, refundPaypalCapture } from "@/lib/paypal";
+import { sendEmail, idVerificationResultEmail } from "@/lib/email";
 import type { Booking } from "@/lib/supabase/types";
 
 export async function POST(
@@ -19,12 +20,31 @@ export async function POST(
 
   const { data: booking, error: fetchError } = await supabase
     .from("bookings")
-    .select("id, booking_status, payment_status, payment_method, payment_reference, total_amount")
+    .select(
+      "id, access_token, booking_status, payment_status, payment_method, payment_reference, total_amount, currency, guest:guests(full_name, email), room:rooms(name)",
+    )
     .eq("id", id)
     .maybeSingle();
 
   if (fetchError || !booking) {
     return NextResponse.json({ error: "Not authorized or booking not found." }, { status: 403 });
+  }
+
+  const guest = booking.guest as unknown as { full_name: string; email: string | null } | null;
+  const roomName = (booking.room as unknown as { name?: string } | null)?.name ?? "your room";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const portalUrl = `${siteUrl}/portal/${booking.access_token}`;
+
+  async function notify(verificationStatus: "Verified" | "Rejected", refundNote?: string | null) {
+    if (!guest?.email) return;
+    const { subject, html } = idVerificationResultEmail({
+      guestName: guest.full_name,
+      roomName,
+      portalUrl,
+      status: verificationStatus,
+      refundNote,
+    });
+    await sendEmail({ to: guest.email, subject, html });
   }
 
   if (status === "Verified") {
@@ -40,6 +60,7 @@ export async function POST(
     if (error) {
       return NextResponse.json({ error: "Could not update verification status." }, { status: 500 });
     }
+    await notify("Verified");
     return NextResponse.json({ ok: true });
   }
 
@@ -53,8 +74,16 @@ export async function POST(
     booking_status: "Cancelled",
   };
 
-  if (booking.payment_status === "Paid") {
+  const wasPaid = booking.payment_status === "Paid";
+  let refundNote: string | null = null;
+
+  if (wasPaid) {
     const amount = Number(booking.total_amount);
+    const amountText = new Intl.NumberFormat("en-KE", {
+      style: "currency",
+      currency: booking.currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
 
     if (booking.payment_method === "paypal" && booking.payment_reference) {
       try {
@@ -65,16 +94,20 @@ export async function POST(
           rejectUpdate.refund_reference = result.refundId;
           rejectUpdate.refund_amount = amount;
           rejectUpdate.refunded_at = new Date().toISOString();
+          refundNote = `Since your booking was already paid, we've refunded ${amountText} to your original payment method.`;
         } else {
           rejectUpdate.refund_status = "Refund Failed";
+          refundNote = `Since your booking was already paid, we're processing your refund of ${amountText} — you'll hear from us shortly.`;
         }
       } catch {
         rejectUpdate.refund_status = "Refund Failed";
+        refundNote = `Since your booking was already paid, we're processing your refund of ${amountText} — you'll hear from us shortly.`;
       }
     } else {
       // M-Pesa (no refund API wired up) or an unexpected/missing method —
       // flag for the admin to refund by hand.
       rejectUpdate.refund_status = "Needs Manual Refund";
+      refundNote = `Since your booking was already paid, we're processing your refund of ${amountText} — you'll hear from us shortly.`;
     }
   }
 
@@ -82,6 +115,8 @@ export async function POST(
   if (updateError) {
     return NextResponse.json({ error: "Could not update verification status." }, { status: 500 });
   }
+
+  await notify("Rejected", refundNote);
 
   return NextResponse.json({ ok: true });
 }

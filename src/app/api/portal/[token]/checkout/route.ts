@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { sendEmail, checkoutCompleteEmail } from "@/lib/email";
 
 export async function POST(
   _request: Request,
@@ -10,7 +11,9 @@ export async function POST(
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, guest_id, checked_out_at, id_document_path, id_selfie_path")
+    .select(
+      "id, guest_id, checked_out_at, id_document_path, id_selfie_path, guest:guests(full_name, email), room:rooms(name)",
+    )
     .eq("access_token", token)
     .maybeSingle();
 
@@ -50,6 +53,19 @@ export async function POST(
       ? supabase.from("guests").update({ phone: null }).eq("id", booking.guest_id)
       : Promise.resolve(),
   ]);
+
+  // Sent after the privacy cleanup above only wipes phone/ID files, not
+  // email — the guest still needs this to find their way to the review form.
+  const guest = booking.guest as unknown as { full_name: string; email: string | null } | null;
+  if (guest?.email) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const { subject, html } = checkoutCompleteEmail({
+      guestName: guest.full_name,
+      roomName: (booking.room as unknown as { name?: string } | null)?.name ?? "your room",
+      portalUrl: `${siteUrl}/portal/${token}`,
+    });
+    await sendEmail({ to: guest.email, subject, html });
+  }
 
   return NextResponse.json({ ok: true });
 }
