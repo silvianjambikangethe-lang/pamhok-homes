@@ -269,18 +269,38 @@ explanation.
 10. **Feature real guest reviews** as they come in — mechanism's built
     (`/admin/reviews`), zero real reviews exist yet so the homepage
     still shows sample testimonials by design.
-11. **Rotate the 2 exposed secrets** (Supabase service role key, PayPal
-    sandbox client ID/secret) — exposed once in a local terminal
-    transcript only, never transmitted. Assessed as low-priority/
-    deferred; natural point to rotate is alongside any future credential
-    refresh. Only urgent if anything suspicious ever turns up on the
-    Supabase project specifically. (A third exposed secret, the Smile ID
-    API key, is now moot — that integration was removed entirely.)
-12. **~40 deferred RLS performance optimizations** flagged by Supabase's
-    advisor (`auth.uid()` re-evaluated per row; multiple permissive
-    policies per table) — genuinely low-priority at 2 real bookings'
-    worth of traffic. Revisit if traffic grows; full list via the
-    Supabase MCP `get_advisors` (performance) tool.
+11. ~~Rotate the Supabase service role key~~ — **done, 2026-08-27.**
+    Migrated both `SUPABASE_SERVICE_ROLE_KEY` and
+    `NEXT_PUBLIC_SUPABASE_ANON_KEY` from Supabase's legacy JWT-based keys
+    to the newer independent publishable/secret key system (new values:
+    `sb_publishable_...` / `sb_secret_...`), updated in Vercel Production
+    and local `.env.local`, redeployed, and verified working via live
+    API calls before formally **disabling the old legacy keys entirely**
+    in Supabase's dashboard (API Keys > Legacy > Disable JWT-based API
+    keys). Confirmed the old key is genuinely dead — a direct REST call
+    using it now returns `401 "Legacy API keys are disabled"`. This also
+    fully retires the service-role key that was exposed once in an
+    earlier session's terminal transcript (never transmitted anywhere,
+    but now moot regardless since that value no longer works at all).
+    **Still outstanding, low priority:** the PayPal *sandbox* client
+    ID/secret exposed in that same transcript — separate credential,
+    unrelated to the Supabase rotation above. Live PayPal credentials
+    (a different app registration) are what's actually in use, so the
+    sandbox one sitting unrotated carries no real risk — it can't touch
+    real money or the live app regardless of whether it's ever revoked.
+    (A third exposed secret, the Smile ID API key, is now moot — that
+    integration was removed entirely.)
+12. ~~~40 deferred RLS performance optimizations~~ — **done, 2026-08-27.**
+    Fixed via two migrations (`20260827000000_wrap_auth_uid_in_rls_policies.sql`,
+    `20260827000001_scope_admin_policies_to_authenticated.sql`,
+    `20260827000002_scope_public_policies_to_anon.sql`): wrapped
+    `auth.uid()` as `(select auth.uid())` in the 10 flagged policies, and
+    scoped the "admins manage X" / "anyone can view X" policy pairs to
+    `authenticated`/`anon` respectively to kill the multiple-permissive-
+    policy overlap. Zero semantic change — verified via direct PostgREST
+    calls before and after. Supabase advisor WARN count: ~40 → 0 (2
+    harmless INFO-level "unused index" notices remain, expected for
+    brand-new indexes with no traffic yet).
 
 ### Untested, not code issues — just flagging
 
@@ -840,25 +860,24 @@ worth a real run-through next time someone's in the admin area.
 6. ~~Fill in remaining placeholder photos~~ — **done, 2026-08-27.** All
    5 confirmed populated with real Supabase Storage URLs (see the
    pending-issues item above).
-7. **Update business expense placeholders** — Domain (.store), Vercel Pro,
-   Supabase Pro all still have placeholder renewal dates (2026-09-03) and
-   no amount, so the "Renewals due soon" dashboard alert will fire on the
-   wrong date until corrected in `/admin/expenses`.
-8. ~~Rotate exposed secrets~~ — **assessed, deferred, not a code fix.**
-   The exposure (Supabase service role key, PayPal sandbox client
-   ID/secret — the third exposed secret, the Smile ID API key, is now
-   moot since that integration was removed entirely on 2026-08-12) was
-   local terminal output only, never transmitted anywhere, and both
-   remaining ones are either sandbox-scoped or low-risk to begin with.
-   No Claude session can rotate these directly — that needs the
-   owner's own login on each provider's dashboard, and doing it blind
-   would break live integrations until every place using the old key
-   (Edge Function secrets, `.env.local`) gets updated in step. Judgment
-   call: not worth the disruption right now. Natural point to rotate
-   instead is **deployment** (item 1) — production secrets get set fresh
-   there anyway. Revisit immediately, ahead of that, only if anything
-   suspicious ever turns up on the Supabase project specifically (it's
-   the one real, non-sandbox key of the two).
+7. ~~Update business expense placeholders~~ — **done, 2026-08-27.**
+   Domain entry was already correct (real `.com`, $19.99/yr, confirmed
+   against Hostinger's actual renewal pricing). Vercel Pro ($20/mo) and
+   Supabase Pro ($25/mo) both filled in with real amounts and a
+   placeholder due-date set a year out so they won't falsely trigger
+   the "Renewals due soon" alert; also removed a duplicate stale
+   Supabase Pro row from an earlier session. Resend Pro ($20/mo) added
+   as a new not-yet-subscribed entry for the same reason (Free tier's
+   100/day cap). None of these are actually subscribed to yet — see
+   the pending-issues section for what each unlocks.
+8. ~~Rotate exposed secrets~~ — **Supabase side done, 2026-08-27** (see
+   pending-issues item 11 for the full story: migrated to Supabase's
+   new key system, then formally disabled the old legacy keys —
+   confirmed dead via a live `401` test, not just unused). **PayPal
+   sandbox client ID/secret still unrotated** — deliberately deferred,
+   low-risk (separate app registration from the live credentials
+   actually in use; can't touch real money regardless of whether it's
+   ever revoked). Revisit only if convenient, no urgency.
 9. ~~Set up a GitHub remote~~ — **done.** Repo is
    `silvianjambikangethe-lang/pamhok-homes` on GitHub, pushed and current.
 10. ~~Resolve the Vercel/domain contradiction~~ — **resolved, 2026-08-26.**
