@@ -572,12 +572,13 @@ This is the most important section to get right for whoever picks this up.
   binds the order to its booking (`payment_reference`); `capture` verifies
   the match before trusting a capture. Shipped in the same PR as the
   Jenga cutover (PR #1, merged 2026-08-26).
-- **⚠️ Security note for the owner, not a code issue**: a prior session's
+- **Security note for the owner, resolved 2026-08-27**: a prior session's
   unredacted terminal command briefly printed several real secret values
   (Supabase service role key, PayPal sandbox client ID/secret) into that
   session's tool-output transcript while inspecting `.env.local`. Nothing
-  left the local machine. If that's a concern, rotating those specific
-  keys is a reasonable precaution. Separately, this session's chat
+  left the local machine at the time, but both have since been formally
+  rotated/disabled regardless — see the pending-issues section for the
+  full story on each. Separately, this session's chat
   contains the Jenga sandbox Consumer Key/Secret, the Equity account
   number, and the live PayPal Client ID/Secret the owner pasted directly
   — the PayPal ones are real, non-sandbox credentials sitting in this
@@ -879,14 +880,16 @@ worth a real run-through next time someone's in the admin area.
    as a new not-yet-subscribed entry for the same reason (Free tier's
    100/day cap). None of these are actually subscribed to yet — see
    the pending-issues section for what each unlocks.
-8. ~~Rotate exposed secrets~~ — **Supabase side done, 2026-08-27** (see
-   pending-issues item 11 for the full story: migrated to Supabase's
-   new key system, then formally disabled the old legacy keys —
-   confirmed dead via a live `401` test, not just unused). **PayPal
-   sandbox client ID/secret still unrotated** — deliberately deferred,
-   low-risk (separate app registration from the live credentials
-   actually in use; can't touch real money regardless of whether it's
-   ever revoked). Revisit only if convenient, no urgency.
+8. ~~Rotate exposed secrets~~ — **fully done, 2026-08-27.** Supabase
+   side: migrated to the new key system, then formally disabled the
+   old legacy keys — confirmed dead via a live `401` test, not just
+   unused (see pending-issues item 11 for the full story). PayPal
+   side: the exposed sandbox app's "Secret key 1" was disabled directly
+   in PayPal's Developer Dashboard (Apps & Credentials → Pamhok Homes
+   sandbox app) — confirmed the badge persisted after a fresh page
+   reload, and confirmed the live PayPal integration (separate app
+   registration entirely) still works correctly afterward via a safe
+   zero-side-effect check.
 9. ~~Set up a GitHub remote~~ — **done.** Repo is
    `silvianjambikangethe-lang/pamhok-homes` on GitHub, pushed and current.
 10. ~~Resolve the Vercel/domain contradiction~~ — **resolved, 2026-08-26.**
