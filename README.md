@@ -121,9 +121,11 @@ in the guest portal.
 
 ## Deployment
 
-No hosting has been chosen yet. Vercel is the natural fit for Next.js —
-connect this repo, add the same environment variables from `.env.local`
-(including a real `NEXT_PUBLIC_SITE_URL`), and deploy.
+Live on Vercel at [www.pamhokhomes.com](https://www.pamhokhomes.com),
+Git-connected to this repo — merging a PR into `master` auto-deploys to
+production. Production environment variables are set directly on Vercel
+(dashboard only, not synced from `.env.local`); `NEXT_PUBLIC_SITE_URL`
+there is the real domain, not `localhost`.
 
 ## A note on this dev machine
 

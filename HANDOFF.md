@@ -1,10 +1,10 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-08-12. Written for continuing this project in a
+Last updated: 2026-08-26. Written for continuing this project in a
 **new chat** — paste a link to this file (or its contents) so the new session
 has full context. This supersedes the previous version of this file (dated
-2026-08-08) — that one's content is folded into this one, updated for
-everything since. See "Session update (2026-08-12)" below for what's new.
+2026-08-12) — that one's content is folded into this one, updated for
+everything since. See "Session update (2026-08-26)" below for what's new.
 
 ---
 
@@ -95,9 +95,59 @@ working local state, plus a new admin-login security feature. In order:
    key signs requests, public key gets uploaded to the Jenga dashboard)
    that doesn't exist yet, and Jenga's own docs were inconsistent enough
    across pages that the OAuth credential mapping is a documented best
-   guess, not a confirmed fact. I also don't currently have Supabase
-   deploy/secrets tool access this session (MCP disconnected, no local
-   CLI), so none of this is live yet regardless.
+   guess, not a confirmed fact. (Update 2026-08-26: the code has since
+   been deployed to Supabase and merged to production on Vercel — see the
+   2026-08-26 session update and the M-Pesa & PayPal section below. It's
+   deployed, not yet functional — still needs the RSA key and Supabase
+   secrets, which remain owner-only steps.)
+
+---
+
+## Session update (2026-08-26)
+
+Picked up from the 2026-08-12 session update above. In order:
+
+1. **Actually deployed the Jenga M-Pesa code to Supabase** — `mpesa-initiate`
+   and `mpesa-callback` are now `ACTIVE` (v5/v4), running the Jenga logic
+   from the 2026-08-12 session. Still not functional (missing RSA key +
+   Supabase secrets — both owner-only, see Pending Issues item 3).
+2. **Live PayPal credentials supplied by the owner directly in chat**,
+   added to `.env.local`. Before trusting it with real money, reviewed the
+   checkout code and found + fixed a real payment-bypass bug (see the
+   M-Pesa & PayPal section) — a guest could've paid for a cheap booking
+   and reused that PayPal order ID to mark a different, more expensive
+   booking Paid. Fixed via an order-to-booking binding check.
+3. **Connected Vercel to the GitHub repo** — previously deployed via a
+   disconnected/manual path (no auto-deploy). Now genuinely Git-connected;
+   verified with a real empty-commit test that triggered and completed a
+   production deployment.
+4. **Established a branch → PR → owner-merge workflow** going forward,
+   instead of pushing straight to `master` — since Vercel now auto-deploys
+   on merge, this keeps the owner in control of what goes live and when.
+   Used for both PRs merged this session (Jenga/PayPal fix, and the
+   middleware→proxy rename below).
+5. **Fixed `NEXT_PUBLIC_SITE_URL`** on Vercel's Production env vars — was
+   pointing at `localhost`, meaning real guests could never have completed
+   a PayPal checkout redirect. Now correctly `https://www.pamhokhomes.com`.
+6. **Renamed `middleware.ts` → `proxy.ts`** — Next.js 16 deprecated the
+   `middleware` file convention in favor of `proxy` (identical behavior,
+   per Next.js's own bundled docs in `node_modules/next/dist/docs`).
+   Straight rename, verified locally (tsc clean, admin login works through
+   the renamed proxy) before merging.
+7. **Confirmed the live PayPal credentials are actually active in
+   production** — safely, with zero transactions or PayPal API calls (see
+   the M-Pesa & PayPal section for exactly how).
+8. **Confirmed there is no tool, on either the Supabase or Vercel MCP
+   connectors, that can list/set/delete secret or environment variable
+   values** — checked twice this session via fresh ToolSearch queries. Any
+   future session should stop re-checking for this and just tell the
+   owner it's dashboard-only, every time.
+9. **A real, recurring Vercel MCP flakiness was hit throughout this
+   session**: `list_projects`/`list_teams` repeatedly returned zero
+   results even when the project was confirmed live (once even
+   independently verified by fetching the domain directly). It eventually
+   started working with no clear trigger. Don't trust a "zero projects"
+   result as proof of anything without cross-checking another way first.
 
 ---
 
@@ -110,39 +160,58 @@ explanation.
 
 ### Blocked on the owner specifically (Claude can't do these)
 
-1. **Domain ownership check — now actively contradicted, needs the
-   owner's eyes.** This doc has claimed since 2026-08-08 that the site
-   runs on a real custom domain, **www.pamhokhomes.com**, aliased in
-   Vercel. On 2026-08-12, checking the Vercel MCP connection (account
-   `silvianjambikangethe-8696's projects`) turned up **zero Vercel
-   projects** — no `pamhok-homes` project, nothing. Either (a) the
-   deployment exists under a different Vercel account/team than the one
-   currently connected, (b) it was deleted since 2026-08-08, or (c) the
-   original claim was never accurate (this doc itself flagged it as
-   "unconfirmed" and "independent of any Claude session" when first
-   written). **Owner: please confirm whether www.pamhokhomes.com is
-   actually live**, and if so, under which Vercel account. Until
-   confirmed, treat "Website URL" below (local-only) as the current
-   known-true state. `/admin/expenses` still has a placeholder entry for
-   a *different* domain (a ".store" one) that doesn't match either
-   story — needs correcting either way. See "Still to do" item 1 for the
-   fuller original story.
+1. ~~Domain ownership check~~ — **resolved 2026-08-26.** Confirmed for
+   real this time, not just claimed: `www.pamhokhomes.com` is live under
+   Vercel account `silvianjambikangethe-8696's projects`, project
+   `pamhok-homes` (`prj_V4kgqkjvM3TQpo6McnsQRjmEyTtA`). It's now
+   **Git-connected** to `silvianjambikangethe-lang/pamhok-homes` — pushes
+   to `master` (via merged PRs) auto-deploy, verified with a real
+   empty-commit test that produced a `READY` production deployment. My
+   Vercel MCP tool access was flaky throughout this process (repeatedly
+   showed zero projects even when things were genuinely fine) — if a
+   future session sees the same "zero projects" result, don't
+   automatically assume the domain is gone; check the dashboard directly
+   or retry. `/admin/expenses` still has a stale placeholder entry for a
+   *different* domain (a ".store" one) — see item 8.
 2. **Email notifications** (guest-experience feature spec, section 7).
    Sign up at resend.com, hand over an API key. Until then this is the
    only piece of that feature build left undone — everything else
    (checkout/cleaning reminders on the My Booking page, manual booking,
    room status, stale-checkout flagging, etc.) is live. See "Still to
    do" item 2.
-3. **M-Pesa is unconfirmed and needs real sandbox testing before
-   go-live.** M-Pesa now runs via Equity's Jenga API (swapped in for the
-   old Daraja integration at your request) — but it's untested against a
-   live sandbox call and needs an RSA key pair you haven't generated yet.
-   See the M-Pesa section above for exactly what's missing. Once that's
-   confirmed working in sandbox, going to production will need Jenga's
-   own go-live process (contact Equity/Finserve — not yet researched).
-4. **PayPal go-live.** Same-day, self-serve, whenever you're ready —
-   flip sandbox→live on developer.paypal.com/dashboard. No credentials
-   handed over yet.
+3. **M-Pesa (Jenga) is deployed but not yet functional — two things only
+   you can finish.** The Jenga-based `mpesa-initiate`/`mpesa-callback`
+   code is deployed to Supabase (confirmed `ACTIVE`) and merged to
+   `master` on Vercel, but M-Pesa will keep reporting "not configured"
+   until both of these are done — no tool available to me can do either:
+   (a) **generate an RSA key pair** and upload the public half to your
+   Jenga/Equity developer dashboard (commands are in
+   `supabase/functions/mpesa-initiate/index.ts`'s comments), and (b) **in
+   the Supabase Dashboard → Edge Functions → Secrets**, delete the 5 old
+   `MPESA_*` entries (dead now, unused) and add `JENGA_CONSUMER_KEY`,
+   `JENGA_CONSUMER_SECRET`, `JENGA_ACCOUNT_NUMBER=0704393189`,
+   `JENGA_ENV=sandbox`, and `JENGA_PRIVATE_KEY` (once you have it from
+   (a)). I checked repeatedly for a Supabase or Vercel MCP tool that
+   manages secret values — none exists on either connector as of
+   2026-08-26; this is dashboard-only. Once both are done, this still
+   needs a real sandbox STK push test before trusting it with a booking
+   — see the M-Pesa section above for the specific unconfirmed
+   assumptions in the code. After that, going to production needs
+   Jenga's own go-live process (contact Equity/Finserve — not yet
+   researched).
+4. ~~PayPal go-live~~ — **credentials are live, confirmed working.**
+   Owner supplied live `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` on
+   2026-08-26; added to `.env.local` and confirmed present on Vercel's
+   Production environment too (verified via a safe, zero-side-effect
+   check: POSTing a bogus booking token to `/api/payments/paypal/
+   create-order` returned 404 "Booking not found" rather than 501 "not
+   configured" — proves the live credentials are active without ever
+   calling PayPal's API or moving money). **No real transaction has been
+   run end-to-end** — deliberately, per the owner's instruction not to
+   spend real money testing this. That's still a real gap before fully
+   trusting checkout: worth one small real booking through it eventually.
+   Also found and fixed a real payment-bypass bug in the same review (see
+   the M-Pesa & PayPal section above) before any of this went live.
 5. **Enable Leaked Password Protection** — Supabase Dashboard →
    Authentication → Policies. Currently off (protects the admin
    password against HaveIBeenPwned-listed passwords). No tool/API
@@ -199,10 +268,12 @@ explanation.
 
 ## Website URL
 
-**Confirmed local-only as of 2026-08-12** (see pending-issues item 1 above
-for why this contradicts an earlier claim in this doc about a live
-www.pamhokhomes.com on Vercel — that needs the owner to resolve, not
-assumed either way). Run it with:
+**Confirmed genuinely live as of 2026-08-26: https://www.pamhokhomes.com**
+— Vercel account `silvianjambikangethe-8696's projects`, project
+`pamhok-homes`. Currently showing the maintenance page
+(`is_open: false` in `site_content`) — that's an admin-controlled toggle
+in `/admin/settings`, not a deployment problem. Also still fully runnable
+locally:
 
 ```bash
 npm install   # if starting fresh
@@ -216,33 +287,43 @@ another session's dev server on the same machine, connect directly via
 `preview_start` with `{url: "http://localhost:3000"}` instead of fighting
 for the port; don't run a second `next dev` on the same project folder).
 
-Real credentials live in `.env.local` (gitignored). **Version control is now
-set up** (see below) — this is no longer the only safety net.
+Real credentials live in `.env.local` (gitignored) for local dev.
+**Production secrets are separate** — set directly in Vercel's Production
+Environment Variables (dashboard only, no tool exposes values) and in
+Supabase's Edge Function Secrets (same — dashboard/CLI only). A value
+being correct in `.env.local` does NOT mean it's live in production;
+always verify separately (see the M-Pesa & PayPal section for how the
+PayPal live-credential check was done safely, with no transaction).
 
 ---
 
-## Git — now set up (was pending, now done)
+## Git & deployment — fully wired up (was pending, now done)
 
-Local repo initialized this session. 12 commits so far, working tree clean:
+GitHub remote: `silvianjambikangethe-lang/pamhok-homes`, public. **Vercel
+is Git-connected to it** as of 2026-08-26 — merging a PR into `master`
+auto-deploys to production. Verified for real with an empty test commit
+that produced a `READY` production deployment before any real changes
+were trusted to it.
 
-```
-f429dd5 Add review curation to the admin dashboard
-d142db7 Restrict room card hover/pointer cursor to tablet and up
-6b16f3d Add an emergency site shutdown switch to admin Settings
-90d87f4 Support pasting ready-made Google Maps directions links
-ea6841d Add point-to-point directions from Pamhok Homes to neighborhood places
-9b89741 Make the Neighborhood page admin-editable, with photos
-32868be Blur door code/WiFi behind the arrival pass popup
-03df202 Add a live public-page preview to room settings
-c0a996a Add Google Maps directions and an in-portal arrival flow
-2a0c5df Add date-first room search and hover/tap feedback on room cards
-f3648b9 Add per-room WiFi network name and room ordering
-d9b658f Initial commit
-```
+**Working pattern established this session, worth continuing**: push
+changes to a feature branch, open a PR (GitHub gives a direct
+`.../pull/new/<branch>` URL right after `git push` — no `gh` CLI needed,
+none is installed locally), let the owner review the diff on GitHub, they
+click Merge themselves. Nothing auto-deploys until they do. Used for both
+PR #1 (Jenga M-Pesa cutover + PayPal order-binding fix) and PR #2
+(middleware→proxy rename) — both merged and confirmed deployed clean
+(`state: READY`, zero runtime errors) via the Vercel MCP tools.
 
-**No remote yet.** The owner has not asked for a GitHub backup — offer,
-don't assume. Pushing anywhere is a "visible to others" action, confirm
-first per this project's own standing instructions.
+**A real gotcha hit this session, worth knowing about**: the Vercel MCP
+connector's `list_projects`/`list_teams`/`get_git_deployment_context`
+tools intermittently returned **zero projects** even when the project was
+demonstrably live and, later, genuinely Git-connected — across multiple
+reconnect attempts. It eventually started working correctly with no
+obvious trigger (possibly just needed the Git connection to fully
+propagate, or a stale token refreshed on its own). If a future session
+hits the same "zero projects" result, don't conclude the deployment is
+gone — cross-check by asking the owner to look at the dashboard directly,
+or by fetching the live URL, before treating it as fact.
 
 `.gitignore` correctly excludes `.env*` (confirmed — this also means
 `.env.example` itself has never actually been committed, since it's swept
@@ -347,18 +428,28 @@ This is the most important section to get right for whoever picks this up.
   `supabase/functions/mpesa-callback`) — **not** Next.js API routes, and
   **not** configured via `.env.local`. Credentials are **Supabase project
   secrets** (`JENGA_CONSUMER_KEY`, `JENGA_CONSUMER_SECRET`,
-  `JENGA_ACCOUNT_NUMBER`, `JENGA_ENV`, `JENGA_PRIVATE_KEY`), set via
-  `supabase secrets set` — same pattern the old Daraja `MPESA_*` secrets
-  used. The old Daraja secrets (`MPESA_CONSUMER_KEY` etc.) are now unused
-  and can be removed from Supabase whenever convenient — not urgent, just
-  dead weight.
+  `JENGA_ACCOUNT_NUMBER`, `JENGA_ENV`, `JENGA_PRIVATE_KEY`) — dashboard or
+  CLI only, same pattern the old Daraja `MPESA_*` secrets used.
+- **Code is deployed (2026-08-26), secrets are not.** Both functions are
+  `ACTIVE` on Supabase (`mpesa-initiate` v5, `mpesa-callback` v4) and the
+  code is merged to `master`/live on Vercel. But **none of the
+  `JENGA_*` secrets have been set** — I checked twice this session (fresh
+  ToolSearch each time) and confirmed neither the Supabase nor Vercel MCP
+  connectors expose any tool that lists, sets, or deletes secret/env
+  values, on any account state I had access to. This is dashboard-only,
+  every time, for any future session too — don't keep re-checking for a
+  tool that isn't coming. Concretely, in the Supabase Dashboard → Edge
+  Functions → Secrets, the owner still needs to: delete the 5 old
+  `MPESA_*` entries (dead, unused now) and add `JENGA_CONSUMER_KEY`,
+  `JENGA_CONSUMER_SECRET`, `JENGA_ACCOUNT_NUMBER=0704393189`,
+  `JENGA_ENV=sandbox`, `JENGA_PRIVATE_KEY`. Until then M-Pesa safely
+  reports "not configured" rather than failing weirdly — that's the
+  code's deliberate guard, not a bug.
 - **⚠️ Unconfirmed against a live sandbox call, unlike the Daraja
   integration it replaces** (which was verified against Safaricom's real
-  sandbox before being trusted). The owner supplied
-  `JENGA_CONSUMER_KEY`/`JENGA_CONSUMER_SECRET`/`JENGA_ENV`/
-  `JENGA_ACCOUNT_NUMBER` in chat, but Jenga's own documentation is
-  genuinely inconsistent across pages for this API generation, and two
-  things remain unverified — see the full caveats at the top of
+  sandbox before being trusted). Jenga's own documentation is genuinely
+  inconsistent across pages for this API generation, and two things
+  remain unverified — see the full caveats at the top of
   `supabase/functions/mpesa-initiate/index.ts`:
   - **An RSA key pair is required and doesn't exist yet.** Jenga signs
     STK-push requests with a private key whose matching public key must be
@@ -371,34 +462,43 @@ This is the most important section to get right for whoever picks this up.
     `JENGA_CONSUMER_KEY` → the `Api-Key` header) — Jenga's docs describe
     three separate values for this step and it's unclear the four values
     given map cleanly. Test in sandbox and adjust if the auth call fails.
-  - I do not currently have Supabase deploy/secrets tool access in this
-    session (the MCP connection dropped) and there's no Supabase CLI
-    installed locally, so **none of this has actually been deployed** —
-    it's written and ready, not live. Deploy commands are in the file.
 - **Going to production M-Pesa** will need Jenga's own go-live process
   (contact Equity/Finserve — this hasn't been researched yet, unlike the
-  Daraja go-live process this replaces) plus a real public HTTPS callback
-  URL once the site is deployed (see the Vercel/domain item in Pending
-  Issues) — right now everything points at `localhost`.
-- **PayPal is still not set up** — `.env.local` confirms `PAYPAL_CLIENT_ID`
-  and `PAYPAL_CLIENT_SECRET` are both empty (`PAYPAL_ENV=sandbox` is set,
-  but that alone doesn't enable anything). No credentials handed over yet.
-  Going live once they are: same-day, self-serve — upgrade the PayPal
-  account to Business if it isn't already, flip Sandbox→Live on
-  developer.paypal.com/dashboard, create/open a Live app, copy the Client
-  ID + Secret. **Worth checking first**: some reports as of mid-2026
-  suggest PayPal doesn't currently offer business accounts in Kenya (only
-  personal) — confirm directly on PayPal's own site before relying on the
-  Business-account upgrade step above.
+  Daraja go-live process this replaces).
+- **PayPal is live and confirmed working, as of 2026-08-26.** Owner
+  supplied real `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` directly in
+  chat; added to `.env.local` for local dev. Whether they'd also made it
+  onto Vercel's Production env vars was unclear — verified safely,
+  **without running any transaction or calling PayPal's API**: POSTing a
+  bogus booking token to `/api/payments/paypal/create-order` on the live
+  site returned `404 "Booking not found"` rather than `501 "not
+  configured"`. The route checks `isPaypalConfigured()` before it ever
+  looks up a booking or touches PayPal, so a 404 there is only possible
+  if real credentials are active in production. **Still genuinely
+  untested: no real transaction has gone through end-to-end** — the owner
+  explicitly asked that no test spend real money, so this remains
+  unverified in that specific sense until a real booking goes through it.
+  Also worth checking: some reports as of mid-2026 suggest PayPal doesn't
+  currently offer business accounts in Kenya (only personal) — confirm
+  directly on PayPal's own site if that matters for this account.
+- **A real payment-bypass bug was found and fixed before any of this went
+  live**: `capture/route.ts` used to trust whatever PayPal order ID was
+  in the URL without checking it belonged to the booking being marked
+  paid — a guest could've paid for a cheap booking and reused that order
+  ID to mark a different, more expensive booking Paid. `create-order` now
+  binds the order to its booking (`payment_reference`); `capture` verifies
+  the match before trusting a capture. Shipped in the same PR as the
+  Jenga cutover (PR #1, merged 2026-08-26).
 - **⚠️ Security note for the owner, not a code issue**: a prior session's
   unredacted terminal command briefly printed several real secret values
   (Supabase service role key, PayPal sandbox client ID/secret) into that
   session's tool-output transcript while inspecting `.env.local`. Nothing
   left the local machine. If that's a concern, rotating those specific
-  keys is a reasonable precaution. Separately, this session's chat now
-  contains the Jenga sandbox Consumer Key/Secret and the Equity account
-  number the owner pasted directly — sandbox-scoped, but worth being aware
-  it's sitting in this conversation's history.
+  keys is a reasonable precaution. Separately, this session's chat
+  contains the Jenga sandbox Consumer Key/Secret, the Equity account
+  number, and the live PayPal Client ID/Secret the owner pasted directly
+  — the PayPal ones are real, non-sandbox credentials sitting in this
+  conversation's history, worth being aware of.
 
 ---
 
@@ -611,12 +711,16 @@ worth a real run-through next time someone's in the admin area.
    job to actually trigger the time-based ones daily. Swapping to
    `bookings@pamhok.com` later, once the owner adds pamhok.com's DNS
    records to Resend, is a one-line `EMAIL_FROM_ADDRESS` env var change.
-3. **Get M-Pesa (via Jenga) working in sandbox, then go live** — the
-   Daraja go-live process this used to need no longer applies. Currently
-   blocked on generating an RSA key pair and confirming the credential
-   mapping — see the M-Pesa section above for exactly what's missing.
-4. **Go live with PayPal** — same-day, self-serve, whenever the owner is
-   ready. See above for the exact steps.
+3. **Get M-Pesa (via Jenga) working in sandbox, then go live** — code is
+   deployed (2026-08-26), but blocked on two owner-only steps: generating
+   an RSA key pair, and setting the `JENGA_*` Supabase secrets (no tool
+   available to any Claude session can do either). See the M-Pesa section
+   above for exactly what's missing.
+4. ~~Go live with PayPal~~ — **done, 2026-08-26.** Live credentials
+   confirmed active in production (see the M-Pesa & PayPal section for how
+   this was verified with zero transactions). Still genuinely untested
+   end-to-end with a real payment, by the owner's own choice not to spend
+   real money testing — worth doing once comfortable.
 5. **Feature real guest reviews as they come in** — the mechanism is built
    (`/admin/reviews`) but there are zero real reviews yet, so the homepage
    is still showing fake sample testimonials by design.
@@ -644,9 +748,10 @@ worth a real run-through next time someone's in the admin area.
    the one real, non-sandbox key of the two).
 9. ~~Set up a GitHub remote~~ — **done.** Repo is
    `silvianjambikangethe-lang/pamhok-homes` on GitHub, pushed and current.
-10. **Resolve the Vercel/domain contradiction** — see pending-issues
-    item 1. Needs the owner to confirm whether www.pamhokhomes.com is
-    actually live and under which account.
+10. ~~Resolve the Vercel/domain contradiction~~ — **resolved, 2026-08-26.**
+    Confirmed genuinely live and now Git-connected. See pending-issues
+    item 1 and the "Git & deployment" section for the full story,
+    including a heads-up about flaky Vercel MCP tool results along the way.
 11. **Exercise the new lockout → email-recovery cycle for real** — fail
     login 3 times, confirm the reset email actually lands in
     pamhokhomes@gmail.com, click through, confirm the new password
