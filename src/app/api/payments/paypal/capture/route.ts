@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getPaypalAccessToken, paypalBaseUrl } from "@/lib/paypal";
+import { sendPaymentSucceededEmail } from "@/lib/booking-emails";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
     const supabase = createAdminSupabaseClient();
     const { data: booking } = await supabase
       .from("bookings")
-      .select("payment_status, payment_reference")
+      .select("id, payment_status, payment_reference, paid_at")
       .eq("access_token", bookingToken)
       .maybeSingle();
 
@@ -65,6 +66,8 @@ export async function GET(request: Request) {
           paid_at: new Date().toISOString(),
         })
         .eq("access_token", bookingToken);
+
+      await sendPaymentSucceededEmail(supabase, booking.id, booking.paid_at !== null);
 
       return NextResponse.redirect(`${siteUrl}/portal/${bookingToken}?paypal=success`);
     }

@@ -24,6 +24,7 @@
 //     that signature here before this goes anywhere near production.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendPaymentSucceededEmail } from "../_shared/email.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -41,7 +42,7 @@ Deno.serve(async (req) => {
 
     const { data: booking } = await supabase
       .from("bookings")
-      .select("id")
+      .select("id, paid_at")
       .eq("payment_reference", reference)
       .maybeSingle();
 
@@ -51,6 +52,8 @@ Deno.serve(async (req) => {
     }
 
     if (payload.status === true && payload.code === 0) {
+      const wasAlreadyPaid = booking.paid_at != null;
+
       await supabase
         .from("bookings")
         .update({
@@ -59,6 +62,8 @@ Deno.serve(async (req) => {
           paid_at: new Date().toISOString(),
         })
         .eq("id", booking.id);
+
+      await sendPaymentSucceededEmail(supabase, booking.id, wasAlreadyPaid);
     } else {
       await supabase
         .from("bookings")

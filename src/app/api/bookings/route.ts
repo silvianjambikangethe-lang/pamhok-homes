@@ -4,7 +4,6 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/data";
 import { generateBookingReference, generatePassReference } from "@/lib/booking-reference";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { sendEmail, bookingConfirmationEmail } from "@/lib/email";
 
 interface BookingRequestBody {
   roomId: string;
@@ -149,22 +148,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not create booking." }, { status: 500 });
   }
 
-  // Best-effort — a failed email should never fail an otherwise-successful
-  // booking. The guest already sees their confirmation on the next page.
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const { subject, html } = bookingConfirmationEmail({
-    guestName: body.guest.fullName.trim(),
-    roomName: room.name,
-    checkIn: body.checkIn,
-    checkOut: body.checkOut,
-    bookingReference: booking.booking_reference,
-    portalUrl: `${siteUrl}/portal/${booking.access_token}`,
-  });
-  // Awaited (not fire-and-forget) — a serverless function can be frozen
-  // the instant it returns a response, which would silently drop an
-  // un-awaited send. sendEmail() already swallows its own errors.
-  await sendEmail({ to: body.guest.email.trim(), subject, html });
-
+  // No confirmation email here on purpose — "Booking Confirmation" is sent
+  // when payment_status actually becomes 'Paid' (see
+  // src/lib/booking-emails.ts), not at request-submission time, since a
+  // booking created here is still just a hold until it's paid for.
   return NextResponse.json({
     accessToken: booking.access_token,
     bookingReference: booking.booking_reference,
