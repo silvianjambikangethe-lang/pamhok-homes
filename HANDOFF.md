@@ -189,24 +189,26 @@ explanation.
    in local `.env.local`; **still needs adding to Vercel's Production
    environment variables** (dashboard only, no tool can do this) before
    it's live for real guests — everything else about this feature is done.
-3. **M-Pesa (Jenga) is deployed but not yet functional — two things only
+3. **M-Pesa (Jenga) is deployed but not yet functional — one thing only
    you can finish.** The Jenga-based `mpesa-initiate`/`mpesa-callback`
    code is deployed to Supabase (confirmed `ACTIVE`) and merged to
-   `master` on Vercel, but M-Pesa will keep reporting "not configured"
-   until both of these are done — no tool available to me can do either:
-   (a) **generate an RSA key pair** and upload the public half to your
-   Jenga/Equity developer dashboard (commands are in
-   `supabase/functions/mpesa-initiate/index.ts`'s comments), and (b) **in
-   the Supabase Dashboard → Edge Functions → Secrets**, delete the 5 old
-   `MPESA_*` entries (dead now, unused) and add `JENGA_CONSUMER_KEY`,
-   `JENGA_CONSUMER_SECRET`, `JENGA_ACCOUNT_NUMBER=0704393189`,
-   `JENGA_ENV=sandbox`, and `JENGA_PRIVATE_KEY` (once you have it from
-   (a)). I checked repeatedly for a Supabase or Vercel MCP tool that
+   `master` on Vercel. ~~Generate an RSA key pair~~ — **done 2026-08-26**,
+   at the owner's request (Claude generated it locally with the exact
+   `openssl` commands from the file comments — see the M-Pesa section
+   above for where the key files live and why they won't survive past
+   this session). The merchant-code-vs-account-number mapping is also now
+   **confirmed correct**, not a guess (see the same section). What's left
+   is purely owner-side: **in the Supabase Dashboard → Edge Functions →
+   Secrets**, set all six — the old `MPESA_*` entries are already gone —
+   `JENGA_CONSUMER_KEY`, `JENGA_CONSUMER_SECRET`,
+   `JENGA_MERCHANT_CODE=4390718704`, `JENGA_ACCOUNT_NUMBER=0704393189`,
+   `JENGA_ENV=sandbox`, and `JENGA_PRIVATE_KEY` (printed in chat this
+   session). I checked repeatedly for a Supabase or Vercel MCP tool that
    manages secret values — none exists on either connector as of
-   2026-08-26; this is dashboard-only. Once both are done, this still
-   needs a real sandbox STK push test before trusting it with a booking
-   — see the M-Pesa section above for the specific unconfirmed
-   assumptions in the code. After that, going to production needs
+   2026-08-26; this is dashboard-only. Once set, this still needs a real
+   sandbox STK push test before trusting it with a booking — see the
+   M-Pesa section above for the specific unconfirmed assumptions still
+   left in the code. After that, going to production needs
    Jenga's own go-live process (contact Equity/Finserve — not yet
    researched).
 4. ~~PayPal go-live~~ — **credentials are live, confirmed working.**
@@ -438,40 +440,63 @@ This is the most important section to get right for whoever picks this up.
   `supabase/functions/mpesa-callback`) — **not** Next.js API routes, and
   **not** configured via `.env.local`. Credentials are **Supabase project
   secrets** (`JENGA_CONSUMER_KEY`, `JENGA_CONSUMER_SECRET`,
-  `JENGA_ACCOUNT_NUMBER`, `JENGA_ENV`, `JENGA_PRIVATE_KEY`) — dashboard or
-  CLI only, same pattern the old Daraja `MPESA_*` secrets used.
-- **Code is deployed (2026-08-26), secrets are not.** Both functions are
-  `ACTIVE` on Supabase (`mpesa-initiate` v5, `mpesa-callback` v4) and the
-  code is merged to `master`/live on Vercel. But **none of the
-  `JENGA_*` secrets have been set** — I checked twice this session (fresh
-  ToolSearch each time) and confirmed neither the Supabase nor Vercel MCP
-  connectors expose any tool that lists, sets, or deletes secret/env
-  values, on any account state I had access to. This is dashboard-only,
-  every time, for any future session too — don't keep re-checking for a
-  tool that isn't coming. Concretely, in the Supabase Dashboard → Edge
-  Functions → Secrets, the owner still needs to: delete the 5 old
-  `MPESA_*` entries (dead, unused now) and add `JENGA_CONSUMER_KEY`,
-  `JENGA_CONSUMER_SECRET`, `JENGA_ACCOUNT_NUMBER=0704393189`,
-  `JENGA_ENV=sandbox`, `JENGA_PRIVATE_KEY`. Until then M-Pesa safely
-  reports "not configured" rather than failing weirdly — that's the
-  code's deliberate guard, not a bug.
-- **⚠️ Unconfirmed against a live sandbox call, unlike the Daraja
+  `JENGA_MERCHANT_CODE`, `JENGA_ACCOUNT_NUMBER`, `JENGA_ENV`,
+  `JENGA_PRIVATE_KEY`) — dashboard or CLI only, same pattern the old
+  Daraja `MPESA_*` secrets used.
+- **Code is deployed (2026-08-26), secrets are not — and the old ones were
+  removed from Supabase entirely.** Both functions are `ACTIVE` on
+  Supabase (`mpesa-initiate` v5, `mpesa-callback` v4) and the code is
+  merged to `master`/live on Vercel. **None of the `JENGA_*` secrets are
+  currently set** — I checked twice this session (fresh ToolSearch each
+  time) and confirmed neither the Supabase nor Vercel MCP connectors
+  expose any tool that lists, sets, or deletes secret/env values, on any
+  account state I had access to. This is dashboard-only, every time, for
+  any future session too — don't keep re-checking for a tool that isn't
+  coming. In the Supabase Dashboard → Edge Functions → Secrets, the owner
+  needs to set all six:
+  ```
+  JENGA_CONSUMER_KEY=<Jenga API Key>
+  JENGA_CONSUMER_SECRET=<Jenga Consumer Secret>
+  JENGA_MERCHANT_CODE=4390718704
+  JENGA_ACCOUNT_NUMBER=0704393189
+  JENGA_ENV=sandbox
+  JENGA_PRIVATE_KEY=<see below>
+  ```
+  Until then M-Pesa safely reports "not configured" rather than failing
+  weirdly — that's the code's deliberate guard, not a bug.
+- **RSA key pair generated 2026-08-26**, at the owner's request, using the
+  exact `openssl` commands documented in the file. Public key was printed
+  in chat for the owner to upload to their Jenga dashboard; private key
+  (PKCS8 form) was also printed in chat, for the owner to paste as
+  `JENGA_PRIVATE_KEY`. **The key files only exist in this session's
+  temporary scratchpad directory — not committed anywhere, not saved
+  durably.** If a future session needs them and they're gone, don't try
+  to recover them — generate a fresh pair (same `openssl` commands) and
+  have the owner re-upload the new public key; a mismatched key pair
+  fails signing, it can't partially work.
+- **The merchant-code/account-number confusion flagged earlier turned out
+  to be real, and is now fixed (2026-08-26).** The original code guessed
+  `JENGA_ACCOUNT_NUMBER` for both the OAuth token call's `merchantCode`
+  *and* the STK push's `merchant.accountNumber` — the owner checked their
+  actual Jenga dashboard and confirmed these are genuinely different
+  values (Merchant Code `4390718704` vs. Equity account number
+  `0704393189`). Fixed: `merchantCode` now has its own
+  `JENGA_MERCHANT_CODE` secret, used only for authentication;
+  `JENGA_ACCOUNT_NUMBER` is used only for the STK push payload and
+  Signature string (the settlement account). This was the one part of the
+  original credential mapping that's now **confirmed correct**, not a
+  guess — the remaining unconfirmed pieces are below.
+- **⚠️ Still unconfirmed against a live sandbox call, unlike the Daraja
   integration it replaces** (which was verified against Safaricom's real
-  sandbox before being trusted). Jenga's own documentation is genuinely
-  inconsistent across pages for this API generation, and two things
-  remain unverified — see the full caveats at the top of
+  sandbox before being trusted). See the full caveats at the top of
   `supabase/functions/mpesa-initiate/index.ts`:
-  - **An RSA key pair is required and doesn't exist yet.** Jenga signs
-    STK-push requests with a private key whose matching public key must be
-    uploaded to the Jenga/Equity developer dashboard — this is separate
-    from the Consumer Key/Secret and wasn't supplied. Nothing will work
-    until one is generated (commands are in the file) and set as the
-    `JENGA_PRIVATE_KEY` secret.
-  - **The credential-to-field mapping for the OAuth token call is a
-    best-effort guess** (`JENGA_ACCOUNT_NUMBER` → `merchantCode`,
-    `JENGA_CONSUMER_KEY` → the `Api-Key` header) — Jenga's docs describe
-    three separate values for this step and it's unclear the four values
-    given map cleanly. Test in sandbox and adjust if the auth call fails.
+  - The Signature header's exact field-concatenation order and whether it
+    applies to this endpoint at all is still per Jenga's docs alone, not
+    a real test.
+  - Which field in the STK response (`reference` vs `transactionId`)
+    matches the callback's `transactionReference` is still unconfirmed.
+  Once all six secrets above are set, this needs one real sandbox STK
+  push before it's trusted with an actual booking.
 - **Going to production M-Pesa** will need Jenga's own go-live process
   (contact Equity/Finserve — this hasn't been researched yet, unlike the
   Daraja go-live process this replaces).
