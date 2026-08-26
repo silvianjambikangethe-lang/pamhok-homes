@@ -47,16 +47,22 @@ Three methods, per the final confirmed list: M-Pesa, PayPal, and Pesapal (card).
   in KES (it's a Kenyan gateway); PayPal charges in whatever currency the
   guest had selected in the currency switcher, falling back to USD since
   PayPal can't process KES at all.
-- **M-Pesa (Daraja)** runs as two **Supabase Edge Functions**
+- **M-Pesa (via Equity's Jenga API)** runs as two **Supabase Edge Functions**
   (`supabase/functions/mpesa-initiate`, `supabase/functions/mpesa-callback`),
-  because Safaricom needs a stable public callback URL independent of
-  wherever this Next.js app ends up hosted. Deploy them with the
-  [Supabase CLI](https://supabase.com/docs/guides/functions):
+  because the STK push callback needs a stable public URL independent of
+  wherever this Next.js app ends up hosted. Settles directly into an Equity
+  account (account-based settlement) — no separate payout step. Replaces an
+  earlier Safaricom Daraja integration, removed at the owner's request.
+  Deploy with the [Supabase CLI](https://supabase.com/docs/guides/functions):
   ```bash
   supabase functions deploy mpesa-initiate
   supabase functions deploy mpesa-callback --no-verify-jwt
-  supabase secrets set MPESA_CONSUMER_KEY=... MPESA_CONSUMER_SECRET=... MPESA_SHORTCODE=... MPESA_PASSKEY=... MPESA_ENV=sandbox
+  supabase secrets set JENGA_CONSUMER_KEY=... JENGA_CONSUMER_SECRET=... JENGA_ACCOUNT_NUMBER=... JENGA_ENV=sandbox JENGA_PRIVATE_KEY="$(cat private_pkcs8.pem)"
   ```
+  **Unconfirmed against a live sandbox call** — see the caveats at the top of
+  `supabase/functions/mpesa-initiate/index.ts` before trusting this with a
+  real booking. Needs an RSA key pair (private key as the `JENGA_PRIVATE_KEY`
+  secret, public key uploaded to the Jenga dashboard) that doesn't exist yet.
   (`--no-verify-jwt` on the callback function only — Safaricom can't send a
   Supabase auth header.) Get sandbox credentials at developer.safaricom.co.ke.
 

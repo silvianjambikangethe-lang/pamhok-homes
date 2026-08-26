@@ -13,6 +13,30 @@ export async function GET(request: Request) {
   }
 
   try {
+    const supabase = createAdminSupabaseClient();
+    const { data: booking } = await supabase
+      .from("bookings")
+      .select("payment_status, payment_reference")
+      .eq("access_token", bookingToken)
+      .maybeSingle();
+
+    if (!booking) {
+      return NextResponse.redirect(`${siteUrl}/`);
+    }
+
+    // Already captured (e.g. the guest hit back/refresh on this redirect) —
+    // don't attempt a second capture against PayPal, just show success.
+    if (booking.payment_status === "Paid") {
+      return NextResponse.redirect(`${siteUrl}/portal/${bookingToken}?paypal=success`);
+    }
+
+    // This order must be the one create-order created for THIS booking —
+    // otherwise a guest could pay for a cheap booking and reuse that order
+    // id here to mark a completely different, more expensive booking Paid.
+    if (booking.payment_reference !== orderId) {
+      return NextResponse.redirect(`${siteUrl}/portal/${bookingToken}?paypal=failed`);
+    }
+
     const accessToken = await getPaypalAccessToken();
 
     const captureRes = await fetch(
@@ -32,7 +56,6 @@ export async function GET(request: Request) {
       const captureId =
         capture.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? orderId;
 
-      const supabase = createAdminSupabaseClient();
       await supabase
         .from("bookings")
         .update({

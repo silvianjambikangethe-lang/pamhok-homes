@@ -82,6 +82,22 @@ working local state, plus a new admin-login security feature. In order:
    also fully retires pending items that used to reference Smile ID
    specifically (production credentials, untested success path, the
    exposed sandbox API key) — see the updated pending-issues list below.
+8. **M-Pesa swapped from Safaricom Daraja to Equity's Jenga API**, at the
+   owner's explicit request — they're settling into a real Equity account
+   (account-based settlement) and pasted sandbox `JENGA_CONSUMER_KEY`/
+   `JENGA_CONSUMER_SECRET`/`JENGA_ENV`/`JENGA_ACCOUNT_NUMBER` directly in
+   chat. `supabase/functions/mpesa-initiate` and `mpesa-callback` were
+   rewritten in place (same function names, so `PaymentSection.tsx` didn't
+   need to change) plus a new `supabase/functions/_shared/jenga.ts` RSA
+   request-signing helper. **This is genuinely unconfirmed, not just
+   pending deployment** — full detail in the "M-Pesa & PayPal" section
+   below, but in short: Jenga's STK push requires an RSA key pair (private
+   key signs requests, public key gets uploaded to the Jenga dashboard)
+   that doesn't exist yet, and Jenga's own docs were inconsistent enough
+   across pages that the OAuth credential mapping is a documented best
+   guess, not a confirmed fact. I also don't currently have Supabase
+   deploy/secrets tool access this session (MCP disconnected, no local
+   CLI), so none of this is live yet regardless.
 
 ---
 
@@ -117,11 +133,13 @@ explanation.
    (checkout/cleaning reminders on the My Booking page, manual booking,
    room status, stale-checkout flagging, etc.) is live. See "Still to
    do" item 2.
-3. **M-Pesa Go-Live submission.** Confirm you have M-Pesa Portal
-   **Admin/Business Manager** access (separate from the Daraja
-   developer account) — email m-pesabusiness@safaricom.co.ke if not.
-   Deployment (the other blocker) is done. See the M-Pesa section above
-   for the full process.
+3. **M-Pesa is unconfirmed and needs real sandbox testing before
+   go-live.** M-Pesa now runs via Equity's Jenga API (swapped in for the
+   old Daraja integration at your request) — but it's untested against a
+   live sandbox call and needs an RSA key pair you haven't generated yet.
+   See the M-Pesa section above for exactly what's missing. Once that's
+   confirmed working in sandbox, going to production will need Jenga's
+   own go-live process (contact Equity/Finserve — not yet researched).
 4. **PayPal go-live.** Same-day, self-serve, whenever you're ready —
    flip sandbox→live on developer.paypal.com/dashboard. No credentials
    handed over yet.
@@ -166,8 +184,10 @@ explanation.
 
 ### Untested, not code issues — just flagging
 
-13. **M-Pesa's real "Paid" outcome** — STK push plumbing is proven
-    correct against sandbox, but no real phone has completed one yet.
+13. **M-Pesa's real "Paid" outcome** — now via Jenga, not Daraja, and
+    unlike the Daraja plumbing it replaced, this hasn't been proven
+    correct against a sandbox call at all yet (missing RSA key, unverified
+    credential mapping — see the M-Pesa section above).
 14. **An unexplained RLS anomaly** from early in the project (a
     textbook-correct insert policy still rejected `anon` inserts on a
     fresh table) — worked around via the service-role client
@@ -320,49 +340,65 @@ local-only reference file, not something `git status` will ever show).
 
 This is the most important section to get right for whoever picks this up.
 
-- **M-Pesa STK Push is fully built**, but as **two Supabase Edge
-  Functions** (`supabase/functions/mpesa-initiate`,
+- **M-Pesa now runs on Equity's Jenga API, not Safaricom Daraja** — swapped
+  out entirely at the owner's request (settling into an Equity account
+  directly, account-based settlement, no separate payout step). Still two
+  **Supabase Edge Functions** (`supabase/functions/mpesa-initiate`,
   `supabase/functions/mpesa-callback`) — **not** Next.js API routes, and
   **not** configured via `.env.local`. Credentials are **Supabase project
-  secrets**, set via `supabase secrets set` (or the Supabase Dashboard →
-  Edge Functions → Secrets). This was discovered this session: `.env.local`
-  used to have a full set of `MPESA_*` variables that looked active but
-  were 100% dead/unused — nothing in the running app ever read them. That
-  dead block has been removed from `.env.local`, and `.env.example` now
-  has a comment pointing at the correct location instead of misleading
-  blank placeholders.
-- **New sandbox Consumer Key + Consumer Secret were set this session**
-  (Supabase Edge Function secrets, confirmed via updated timestamp).
-  `MPESA_SHORTCODE` and `MPESA_PASSKEY` were **left untouched** — only
-  Consumer Key/Secret were given as new values. Worth double-checking
-  those two against whatever the new sandbox app's own dashboard shows,
-  though the current values (shortcode `174379` + its paired passkey) are
-  Safaricom's standard shared public sandbox test values, so they're
-  likely still fine regardless of which app/Consumer Key is used.
-- **Going to production M-Pesa requires**: (1) a real Paybill number, (2)
-  M-Pesa Portal access with an Admin/Business Manager role (separate from
-  the Daraja developer account — email m-pesabusiness@safaricom.co.ke if
-  the owner doesn't have this), (3) submitting a "Go-Live" request inside
-  the logged-in Daraja portal for the **M-Pesa Express (Prompt) / STK
-  Push** API specifically, tied to the Paybill. This is a real Safaricom
-  business review process — expect days, not minutes. **This also can't
-  fully complete until the site is deployed** — the callback URL Safaricom
-  posts results to needs to be a real public HTTPS URL, and right now
-  everything points at `localhost`.
-- **PayPal is still on sandbox** (`PAYPAL_ENV=sandbox` in `.env.local`).
-  Going live is same-day and fully self-serve: upgrade the PayPal account
-  to Business if it isn't already, flip the toggle from Sandbox to Live on
+  secrets** (`JENGA_CONSUMER_KEY`, `JENGA_CONSUMER_SECRET`,
+  `JENGA_ACCOUNT_NUMBER`, `JENGA_ENV`, `JENGA_PRIVATE_KEY`), set via
+  `supabase secrets set` — same pattern the old Daraja `MPESA_*` secrets
+  used. The old Daraja secrets (`MPESA_CONSUMER_KEY` etc.) are now unused
+  and can be removed from Supabase whenever convenient — not urgent, just
+  dead weight.
+- **⚠️ Unconfirmed against a live sandbox call, unlike the Daraja
+  integration it replaces** (which was verified against Safaricom's real
+  sandbox before being trusted). The owner supplied
+  `JENGA_CONSUMER_KEY`/`JENGA_CONSUMER_SECRET`/`JENGA_ENV`/
+  `JENGA_ACCOUNT_NUMBER` in chat, but Jenga's own documentation is
+  genuinely inconsistent across pages for this API generation, and two
+  things remain unverified — see the full caveats at the top of
+  `supabase/functions/mpesa-initiate/index.ts`:
+  - **An RSA key pair is required and doesn't exist yet.** Jenga signs
+    STK-push requests with a private key whose matching public key must be
+    uploaded to the Jenga/Equity developer dashboard — this is separate
+    from the Consumer Key/Secret and wasn't supplied. Nothing will work
+    until one is generated (commands are in the file) and set as the
+    `JENGA_PRIVATE_KEY` secret.
+  - **The credential-to-field mapping for the OAuth token call is a
+    best-effort guess** (`JENGA_ACCOUNT_NUMBER` → `merchantCode`,
+    `JENGA_CONSUMER_KEY` → the `Api-Key` header) — Jenga's docs describe
+    three separate values for this step and it's unclear the four values
+    given map cleanly. Test in sandbox and adjust if the auth call fails.
+  - I do not currently have Supabase deploy/secrets tool access in this
+    session (the MCP connection dropped) and there's no Supabase CLI
+    installed locally, so **none of this has actually been deployed** —
+    it's written and ready, not live. Deploy commands are in the file.
+- **Going to production M-Pesa** will need Jenga's own go-live process
+  (contact Equity/Finserve — this hasn't been researched yet, unlike the
+  Daraja go-live process this replaces) plus a real public HTTPS callback
+  URL once the site is deployed (see the Vercel/domain item in Pending
+  Issues) — right now everything points at `localhost`.
+- **PayPal is still not set up** — `.env.local` confirms `PAYPAL_CLIENT_ID`
+  and `PAYPAL_CLIENT_SECRET` are both empty (`PAYPAL_ENV=sandbox` is set,
+  but that alone doesn't enable anything). No credentials handed over yet.
+  Going live once they are: same-day, self-serve — upgrade the PayPal
+  account to Business if it isn't already, flip Sandbox→Live on
   developer.paypal.com/dashboard, create/open a Live app, copy the Client
-  ID + Secret. No credentials handed over for this yet.
-- **⚠️ Security note for the owner, not a code issue**: earlier this
-  session, an unredacted terminal command briefly printed several *other*
-  real secret values (Supabase service role key, PayPal sandbox client
-  ID/secret, Smile ID API key) into this session's tool-output transcript
-  while inspecting `.env.local`. Nothing left the local machine — it was a
-  local command, not sent anywhere — but if that's a concern, rotating
-  those specific keys is a reasonable precaution. The new M-Pesa
-  credentials were **not** exposed this way (set via a temp env file with
-  `--env-file`, never printed).
+  ID + Secret. **Worth checking first**: some reports as of mid-2026
+  suggest PayPal doesn't currently offer business accounts in Kenya (only
+  personal) — confirm directly on PayPal's own site before relying on the
+  Business-account upgrade step above.
+- **⚠️ Security note for the owner, not a code issue**: a prior session's
+  unredacted terminal command briefly printed several real secret values
+  (Supabase service role key, PayPal sandbox client ID/secret) into that
+  session's tool-output transcript while inspecting `.env.local`. Nothing
+  left the local machine. If that's a concern, rotating those specific
+  keys is a reasonable precaution. Separately, this session's chat now
+  contains the Jenga sandbox Consumer Key/Secret and the Equity account
+  number the owner pasted directly — sandbox-scoped, but worth being aware
+  it's sitting in this conversation's history.
 
 ---
 
@@ -523,10 +559,11 @@ worth a real run-through next time someone's in the admin area.
    fresh table with a textbook-correct insert policy still rejected `anon`
    inserts) — worked around via the service-role client, root cause never
    found. Worth a Supabase support ticket, independent of this project.
-2. **M-Pesa's real "Paid" outcome still needs a genuine test** — the STK
-   push plumbing is proven correct against Safaricom's sandbox (a real
-   `CheckoutRequestID` gets issued), but no real phone has ever completed
-   one, so the actual success path is unconfirmed.
+2. **M-Pesa's real "Paid" outcome still needs a genuine test** — now via
+   Jenga, not Daraja. Unlike the Daraja plumbing this replaced (which was
+   proven correct against Safaricom's sandbox), this hasn't even had a
+   successful sandbox call yet — it's missing an RSA key pair and has an
+   unverified credential mapping. See the M-Pesa section above.
 
 ## Still to do (priority order)
 
@@ -553,7 +590,7 @@ worth a real run-through next time someone's in the admin area.
    `.env.local`). Verified live: homepage renders, `/rooms` pulls real
    Supabase data (no "sample rooms" fallback banner), no console errors,
    security headers all present on the real domain (see item 11 below).
-   `MPESA_CALLBACK_URL` is still unset, but that's fine as-is — the
+   `JENGA_CALLBACK_URL` is still unset, but that's fine as-is — the
    Supabase Edge Function defaults it to its own function URL
    (`*.supabase.co/functions/v1/mpesa-callback`) when unset, already a
    real public HTTPS endpoint regardless of frontend domain. Never
@@ -574,9 +611,10 @@ worth a real run-through next time someone's in the admin area.
    job to actually trigger the time-based ones daily. Swapping to
    `bookings@pamhok.com` later, once the owner adds pamhok.com's DNS
    records to Resend, is a one-line `EMAIL_FROM_ADDRESS` env var change.
-3. **Submit the M-Pesa Go-Live request** — deployment's done; still needs
-   M-Pesa Portal Admin access confirmed. See the M-Pesa section above for
-   the exact process.
+3. **Get M-Pesa (via Jenga) working in sandbox, then go live** — the
+   Daraja go-live process this used to need no longer applies. Currently
+   blocked on generating an RSA key pair and confirming the credential
+   mapping — see the M-Pesa section above for exactly what's missing.
 4. **Go live with PayPal** — same-day, self-serve, whenever the owner is
    ready. See above for the exact steps.
 5. **Feature real guest reviews as they come in** — the mechanism is built
