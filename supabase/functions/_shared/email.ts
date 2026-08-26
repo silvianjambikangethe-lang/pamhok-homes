@@ -51,7 +51,11 @@ export async function sendPaymentSucceededEmail(
   const guest = booking?.guest as { full_name: string; email: string | null } | null;
   if (!booking || !guest?.email) return;
 
-  const siteUrl = Deno.env.get("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000";
+  // NEXT_PUBLIC_SITE_URL is a Vercel/Next.js env var, not a Supabase Edge
+  // Function secret — nothing sets it here, so default straight to the
+  // real domain rather than localhost (mirrors JENGA_CALLBACK_URL's
+  // fallback-to-a-real-endpoint pattern in mpesa-initiate).
+  const siteUrl = Deno.env.get("NEXT_PUBLIC_SITE_URL") ?? "https://www.pamhokhomes.com";
   const portalUrl = `${siteUrl}/portal/${booking.access_token}`;
   const roomName = (booking.room as { name?: string } | null)?.name ?? "your room";
   const amountText = new Intl.NumberFormat("en-KE", {
