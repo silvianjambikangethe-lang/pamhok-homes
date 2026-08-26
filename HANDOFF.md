@@ -884,11 +884,19 @@ worth a real run-through next time someone's in the admin area.
     Confirmed genuinely live and now Git-connected. See pending-issues
     item 1 and the "Git & deployment" section for the full story,
     including a heads-up about flaky Vercel MCP tool results along the way.
-11. **Exercise the new lockout → email-recovery cycle for real** — fail
-    login 3 times, confirm the reset email actually lands in
-    pamhokhomes@gmail.com, click through, confirm the new password
-    works. Only the "already logged in with a working password" half was
-    verified on 2026-08-12, not the failure/recovery path itself.
+11. ~~Exercise the new lockout → email-recovery cycle for real~~ —
+    **done, 2026-08-27.** Owner confirmed the full cycle end-to-end:
+    3 failed attempts triggers lockout, the reset email actually lands,
+    and clicking through resets the password successfully. Running
+    this real test caught and fixed two genuine bugs along the way:
+    Supabase Auth's Site URL and Redirect URL allow-list were still
+    pointing at `localhost` (fixed to the real domain), and Supabase's
+    default 2 emails/hour cap was silently dropping the recovery email
+    (fixed by wiring up Resend as Supabase's custom SMTP provider,
+    which also raised the cap to 30/hour — later tuned to 10/hour
+    specifically for this admin-recovery channel, per the owner's
+    request; guest-facing emails are unaffected since they go through
+    Resend directly, not through this Supabase-limited channel).
 12. **Pick and wire up a new ID-verification provider** (or stay fully
     manual) — Smile ID was removed entirely at the owner's request; see
     the 2026-08-12 session update for exactly which fields are ready for
