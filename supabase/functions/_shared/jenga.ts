@@ -2,11 +2,24 @@
 // UNCONFIRMED against a live sandbox call — see mpesa-initiate/index.ts for
 // the full list of assumptions this integration makes.
 
+// Strips everything except valid base64 characters (rather than trusting
+// exact BEGIN/END line matches + whitespace stripping alone) — resilient
+// to however the key got mangled when pasted into a secrets form:
+// stray \r, smart quotes, literal "\n" instead of real newlines, extra
+// wrapping quotes, etc. Found necessary in practice (2026-08-26): the
+// original whitespace-only stripping threw "invalid character" on a real
+// pasted key even though it looked correct.
 function pemToArrayBuffer(pem: string): ArrayBuffer {
   const base64 = pem
-    .replace(/-----BEGIN (.*)-----/, "")
-    .replace(/-----END (.*)-----/, "")
-    .replace(/\s+/g, "");
+    .replace(/-----BEGIN [^-]*-----/, "")
+    .replace(/-----END [^-]*-----/, "")
+    // Literal backslash-n / backslash-r (two real characters, not an actual
+    // newline) can end up in a secret's value depending on how it passed
+    // through a form/shell — strip these BEFORE the base64 filter below,
+    // otherwise the bare "n"/"r" letters get kept as if they were real
+    // base64 data and silently corrupt the decoded key bytes.
+    .replace(/\\[nr]/g, "")
+    .replace(/[^A-Za-z0-9+/=]/g, "");
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);

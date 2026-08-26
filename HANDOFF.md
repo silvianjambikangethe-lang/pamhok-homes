@@ -189,32 +189,82 @@ explanation.
    in local `.env.local`; **still needs adding to Vercel's Production
    environment variables** (dashboard only, no tool can do this) before
    it's live for real guests — everything else about this feature is done.
-3. ~~M-Pesa (Jenga) config~~ — **fully configured and confirmed,
-   2026-08-26.** All six Supabase secrets are set (`JENGA_CONSUMER_KEY`,
-   `JENGA_CONSUMER_SECRET`, `JENGA_MERCHANT_CODE=4390718704`,
-   `JENGA_ACCOUNT_NUMBER=0704393189`, `JENGA_ENV=sandbox`,
-   `JENGA_PRIVATE_KEY`) — confirmed working via the same safe,
-   zero-transaction technique as the PayPal check: POSTing a fake booking
-   token to the live `mpesa-initiate` function returns `404 "Booking not
-   found"` rather than `501 "not configured"`, which is only possible if
-   all five required secrets are actually present.
-   **Real gotcha worth remembering for future sessions**: merging the
-   merchant-code fix's PR only redeployed the Vercel app — Supabase Edge
-   Functions are a completely separate deployment target Vercel never
-   touches. The actual running `mpesa-initiate`/`mpesa-callback` functions
-   needed a manual redeploy via the Supabase MCP tool even after the PR
-   merged; the code sitting in `master` and the code actually running on
-   Supabase can silently diverge if you forget this. (Caught one own
-   mistake doing this redeploy, too: hand-typing a large file's content
-   into the deploy tool call introduced a stray unused line that wasn't
-   in the real source — caught by re-reading the deployed function back
-   with `get_edge_function` and comparing, then redeployed clean. Worth
-   doing that comparison after any manual Edge Function deploy.)
-   What's left is a real sandbox STK push test before trusting this with
-   an actual booking — see the M-Pesa section above for the specific
-   unconfirmed assumptions still left in the code. After that, going to
-   production needs Jenga's own go-live process (contact Equity/Finserve
-   — not yet researched).
+3. **M-Pesa (Jenga) — a real sandbox test finally ran, 2026-08-26, and
+   surfaced the actual current blocker: Jenga hasn't authorized this
+   merchant for the STK/USSD Push product itself.** This took a long,
+   genuinely useful debugging pass to get to — worth reading in full
+   before touching this again, because "the secrets are set" turned out
+   to mean almost nothing on its own.
+   - **The zero-transaction "404 not 501" config check (used earlier and
+     for PayPal) only proves secrets are non-empty, not correct.** All six
+     `JENGA_*` secrets being *present* passed that check the whole time
+     even when several of them were wrong. Don't treat that check as
+     proof of a working integration again — it only rules out the
+     "nothing is configured" case.
+   - **A real sandbox STK push (not just a config check) needs an actual
+     booking** — there are 0 real bookings in production, so one was
+     created directly via SQL (test guest, 1-night stay, `payment_status:
+     'Pending'`, `id_verification_status: 'Verified'`) specifically to
+     have something to call `mpesa-initiate` against, then deleted
+     afterward. Room One, KES 2,500, 2027-01-15/16 — if a similar test is
+     needed again, same approach; just remember to clean it up (`delete
+     from bookings ...; delete from guests where email = '...'`).
+   - **`JENGA_PRIVATE_KEY` was wrong three times in a row**, each in a
+     different way — proof the code itself was fine (verified independently
+     with Node's own `crypto.createPrivateKey` against the real key file)
+     and the problem was purely what got pasted into Supabase:
+     1st attempt: the stored value literally started with one of *my own
+     terminal commands* (`$ wc -l "C:\Users\...`) — wrong text entirely,
+     copied from somewhere unintended.
+     2nd attempt: the stored value was literally the bullet characters
+     (`•••••`) a password-masked field *displays* — someone copied a
+     masked/hidden rendering instead of the real underlying text.
+     3rd attempt (worked): sending the actual `.pem` file to the owner via
+     `SendUserFile` so they could open it in Notepad and copy directly,
+     completely bypassing chat-rendering/clipboard weirdness, finally
+     produced a byte-correct key. **If this ever needs setting again,
+     skip straight to sending the file — don't rely on copy from chat
+     text.**
+   - **A temporary diagnostic deploy** (swap the real function for one
+     that just reports `Deno.env.get("JENGA_PRIVATE_KEY")`'s length/
+     first-and-last-few-chars, redeploy the real function immediately
+     after) is what actually cracked both private-key failures — guessing
+     from error messages alone (`"Failed to decode base64"`, `"incorrect
+     length for APPLICATION [17]"`, `"ASN.1 DER message is incomplete"`)
+     wasn't getting anywhere. Worth reaching for this pattern early next
+     time a secret value is suspected wrong, rather than iterating blind.
+   - **The Public Key on Jenga's own dashboard was never actually saved**
+     the first time either — "View" showed nothing, meaning the earlier
+     upload silently failed. Fixed via Jenga's own "Edit Public Key"
+     modal (Integrations & Keys page → Public Key section).
+   - **`JENGA_CONSUMER_KEY`/`JENGA_CONSUMER_SECRET` were stale** — still
+     the very first values the owner ever pasted in chat, from *before*
+     they regenerated their API key on Jenga's dashboard partway through
+     this session. Regenerating invalidated the old ones
+     (`401 "Invalid Credentials Entered!"` once we could finally see the
+     real auth response). Fixed by having the owner reveal the *current*
+     values via the eye icons on Jenga's Key Management panel and
+     re-setting both secrets from there.
+   - **Once all of the above were actually correct** (not just present),
+     auth succeeded and the request reached Jenga's real STK/USSD push
+     endpoint — Signature header and RSA signing both confirmed working
+     for real, not just in theory. **Current blocker**: Jenga responds
+     `502 "Not Authorized to access the API"` specifically from the STK
+     push endpoint (auth itself is fine) — this reads as an
+     account/product-level authorization Jenga controls, not anything
+     fixable in code or Supabase secrets. Owner needs to check with
+     Jenga/Equity (dashboard product-activation option, or their
+     support/business team) about enabling the STK/USSD Push product for
+     this sandbox merchant specifically.
+   - Also hardened `supabase/functions/_shared/jenga.ts`'s PEM parsing
+     while debugging (strips literal `\n`/`\r` sequences and any
+     non-base64 character, not just whitespace) — didn't end up being the
+     actual root cause this time, but is a genuine robustness improvement
+     worth keeping regardless.
+   Once Jenga confirms the product is authorized, retest the same way
+   (real booking + real call to `mpesa-initiate`) before trusting this
+   with an actual guest. After that, going to production needs Jenga's
+   own go-live process (contact Equity/Finserve — not yet researched).
 4. ~~PayPal go-live~~ — **credentials are live, confirmed working.**
    Owner supplied live `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` on
    2026-08-26; added to `.env.local` and confirmed present on Vercel's
@@ -447,60 +497,37 @@ This is the most important section to get right for whoever picks this up.
   `JENGA_MERCHANT_CODE`, `JENGA_ACCOUNT_NUMBER`, `JENGA_ENV`,
   `JENGA_PRIVATE_KEY`) — dashboard or CLI only, same pattern the old
   Daraja `MPESA_*` secrets used.
-- **Code is deployed (2026-08-26), secrets are not — and the old ones were
-  removed from Supabase entirely.** Both functions are `ACTIVE` on
-  Supabase (`mpesa-initiate` v5, `mpesa-callback` v4) and the code is
-  merged to `master`/live on Vercel. **None of the `JENGA_*` secrets are
-  currently set** — I checked twice this session (fresh ToolSearch each
-  time) and confirmed neither the Supabase nor Vercel MCP connectors
-  expose any tool that lists, sets, or deletes secret/env values, on any
-  account state I had access to. This is dashboard-only, every time, for
-  any future session too — don't keep re-checking for a tool that isn't
-  coming. In the Supabase Dashboard → Edge Functions → Secrets, the owner
-  needs to set all six:
-  ```
-  JENGA_CONSUMER_KEY=<Jenga API Key>
-  JENGA_CONSUMER_SECRET=<Jenga Consumer Secret>
-  JENGA_MERCHANT_CODE=4390718704
-  JENGA_ACCOUNT_NUMBER=0704393189
-  JENGA_ENV=sandbox
-  JENGA_PRIVATE_KEY=<see below>
-  ```
-  Until then M-Pesa safely reports "not configured" rather than failing
-  weirdly — that's the code's deliberate guard, not a bug.
 - **RSA key pair generated 2026-08-26**, at the owner's request, using the
-  exact `openssl` commands documented in the file. Public key was printed
-  in chat for the owner to upload to their Jenga dashboard; private key
-  (PKCS8 form) was also printed in chat, for the owner to paste as
-  `JENGA_PRIVATE_KEY`. **The key files only exist in this session's
-  temporary scratchpad directory — not committed anywhere, not saved
-  durably.** If a future session needs them and they're gone, don't try
-  to recover them — generate a fresh pair (same `openssl` commands) and
-  have the owner re-upload the new public key; a mismatched key pair
-  fails signing, it can't partially work.
+  exact `openssl` commands documented in the file, then sent directly to
+  the owner as a downloadable file (`SendUserFile`) after chat-copy kept
+  producing corrupted pastes — see pending-issues item 3 for the full
+  story. **The key files only exist in this session's temporary
+  scratchpad directory — not committed anywhere, not saved durably.** If
+  a future session needs them and they're gone, don't try to recover
+  them — generate a fresh pair and have the owner re-upload the new
+  public key; a mismatched key pair fails signing, it can't partially
+  work.
 - **The merchant-code/account-number confusion flagged earlier turned out
-  to be real, and is now fixed (2026-08-26).** The original code guessed
-  `JENGA_ACCOUNT_NUMBER` for both the OAuth token call's `merchantCode`
-  *and* the STK push's `merchant.accountNumber` — the owner checked their
-  actual Jenga dashboard and confirmed these are genuinely different
-  values (Merchant Code `4390718704` vs. Equity account number
-  `0704393189`). Fixed: `merchantCode` now has its own
-  `JENGA_MERCHANT_CODE` secret, used only for authentication;
+  to be real, and is now fixed (2026-08-26).** `merchantCode` now has its
+  own `JENGA_MERCHANT_CODE` secret, used only for authentication;
   `JENGA_ACCOUNT_NUMBER` is used only for the STK push payload and
-  Signature string (the settlement account). This was the one part of the
-  original credential mapping that's now **confirmed correct**, not a
-  guess — the remaining unconfirmed pieces are below.
-- **⚠️ Still unconfirmed against a live sandbox call, unlike the Daraja
-  integration it replaces** (which was verified against Safaricom's real
-  sandbox before being trusted). See the full caveats at the top of
-  `supabase/functions/mpesa-initiate/index.ts`:
-  - The Signature header's exact field-concatenation order and whether it
-    applies to this endpoint at all is still per Jenga's docs alone, not
-    a real test.
-  - Which field in the STK response (`reference` vs `transactionId`)
-    matches the callback's `transactionReference` is still unconfirmed.
-  Once all six secrets above are set, this needs one real sandbox STK
-  push before it's trusted with an actual booking.
+  Signature string (the settlement account). Confirmed correct, not a
+  guess — see pending-issues item 3.
+- **A real sandbox STK push was actually attempted, repeatedly, 2026-08-26
+  — see pending-issues item 3 for the full debugging saga** (multiple
+  wrong secret values found and fixed one at a time: a corrupted private
+  key three different ways, an unsaved public key, stale API
+  credentials). **Auth and RSA signing are now both confirmed genuinely
+  working** — the request reaches Jenga's real STK endpoint. Current
+  blocker is Jenga's own account authorization for the STK/USSD Push
+  product (`502 "Not Authorized to access the API"`), which needs the
+  owner to follow up with Jenga/Equity directly — nothing left to fix in
+  code or secrets for this specific error.
+  Still separately unconfirmed once that's sorted: the Signature header's
+  exact field-concatenation order, and which field in the STK response
+  (`reference` vs `transactionId`) matches the callback's
+  `transactionReference` — both still per Jenga's docs alone, not a real
+  completed transaction. Retest before trusting this with a real booking.
 - **Going to production M-Pesa** will need Jenga's own go-live process
   (contact Equity/Finserve — this hasn't been researched yet, unlike the
   Daraja go-live process this replaces).
