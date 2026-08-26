@@ -189,28 +189,32 @@ explanation.
    in local `.env.local`; **still needs adding to Vercel's Production
    environment variables** (dashboard only, no tool can do this) before
    it's live for real guests — everything else about this feature is done.
-3. **M-Pesa (Jenga) is deployed but not yet functional — one thing only
-   you can finish.** The Jenga-based `mpesa-initiate`/`mpesa-callback`
-   code is deployed to Supabase (confirmed `ACTIVE`) and merged to
-   `master` on Vercel. ~~Generate an RSA key pair~~ — **done 2026-08-26**,
-   at the owner's request (Claude generated it locally with the exact
-   `openssl` commands from the file comments — see the M-Pesa section
-   above for where the key files live and why they won't survive past
-   this session). The merchant-code-vs-account-number mapping is also now
-   **confirmed correct**, not a guess (see the same section). What's left
-   is purely owner-side: **in the Supabase Dashboard → Edge Functions →
-   Secrets**, set all six — the old `MPESA_*` entries are already gone —
-   `JENGA_CONSUMER_KEY`, `JENGA_CONSUMER_SECRET`,
-   `JENGA_MERCHANT_CODE=4390718704`, `JENGA_ACCOUNT_NUMBER=0704393189`,
-   `JENGA_ENV=sandbox`, and `JENGA_PRIVATE_KEY` (printed in chat this
-   session). I checked repeatedly for a Supabase or Vercel MCP tool that
-   manages secret values — none exists on either connector as of
-   2026-08-26; this is dashboard-only. Once set, this still needs a real
-   sandbox STK push test before trusting it with a booking — see the
-   M-Pesa section above for the specific unconfirmed assumptions still
-   left in the code. After that, going to production needs
-   Jenga's own go-live process (contact Equity/Finserve — not yet
-   researched).
+3. ~~M-Pesa (Jenga) config~~ — **fully configured and confirmed,
+   2026-08-26.** All six Supabase secrets are set (`JENGA_CONSUMER_KEY`,
+   `JENGA_CONSUMER_SECRET`, `JENGA_MERCHANT_CODE=4390718704`,
+   `JENGA_ACCOUNT_NUMBER=0704393189`, `JENGA_ENV=sandbox`,
+   `JENGA_PRIVATE_KEY`) — confirmed working via the same safe,
+   zero-transaction technique as the PayPal check: POSTing a fake booking
+   token to the live `mpesa-initiate` function returns `404 "Booking not
+   found"` rather than `501 "not configured"`, which is only possible if
+   all five required secrets are actually present.
+   **Real gotcha worth remembering for future sessions**: merging the
+   merchant-code fix's PR only redeployed the Vercel app — Supabase Edge
+   Functions are a completely separate deployment target Vercel never
+   touches. The actual running `mpesa-initiate`/`mpesa-callback` functions
+   needed a manual redeploy via the Supabase MCP tool even after the PR
+   merged; the code sitting in `master` and the code actually running on
+   Supabase can silently diverge if you forget this. (Caught one own
+   mistake doing this redeploy, too: hand-typing a large file's content
+   into the deploy tool call introduced a stray unused line that wasn't
+   in the real source — caught by re-reading the deployed function back
+   with `get_edge_function` and comparing, then redeployed clean. Worth
+   doing that comparison after any manual Edge Function deploy.)
+   What's left is a real sandbox STK push test before trusting this with
+   an actual booking — see the M-Pesa section above for the specific
+   unconfirmed assumptions still left in the code. After that, going to
+   production needs Jenga's own go-live process (contact Equity/Finserve
+   — not yet researched).
 4. ~~PayPal go-live~~ — **credentials are live, confirmed working.**
    Owner supplied live `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` on
    2026-08-26; added to `.env.local` and confirmed present on Vercel's
