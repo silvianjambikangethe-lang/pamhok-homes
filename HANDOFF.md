@@ -148,6 +148,26 @@ Picked up from the 2026-08-12 session update above. In order:
    independently verified by fetching the domain directly). It eventually
    started working with no clear trigger. Don't trust a "zero projects"
    result as proof of anything without cross-checking another way first.
+10. **Expanded email notifications from 3 generic triggers to the 7
+    specific ones the owner spec'd** (booking confirmation on payment
+    — not creation, a real bug caught and fixed — plus ID verification
+    result, both checkout reminders, stay extension confirmation, laundry
+    status updates, and checkout complete). Full trigger-by-trigger map
+    in the "Guest email notifications" section below. **Open as PR
+    `expand-email-notifications`, not yet merged.**
+11. **Generated the Jenga RSA key pair and ran it through a real sandbox
+    STK push test** — not just a config check. Took a long debugging pass
+    (three different wrong `JENGA_PRIVATE_KEY` values, an unsaved public
+    key, stale API credentials) before auth and signing were both
+    confirmed genuinely working. Current blocker is Jenga's own account
+    authorization for the STK/USSD Push product, not code — full story in
+    pending-issues item 3 and the M-Pesa section below. **Also hardened
+    the PEM-parsing code while debugging; open as PR
+    `fix-jenga-pem-parsing`, not yet merged.**
+12. **Two PRs are sitting open, unmerged, as of this doc's writing** —
+    `expand-email-notifications` and `fix-jenga-pem-parsing`. Check
+    GitHub for their current status before assuming either is live;
+    neither's changes are on `master`/deployed yet.
 
 ---
 
