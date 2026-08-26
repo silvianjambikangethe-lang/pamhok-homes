@@ -173,21 +173,28 @@ explanation.
    automatically assume the domain is gone; check the dashboard directly
    or retry. `/admin/expenses` still has a stale placeholder entry for a
    *different* domain (a ".store" one) — see item 8.
-2. ~~Email notifications~~ — **7 trigger-specific emails, done
-   2026-08-26.** Real delivery confirmed working (pamhokhomes.com is
-   verified on Resend; `EMAIL_FROM_ADDRESS=Pamhok Homes
-   <bookings@pamhokhomes.com>`) — see the "Guest email notifications"
-   section below for the full trigger-by-trigger map, including one real
-   bug caught and fixed along the way (booking-confirmation was originally
-   wired to fire on booking *creation*, not on payment — corrected per the
-   owner's explicit spec, not left as a silent duplicate). Styled to match
-   the site's brand (Fraunces headings, terracotta buttons). Owner
-   supplied the Resend API key. **Still needs adding to Vercel's
-   Production environment variables** (`RESEND_API_KEY`,
-   `EMAIL_FROM_ADDRESS` — currently only in local `.env.local`) and, for
-   the M-Pesa side specifically, the same two as Supabase Edge Function
-   secrets (dashboard-only either way, no tool can do this) before any of
-   it reaches a real guest.
+2. ~~Email notifications~~ — **all 7 trigger-specific emails merged to
+   `master` and deployed to production, 2026-08-26** (PR #5
+   `expand-email-notifications`, merged by the owner; confirmed `READY`
+   on Vercel from commit `5499e17`). Real delivery confirmed working
+   (pamhokhomes.com is verified on Resend; `EMAIL_FROM_ADDRESS=Pamhok
+   Homes <bookings@pamhokhomes.com>`) — see the "Guest email
+   notifications" section below for the full trigger-by-trigger map,
+   including one real bug caught and fixed along the way
+   (booking-confirmation was originally wired to fire on booking
+   *creation*, not on payment — corrected per the owner's explicit spec,
+   not left as a silent duplicate). Styled to match the site's brand
+   (Fraunces headings, terracotta buttons). During PR review, a second
+   real bug was caught and fixed before merge: the M-Pesa callback's
+   copy of the email sender defaulted its portal link to
+   `http://localhost:3000` if `NEXT_PUBLIC_SITE_URL` was ever unset as a
+   Supabase secret (it never has been — that's a Vercel-only env var) —
+   now defaults to `https://www.pamhokhomes.com` instead. **Still needs
+   adding to Vercel's Production environment variables**
+   (`RESEND_API_KEY`, `EMAIL_FROM_ADDRESS` — currently only in local
+   `.env.local`) and, for the M-Pesa side specifically, the same two as
+   Supabase Edge Function secrets (dashboard-only either way, no tool
+   can do this) before any of it reaches a real guest.
 3. ~~M-Pesa (Jenga) config~~ — **fully configured and confirmed,
    2026-08-26.** All six Supabase secrets are set (`JENGA_CONSUMER_KEY`,
    `JENGA_CONSUMER_SECRET`, `JENGA_MERCHANT_CODE=4390718704`,
@@ -209,14 +216,12 @@ explanation.
    in the real source — caught by re-reading the deployed function back
    with `get_edge_function` and comparing, then redeployed clean. Worth
    doing that comparison after any manual Edge Function deploy.)
-   Separately, the `expand-email-notifications` PR wires a
-   payment-confirmation/stay-extension email into the M-Pesa callback
-   itself (`supabase/functions/_shared/email.ts`) — that needs its own
-   `RESEND_API_KEY`/`EMAIL_FROM_ADDRESS` Supabase secrets (see item 2
-   above) on top of the six `JENGA_*` ones, or that specific email will
-   silently no-op. Its portal-link fallback was also fixed during PR
-   review (2026-08-26) to point at the real domain instead of
-   `localhost` if that secret is ever missing.
+   Separately, the merged `expand-email-notifications` work (see item 2
+   above) wires a payment-confirmation/stay-extension email into the
+   M-Pesa callback itself (`supabase/functions/_shared/email.ts`) — that
+   needs its own `RESEND_API_KEY`/`EMAIL_FROM_ADDRESS` Supabase secrets
+   on top of the six `JENGA_*` ones, or that specific email will
+   silently no-op.
    What's left is a real sandbox STK push test before trusting this with
    an actual booking — see the M-Pesa section above for the specific
    unconfirmed assumptions still left in the code. After that, going to
