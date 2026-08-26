@@ -173,25 +173,22 @@ explanation.
    automatically assume the domain is gone; check the dashboard directly
    or retry. `/admin/expenses` still has a stale placeholder entry for a
    *different* domain (a ".store" one) — see item 8.
-2. ~~Email notifications~~ — **code done, but real delivery is blocked on
-   a Resend domain verification, 2026-08-26.** Owner supplied a Resend API
-   key; wired up booking-confirmation, checkout-reminder, and
-   cleaning-notice emails (`src/lib/email.ts`, plus
+2. ~~Email notifications~~ — **done, real delivery confirmed 2026-08-26.**
+   Owner supplied a Resend API key; wired up booking-confirmation,
+   checkout-reminder, and cleaning-notice emails (`src/lib/email.ts`, plus
    `/api/cron/checkout-reminders` and the new `/api/cron/cleaning-notices`,
-   scheduled via `vercel.json`). **Discovered by actually sending a real
-   test email, not assumed**: Resend's shared `onboarding@resend.dev`
-   sender only works for accounts with a verified domain, or when sending
-   to the Resend account's own signup address
-   (`silvianjambikangethe@gmail.com`) — confirmed both ways (a send to
-   `pamhokhomes@gmail.com` was rejected with a 403 `validation_error`; the
-   identical send to the account's own address succeeded). **This means
-   no guest will actually receive any of these emails until the owner
-   verifies a domain (e.g. pamhok.com) at resend.com/domains** and
-   `EMAIL_FROM_ADDRESS` is set to an address on it. Until then the code
-   runs, calls Resend successfully, and silently fails to deliver to real
-   guests — `sendEmail()` swallows the error by design (a failed email
-   should never fail a booking), so this won't show up as a visible bug,
-   only as guests not receiving mail. See "Still to do" item 2.
+   scheduled via `vercel.json`). First attempt hit a real limitation,
+   found by actually sending a test email rather than assuming it'd work:
+   Resend's shared `onboarding@resend.dev` sender only delivers to the
+   account's own signup address until a domain is verified — a send to
+   `pamhokhomes@gmail.com` was rejected (403). Turned out **pamhokhomes.com
+   was already verified on Resend** (17 days prior, independently of this
+   session) — once `EMAIL_FROM_ADDRESS` was set to
+   `Pamhok Homes <bookings@pamhokhomes.com>` and re-tested, delivery to
+   `pamhokhomes@gmail.com` succeeded for real. `EMAIL_FROM_ADDRESS` is set
+   in local `.env.local`; **still needs adding to Vercel's Production
+   environment variables** (dashboard only, no tool can do this) before
+   it's live for real guests — everything else about this feature is done.
 3. **M-Pesa (Jenga) is deployed but not yet functional — two things only
    you can finish.** The Jenga-based `mpesa-initiate`/`mpesa-callback`
    code is deployed to Supabase (confirmed `ACTIVE`) and merged to
@@ -712,12 +709,12 @@ worth a real run-through next time someone's in the admin area.
    this update — everything through the guest-experience feature build
    (Sections 1–6, 8 below) plus the security/performance hardening pass
    (item 11) is committed, pushed, and deployed.
-2. ~~Email notifications~~ — **code done 2026-08-26, delivery blocked on
-   a Resend domain verification.** See the pending-issues item above for
-   the full story — real guests won't receive these emails until the
-   owner verifies a domain at resend.com/domains. Swapping to
-   `bookings@pamhok.com` later, once the owner adds pamhok.com's DNS
-   records to Resend, is a one-line `EMAIL_FROM_ADDRESS` env var change.
+2. ~~Email notifications~~ — **done, 2026-08-26.** pamhokhomes.com was
+   already verified on Resend; `EMAIL_FROM_ADDRESS` set to
+   `Pamhok Homes <bookings@pamhokhomes.com>` and real delivery confirmed.
+   See the pending-issues item above for the full story. Only remaining
+   step: add `EMAIL_FROM_ADDRESS` to Vercel's Production env vars
+   (currently only in local `.env.local`).
 3. **Get M-Pesa (via Jenga) working in sandbox, then go live** — code is
    deployed (2026-08-26), but blocked on two owner-only steps: generating
    an RSA key pair, and setting the `JENGA_*` Supabase secrets (no tool
