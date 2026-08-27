@@ -531,6 +531,29 @@ local-only reference file, not something `git status` will ever show).
     unconditionally claim the extension succeeded whenever
     `paid_at` was already set, which would've been wrong the one time it
     matters most.
+  - **Found a real, pre-existing drift bug while wiring the M-Pesa side of
+    this**: `supabase/functions/mpesa-callback/index.ts` in git (merged via
+    the `expand-email-notifications` PR) calls `sendPaymentSucceededEmail`
+    from `_shared/email.ts` — but the actual **live** Edge Function had no
+    such call at all when read directly from Supabase. Root cause:
+    Supabase Edge Functions are a separate deployment target from
+    Vercel — `git push` alone never updates them, they need an explicit
+    `deploy_edge_function` call (or `supabase functions deploy`), and that
+    manual step was done for the earlier Jenga merchant-code PR but
+    apparently missed for this one. Net effect: M-Pesa payments likely
+    never sent a "Payment confirmed" or "Stay extended" email in
+    production. Fixed by redeploying the function with both the email
+    call and the new extension-hold logic together — verify_jwt confirmed
+    still `false` (required, Jenga can't send a Supabase auth header).
+    **Any future change to this file needs its own explicit redeploy** —
+    a merged PR alone does not put it live. Checked `mpesa-initiate` the
+    same way while here — its live content matches git byte-for-byte, no
+    drift there, and its `verify_jwt: true` is correct as-is (the browser
+    calls it directly with the guest's own Supabase session, unlike
+    `mpesa-callback` which Jenga's server calls with no ability to attach
+    any Supabase auth header). Worth periodically diffing git against
+    `get_edge_function`'s live content for both functions to catch this
+    class of drift early.
   - **Admin notifications** for requested / confirmed / expired-or-
     conflicted extensions all go through the existing `guest_requests`
     feed (Overview badge + `/admin/requests`) — no new admin UI needed,
