@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { differenceInCalendarDays, parseISO, startOfDay } from "date-fns";
-import { CalendarPlus, Warning } from "@phosphor-icons/react";
+import { differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
+import { CalendarPlus, Clock, Warning } from "@phosphor-icons/react";
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("en-KE", {
@@ -13,12 +13,20 @@ function formatMoney(amount: number, currency: string) {
   }).format(amount);
 }
 
+const HOLD_HOURS = 3;
+
 export default function ExtendStaySection({
   token,
   checkOut,
+  pendingExtensionCheckOut,
+  pendingExtensionNights,
+  pendingExtensionRequestedAt,
 }: {
   token: string;
   checkOut: string;
+  pendingExtensionCheckOut: string | null;
+  pendingExtensionNights: number | null;
+  pendingExtensionRequestedAt: string | null;
 }) {
   const router = useRouter();
   const daysUntilCheckout = differenceInCalendarDays(startOfDay(parseISO(checkOut)), startOfDay(new Date()));
@@ -70,6 +78,13 @@ export default function ExtendStaySection({
         return;
       }
       router.refresh();
+      // router.refresh() re-fetches server data but doesn't remount this
+      // component (an extension leaves the guest "active", so this
+      // section stays mounted), so the loading state has to be reset by
+      // hand rather than relying on the success path unmounting it.
+      setOpen(false);
+      setQuote(null);
+      setConfirming(false);
     } catch {
       setError("Could not extend your stay.");
       setConfirming(false);
@@ -77,6 +92,27 @@ export default function ExtendStaySection({
   }
 
   const isUrgent = daysUntilCheckout <= 1;
+
+  if (pendingExtensionCheckOut) {
+    const deadline = pendingExtensionRequestedAt
+      ? new Date(new Date(pendingExtensionRequestedAt).getTime() + HOLD_HOURS * 60 * 60 * 1000)
+      : null;
+    return (
+      <div className="flex items-start gap-3 rounded-2xl border border-gold-500/40 bg-gold-500/15 p-5 text-sm text-cocoa shadow-card dark:bg-gold-500/20 dark:text-espresso">
+        <Clock size={20} className="mt-0.5 shrink-0" />
+        <p>
+          You requested {pendingExtensionNights} extra night
+          {pendingExtensionNights === 1 ? "" : "s"}, extending your stay to{" "}
+          <strong>{format(parseISO(pendingExtensionCheckOut), "EEE, d MMM yyyy")}</strong>.
+          These nights are held for you, but not confirmed yet — complete payment above
+          {deadline
+            ? ` by ${format(deadline, "h:mm a")} on ${format(deadline, "d MMM")}`
+            : ` within ${HOLD_HOURS} hours`}{" "}
+          or the hold will be released.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div

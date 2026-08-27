@@ -466,6 +466,79 @@ local-only reference file, not something `git status` will ever show).
   Ten (Q)" was flagged as a possible typo (every other room follows
   "Room [Word] ([matching digit])") but the owner confirmed it's
   intentional, not a bug — left as-is.
+- **10-day guest-journey simulation + Stay Extension rebuild (2026-08-27)**
+  — owner asked to simulate a full 10-night guest stay (payment/ID bypassed
+  as verified per their instruction) and walk every portal feature. Found
+  and fixed two bugs unrelated to extensions: the "Confirming…"/"Confirming…"
+  buttons on Confirm Extension and Confirm Check-Out never reset their
+  loading state on success (only on error), so they'd stay stuck forever
+  even though the action had actually succeeded — both fixed in
+  `ExtendStaySection.tsx`/`CheckoutSection.tsx`.
+  During that pass the owner gave three rounds of direct product
+  instruction that together **rebuilt how stay extensions work**:
+  1. An already-active (previously paid + verified) guest shouldn't lose
+     access to their door code/WiFi/laundry/checkout just because they
+     have a new, unpaid extension request sitting on the booking — only a
+     genuinely never-paid booking still needs full payment before
+     anything unlocks. (`PortalClient.tsx`'s `wasEverActive` flag, keyed
+     off `paid_at` being set rather than current `payment_status`.)
+  2. Extending should require the *current* stay to already be fully
+     paid, and the extra nights shouldn't actually apply until *their*
+     payment clears — not the moment the guest requests them. And any
+     extension activity should notify admin.
+  This became a real hold system, not just a flag:
+  - `pending_extension_check_out` / `_nights` / `_amount` /
+    `_requested_at` on `bookings` (migration
+    `add_extension_hold_tracking_and_view`) — `extend/confirm` now
+    requires `payment_status === 'Paid'` before accepting a request, then
+    parks the new checkout date here instead of touching `check_out`
+    directly; `total_amount` is bumped immediately so the existing
+    PayPal/M-Pesa/manual payment flow can charge the new total with no
+    changes needed on the payment side.
+  - **The hold is real, not just a note**: `availability_view` was
+    redefined to UNION in a synthetic occupied range for the pending
+    extension window, active only while `pending_extension_requested_at`
+    is under 3 hours old. This means every existing caller (new booking
+    creation, other guests' extend/check and extend/confirm) automatically
+    respects the hold with no new locking code — verified live that a
+    second booking attempt on the held dates is correctly rejected.
+  - **3-hour expiry is enforced lazily, not by cron** — this project's
+    current Vercel plan only allows daily cron, which can't reliably hit
+    a 3-hour SLA. `src/lib/extension-hold.ts`'s
+    `releaseExpiredExtensionHold()` runs on every booking read (portal
+    page, verify page, extend/check, extend/confirm) and self-heals a
+    stale hold the instant anyone next looks at it — reverts
+    `total_amount`, clears the pending fields, restores `payment_status`
+    to `Paid` (the original nights genuinely were paid), and notifies
+    admin. `cron/expire-extension-holds` (daily, registered in
+    `vercel.json`) is only a backstop for a booking nobody ever reloads.
+  - **Payment confirming an extension is automatic** across all three
+    payment paths — PayPal capture, the M-Pesa `mpesa-callback` edge
+    function (redeployed, `verify_jwt` correctly still `false` — Jenga
+    can't send a Supabase auth header), and the admin's existing **Mark
+    Paid** button (`/admin/bookings`, for cash/bank-transfer/other manual
+    payment) — all call `resolvePendingExtensionAfterPayment()`, which
+    re-checks the hold hasn't expired and nobody else took the dates
+    before applying `check_out`, or reverts (amount adjusted back down,
+    admin notified to check whether a refund is owed) if either
+    happened. Verified all three paths live end-to-end: request → hold
+    blocks a conflicting booking → Mark Paid → `check_out` updates,
+    `total_amount` correct, admin gets an "Extension confirmed"
+    notification; separately verified the unpaid-guard, the 3-hour
+    self-heal (dates/amount correctly reverted), and that the existing
+    "Stay Extension Confirmation" guest email (built in an earlier
+    session) no longer fires in the rare revert case — it used to
+    unconditionally claim the extension succeeded whenever
+    `paid_at` was already set, which would've been wrong the one time it
+    matters most.
+  - **Admin notifications** for requested / confirmed / expired-or-
+    conflicted extensions all go through the existing `guest_requests`
+    feed (Overview badge + `/admin/requests`) — no new admin UI needed,
+    it already surfaced this generically. The admin Calendar page queries
+    `bookings` fresh on every load, so a confirmed extension shows there
+    automatically too.
+  All test bookings/guests/reviews created during simulation and testing
+  were deleted afterward — production data untouched throughout.
 - **"I've Arrived" flow in the guest portal** — once paid + verified, a
   guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
   latter pops up a congratulations message plus their verification pass

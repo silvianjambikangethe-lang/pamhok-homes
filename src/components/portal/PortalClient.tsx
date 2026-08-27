@@ -57,17 +57,26 @@ export default function PortalClient({
   const cleaningNotices = getCleaningNotices(booking.check_in, booking.check_out);
   const isPassReady =
     booking.payment_status === "Paid" && booking.id_verification_status === "Verified";
-  const isVerifiedAndActive = isPassReady && !booking.checked_out_at;
+  // Distinct from isPassReady: a guest who has already been ID-verified
+  // and paid at least once (paid_at set) stays "active" even if a later
+  // stay extension puts payment_status back to Pending — they're already
+  // in the room, so an unpaid top-up for extra nights shouldn't lock them
+  // out of the door code/WiFi/laundry/checkout they already have. A
+  // brand-new booking (paid_at still null) still needs the full
+  // isPassReady gate before any of that unlocks for the first time.
+  const wasEverActive = booking.id_verification_status === "Verified" && !!booking.paid_at;
+  const isVerifiedAndActive = wasEverActive && !booking.checked_out_at;
   const passReference = booking.pass_reference;
 
   const { setHidden } = useWhatsappVisibility();
   // Hide the floating WhatsApp button only on the payment-pending / ID-
-  // verification step — everywhere else on the site (and everywhere else
-  // in the portal, once verified) it stays visible.
+  // verification step for a brand-new booking — everywhere else on the
+  // site (and everywhere else in the portal, once ever verified) it stays
+  // visible.
   useEffect(() => {
-    setHidden(!isPassReady);
+    setHidden(!wasEverActive);
     return () => setHidden(false);
-  }, [isPassReady, setHidden]);
+  }, [wasEverActive, setHidden]);
 
   return (
     <div>
@@ -105,7 +114,7 @@ export default function PortalClient({
         </div>
       )}
 
-      {isPassReady && adminPhone && (
+      {wasEverActive && adminPhone && (
         <a
           href={whatsappLink(
             adminPhone,
@@ -123,7 +132,7 @@ export default function PortalClient({
       )}
 
       <div className="mt-8 space-y-6">
-        <VerificationPassSection isReady={isPassReady} />
+        <VerificationPassSection isReady={isPassReady} wasEverActive={wasEverActive} />
 
         {isVerifiedAndActive && (
           <ArrivalSection
@@ -233,7 +242,15 @@ export default function PortalClient({
           />
         )}
 
-        {isVerifiedAndActive && <ExtendStaySection token={token} checkOut={booking.check_out} />}
+        {isVerifiedAndActive && (
+          <ExtendStaySection
+            token={token}
+            checkOut={booking.check_out}
+            pendingExtensionCheckOut={booking.pending_extension_check_out}
+            pendingExtensionNights={booking.pending_extension_nights}
+            pendingExtensionRequestedAt={booking.pending_extension_requested_at}
+          />
+        )}
 
         {isVerifiedAndActive &&
           cleaningNotices.map((notice) => (

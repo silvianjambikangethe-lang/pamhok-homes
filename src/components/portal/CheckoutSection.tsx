@@ -39,6 +39,10 @@ export default function CheckoutSection({
         return;
       }
       router.refresh();
+      // This section unmounts once the refreshed booking shows
+      // checked_out_at set, but resetting here too avoids a stuck
+      // "Confirming…" button if that refresh is ever slow to land.
+      setSubmitting(false);
     } catch {
       setError("Could not confirm check-out.");
       setSubmitting(false);

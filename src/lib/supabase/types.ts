@@ -105,6 +105,10 @@ export type Booking = {
   checked_out_at: string | null;
   terms_accepted_at: string | null;
   created_at: string;
+  pending_extension_check_out: string | null;
+  pending_extension_nights: number | null;
+  pending_extension_amount: number | null;
+  pending_extension_requested_at: string | null;
 };
 
 export type GuestRequest = {

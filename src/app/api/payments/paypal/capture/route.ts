@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getPaypalAccessToken, paypalBaseUrl } from "@/lib/paypal";
 import { sendPaymentSucceededEmail } from "@/lib/booking-emails";
+import { resolvePendingExtensionAfterPayment } from "@/lib/extension-hold";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
     const supabase = createAdminSupabaseClient();
     const { data: booking } = await supabase
       .from("bookings")
-      .select("id, payment_status, payment_reference, paid_at")
+      .select("id, payment_status, payment_reference, paid_at, pending_extension_check_out")
       .eq("access_token", bookingToken)
       .maybeSingle();
 
@@ -67,7 +68,22 @@ export async function GET(request: Request) {
         })
         .eq("access_token", bookingToken);
 
-      await sendPaymentSucceededEmail(supabase, booking.id, booking.paid_at !== null);
+      // A stay extension only takes effect once its payment actually
+      // clears — this applies the held pending_extension_check_out now
+      // (re-checking the hold hasn't expired and nobody else took the
+      // dates in the meantime), rather than when the guest merely
+      // requested it. No-op ("none") if there's no pending extension on
+      // this booking.
+      const extensionResolution = await resolvePendingExtensionAfterPayment(supabase, booking.id);
+
+      // If the hold expired or lost the dates right as payment landed,
+      // neither the "booking confirmed" nor "extension confirmed" email
+      // is true — admin was already notified (see
+      // resolvePendingExtensionAfterPayment) and needs to sort out a
+      // possible refund before the guest hears anything.
+      if (extensionResolution !== "reverted") {
+        await sendPaymentSucceededEmail(supabase, booking.id, booking.paid_at !== null);
+      }
 
       return NextResponse.redirect(`${siteUrl}/portal/${bookingToken}?paypal=success`);
     }

@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { releaseExpiredExtensionHold } from "@/lib/extension-hold";
 import type { Booking, Guest, Room } from "@/lib/supabase/types";
 
 export interface LatestLaundryRequest {
@@ -23,7 +24,7 @@ export interface PortalBooking extends Booking {
 export async function getBookingByToken(token: string): Promise<PortalBooking | null> {
   const supabase = createAdminSupabaseClient();
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("bookings")
     .select(
       "*, room:rooms(id, name, slug, door_code, wifi_password, wifi_network_name), guest:guests(full_name)",
@@ -32,6 +33,17 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     .maybeSingle();
 
   if (error || !data) return null;
+
+  if (await releaseExpiredExtensionHold(supabase, data)) {
+    ({ data, error } = await supabase
+      .from("bookings")
+      .select(
+        "*, room:rooms(id, name, slug, door_code, wifi_password, wifi_network_name), guest:guests(full_name)",
+      )
+      .eq("access_token", token)
+      .maybeSingle());
+    if (error || !data) return null;
+  }
 
   const [{ count }, { data: laundryRows }] = await Promise.all([
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("booking_id", data.id),

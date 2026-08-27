@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { sendPaymentSucceededEmail } from "@/lib/booking-emails";
+import { resolvePendingExtensionAfterPayment } from "@/lib/extension-hold";
 
 export async function POST(
   _request: Request,
@@ -33,7 +34,21 @@ export async function POST(
     return NextResponse.json({ error: "Not authorized or booking not found." }, { status: 403 });
   }
 
-  await sendPaymentSucceededEmail(supabase, id, wasAlreadyPaid);
+  // A stay extension only takes effect once its payment actually clears —
+  // this applies the held pending_extension_check_out now (re-checking
+  // the hold hasn't expired and nobody else took the dates in the
+  // meantime), rather than when the guest merely requested it. No-op
+  // ("none") if there's no pending extension on this booking.
+  const extensionResolution = await resolvePendingExtensionAfterPayment(supabase, id);
+
+  // If the hold expired or lost the dates right as payment landed,
+  // neither the "booking confirmed" nor "extension confirmed" email is
+  // true — admin was already notified (see
+  // resolvePendingExtensionAfterPayment) and needs to sort out a possible
+  // refund before the guest hears anything.
+  if (extensionResolution !== "reverted") {
+    await sendPaymentSucceededEmail(supabase, id, wasAlreadyPaid);
+  }
 
   return NextResponse.json({ ok: true });
 }
