@@ -435,12 +435,22 @@ local-only reference file, not something `git status` will ever show).
     Neighborhood): add/remove places under Food or Recreation, each with a
     name, detail line, and a photo upload slot. 6 real places under
     Recreation (Thika Road Mall/TRM, Garden City Mall, Two Rivers Mall,
-    Village Market, Karura Forest, Nairobi National Park), **all with
-    working "Get Directions from Pamhok Homes" buttons** built from
-    precise point-to-point Maps routes. Two Food places added (Artcaffe,
-    Java House); no Maps link supplied for either yet, so no directions
-    button on those two until one's added. All neighborhood photos —
-    Recreation and Food — are now uploaded.
+    Village Market, Karura Forest, Nairobi National Park — the last one
+    added 2026-08-27 with photo, description, and directions link, closing
+    a gap where it was documented here but missing from the live data),
+    **all with working "Get Directions from Pamhok Homes" buttons** built
+    from precise point-to-point Maps routes. Two Food places (Artcaffe,
+    Java House), both now with working directions links (Artcaffe's added
+    2026-08-27). All neighborhood photos — Recreation and Food — are
+    uploaded.
+- **Full site content QA pass done 2026-08-27** (owner asked "run through the
+  site tell me what's missing"): found and fixed a contradictory sentence
+  in the About page body ("We're not a hotel chain, and we could evolve to
+  one where..." → "...and we don't want to be one — ..."). Checked rooms
+  (all complete with photos), social links (Instagram + TikTok, both real
+  and active, no gaps), business expenses, and neighborhood content —
+  no other issues found. Reviews table is still empty (0 rows), which is
+  expected pre-launch, not a bug.
 - **"I've Arrived" flow in the guest portal** — once paid + verified, a
   guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
   latter pops up a congratulations message plus their verification pass
