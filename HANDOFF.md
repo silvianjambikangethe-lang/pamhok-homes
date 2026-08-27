@@ -451,6 +451,21 @@ local-only reference file, not something `git status` will ever show).
   and active, no gaps), business expenses, and neighborhood content —
   no other issues found. Reviews table is still empty (0 rows), which is
   expected pre-launch, not a bug.
+- **Second QA/error pass done 2026-08-27** (owner asked to "continue the web
+  check for errors" after the above): fixed a typo in the homepage subtext
+  ("...Thika Road Mall-along Thika Rd, Roysambu\n. Book directly with us,
+  Always within reach." → "...Thika Road Mall, along Thika Rd, Roysambu.
+  Book directly with us, always within reach." — the run-together
+  "Mall-along", a stray line break producing an orphaned period, and a
+  mid-sentence capital "Always" are all fixed). Verified all 45 photo URLs
+  referenced across rooms/homepage/about/neighborhood resolve with HTTP 200
+  — no broken images anywhere. Checked bookings (0 rows, expected
+  pre-launch), guest_requests (0), admin_users (1, correct), and re-ran the
+  security advisor — only the same two pre-existing benign items remain
+  (see "RLS + advisor cleanup" note elsewhere in this file). Note: "Room
+  Ten (Q)" was flagged as a possible typo (every other room follows
+  "Room [Word] ([matching digit])") but the owner confirmed it's
+  intentional, not a bug — left as-is.
 - **"I've Arrived" flow in the guest portal** — once paid + verified, a
   guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
   latter pops up a congratulations message plus their verification pass
