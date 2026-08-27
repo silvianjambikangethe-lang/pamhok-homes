@@ -562,6 +562,63 @@ local-only reference file, not something `git status` will ever show).
     automatically too.
   All test bookings/guests/reviews created during simulation and testing
   were deleted afterward — production data untouched throughout.
+- **Room-transfer extension + contact-button visibility fix (2026-08-27)**
+  — follow-up owner request: when a guest's own room isn't free for the
+  extra nights they want, don't dead-end them — offer other rooms free
+  for those same dates, and if they pick one, treat it as a genuinely
+  fresh check-in rather than an awkward bolt-on:
+  - `extend/check` (`src/app/api/portal/[token]/extend/check/route.ts`)
+    now returns `alternateRooms` (every other active room with no
+    conflict for the requested date range, name + price) whenever the
+    guest's current room has a conflict, plus the computed `newCheckOut`
+    so the frontend has exact dates to act on.
+  - New route `extend/transfer`
+    (`src/app/api/portal/[token]/extend/transfer/route.ts`): creates a
+    genuinely separate `bookings` row in the chosen room — check_in is
+    the guest's current check_out (so it starts the moment their current
+    stay ends), its own check_out, its own `booking_reference`/
+    `pass_reference`/`access_token`, `payment_status: 'Pending'`. Reuses
+    the same `guest_id` (same person, not duplicated) and copies
+    `id_verification_status: 'Verified'` over — no ID re-upload for a
+    guest who's already vetted and currently staying — but leaves
+    `terms_accepted_at` unset and payment untouched, same as any other
+    booking. Re-validates availability at transfer time too (same
+    race-condition guard pattern as extend/confirm). Because it's a
+    genuinely new booking row, laundry (`guest_requests` scoped to
+    `booking_id`) and cleaning-day notices (computed off `check_in`)
+    start completely fresh for the new room — nothing carries over from
+    the old one.
+  - `ExtendStaySection.tsx` renders the alternate rooms as a picker
+    ("Book this room" per room, its own per-button loading state so
+    picking one doesn't block the others); on success, `router.push`s
+    straight to the new booking's portal page.
+  - **Contact-button visibility loosened**: previously both the floating
+    WhatsApp widget and the inline "Contact Host on WhatsApp" button
+    required the guest to have paid at least once (`wasEverActive`,
+    paid_at-based — see the entry above). That's still correct for
+    door code/WiFi/laundry, but it meant a guest freshly transferred to a
+    new room (or anyone mid-first-payment) saw no way to reach the host
+    if something went wrong. New `canContactHost` flag in
+    `PortalClient.tsx` drops the payment requirement — visible to any
+    ID-verified guest regardless of payment status. `ExtendStaySection`
+    also gained its own inline WhatsApp + Call block, shown any time an
+    error or an alternate-rooms picker appears — the two together mean a
+    stuck guest is never more than one tap from reaching the host, per
+    the owner's explicit ask. `VerificationPassSection`'s "pass not
+    ready" message was also split into three accurate states (extension
+    pending / ID verified but unpaid / not yet verified) instead of one
+    generic message that used to claim ID wasn't confirmed even when it
+    was — the fresh-transfer booking is exactly the case that needed
+    this.
+  - Verified live end-to-end through the real dev server and browser
+    (not just curl): created a real conflict on a room, confirmed
+    `extend/check` listed every other free room with correct pricing,
+    clicked "Book this room" in the actual UI, confirmed it created a
+    real second booking with the right dates/room/amount, redirected to
+    its portal page, and confirmed both WhatsApp options were visible
+    pre-payment with the new accurate messaging. Admin notification
+    ("Guest moved to Room X for extra nights...") confirmed in
+    `guest_requests`. All test data cleaned up afterward.
 - **"I've Arrived" flow in the guest portal** — once paid + verified, a
   guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
   latter pops up a congratulations message plus their verification pass

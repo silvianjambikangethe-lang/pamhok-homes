@@ -67,16 +67,22 @@ export default function PortalClient({
   const wasEverActive = booking.id_verification_status === "Verified" && !!booking.paid_at;
   const isVerifiedAndActive = wasEverActive && !booking.checked_out_at;
   const passReference = booking.pass_reference;
+  // Deliberately looser than wasEverActive: a guest who's ID-verified but
+  // hasn't paid yet (still mid first-payment, or freshly transferred to a
+  // different room after their old one wasn't free for extra nights)
+  // should still be able to reach the host if something goes wrong — the
+  // contact button just offers a way to ask for help, unlike door
+  // code/WiFi/laundry which stay gated behind full payment.
+  const canContactHost = booking.id_verification_status === "Verified";
 
   const { setHidden } = useWhatsappVisibility();
-  // Hide the floating WhatsApp button only on the payment-pending / ID-
-  // verification step for a brand-new booking — everywhere else on the
-  // site (and everywhere else in the portal, once ever verified) it stays
-  // visible.
+  // Hide the floating WhatsApp button only before ID verification —
+  // everywhere else (including mid-payment, so a stuck guest always has a
+  // way to ask for help) it stays visible.
   useEffect(() => {
-    setHidden(!wasEverActive);
+    setHidden(!canContactHost);
     return () => setHidden(false);
-  }, [wasEverActive, setHidden]);
+  }, [canContactHost, setHidden]);
 
   return (
     <div>
@@ -114,7 +120,7 @@ export default function PortalClient({
         </div>
       )}
 
-      {wasEverActive && adminPhone && (
+      {canContactHost && adminPhone && (
         <a
           href={whatsappLink(
             adminPhone,
@@ -132,7 +138,11 @@ export default function PortalClient({
       )}
 
       <div className="mt-8 space-y-6">
-        <VerificationPassSection isReady={isPassReady} wasEverActive={wasEverActive} />
+        <VerificationPassSection
+          isReady={isPassReady}
+          idVerified={booking.id_verification_status === "Verified"}
+          hasPendingExtension={!!booking.pending_extension_check_out}
+        />
 
         {isVerifiedAndActive && (
           <ArrivalSection
@@ -249,6 +259,8 @@ export default function PortalClient({
             pendingExtensionCheckOut={booking.pending_extension_check_out}
             pendingExtensionNights={booking.pending_extension_nights}
             pendingExtensionRequestedAt={booking.pending_extension_requested_at}
+            adminPhone={adminPhone}
+            bookingReference={booking.booking_reference}
           />
         )}
 

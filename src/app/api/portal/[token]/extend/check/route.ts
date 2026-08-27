@@ -76,9 +76,38 @@ export async function POST(
   const pricePerNight = room?.price_per_night ?? 0;
 
   if (conflicts && conflicts.length > 0) {
+    // The guest's own room isn't free for the extra nights — offer any
+    // other room that is, rather than a dead end. additionalNights here
+    // is exactly what they'd need in the alternate room too, since it's
+    // the same date range (their current check_out -> newCheckOut).
+    const [{ data: allRooms }, { data: allBusy }] = await Promise.all([
+      supabase
+        .from("rooms")
+        .select("id, name, price_per_night, currency")
+        .eq("is_active", true)
+        .neq("id", booking.room_id),
+      supabase
+        .from("availability_view")
+        .select("room_id, check_in, check_out")
+        .lt("check_in", newCheckOut)
+        .gt("check_out", booking.check_out),
+    ]);
+
+    const busyRoomIds = new Set((allBusy ?? []).map((b) => b.room_id));
+    const alternateRooms = (allRooms ?? [])
+      .filter((r) => !busyRoomIds.has(r.id))
+      .map((r) => ({
+        roomId: r.id,
+        name: r.name,
+        additionalCost: additionalNights * r.price_per_night,
+        currency: r.currency,
+      }));
+
     return NextResponse.json({
       available: false,
-      message: "Those extra nights aren't available — another guest is booked next.",
+      message: "Those extra nights aren't available in your current room — another guest is booked next.",
+      newCheckOut,
+      alternateRooms,
     });
   }
 
