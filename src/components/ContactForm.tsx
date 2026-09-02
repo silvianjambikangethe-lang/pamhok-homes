@@ -60,7 +60,6 @@ export default function ContactForm() {
             required
             autoComplete="name"
             className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/40"
-            placeholder="Jane Doe"
           />
         </div>
         <div>
@@ -74,7 +73,6 @@ export default function ContactForm() {
             required
             autoComplete="email"
             className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/40"
-            placeholder="jane@example.com"
           />
         </div>
       </div>

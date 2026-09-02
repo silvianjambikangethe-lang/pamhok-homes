@@ -127,7 +127,6 @@ export default function ManualBookingForm({
             required
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
-            placeholder="e.g. Jane Doe"
             className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3 py-2.5 text-sm text-ink"
           />
         </div>

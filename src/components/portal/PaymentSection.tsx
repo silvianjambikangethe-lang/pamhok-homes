@@ -212,7 +212,6 @@ export default function PaymentSection({
                   required
                   value={mpesaPhone}
                   onChange={(e) => setMpesaPhone(e.target.value)}
-                  placeholder="07XX XXX XXX"
                   className="focus-ring flex-1 rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
                 />
                 <button
