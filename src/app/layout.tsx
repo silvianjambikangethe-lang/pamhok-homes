@@ -7,6 +7,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import WhatsappFloatButton from "@/components/WhatsappFloatButton";
 import { WhatsappVisibilityProvider } from "@/components/WhatsappVisibilityContext";
 import { getAdminContactPhone } from "@/lib/data";
+import { SITE } from "@/lib/site";
 
 // The typography brief specifies "General Sans" for body text, but it's a
 // Fontshare-exclusive font, not actually published on Google Fonts (checked
@@ -39,7 +40,7 @@ const cormorant = Cormorant({
 });
 
 export const metadata: Metadata = {
-  title: "Pamhok Homes — A Home Away From Home in Nairobi",
+  title: `${SITE.name} — A Home Away From Home in Nairobi`,
   description:
     "Boutique stays near Thika Road Mall, Nairobi. Warm, welcoming rooms with free WiFi, parking, and a personal touch — book directly, no middlemen.",
 };

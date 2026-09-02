@@ -4,9 +4,10 @@ import { getSiteStatus } from "@/lib/data";
 import ChangePasswordForm from "@/components/admin/ChangePasswordForm";
 import ChangePhoneForm from "@/components/admin/ChangePhoneForm";
 import SiteStatusForm from "@/components/admin/SiteStatusForm";
+import { pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Settings — Pamhok Homes",
+  title: pageTitle("Settings"),
   robots: { index: false, follow: false },
 };
 

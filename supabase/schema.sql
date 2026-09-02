@@ -8,6 +8,13 @@
 -- `admin_users` table so the admin dashboard can be gated by
 -- Row Level Security tied to a real Supabase Auth user id,
 -- not just a frontend redirect.
+--
+-- Kept in sync with the live database by hand (not by CLI push —
+-- schema changes here are applied via the Supabase MCP tool, see
+-- supabase/migrations/ for the individual dated changes). If you
+-- ever suspect drift, the source of truth is always the live
+-- project, not this file — diff against it with list_tables /
+-- pg_policies / pg_get_viewdef before trusting this script.
 -- ============================================================
 
 create extension if not exists "pgcrypto";
@@ -161,6 +168,16 @@ create table if not exists bookings (
   refund_reference text,
   refunded_at timestamptz,
 
+  -- A guest-requested stay extension is not applied to check_out until its
+  -- payment is confirmed — these four columns hold the pending extension
+  -- (and its 3-hour availability hold, see availability_view below) until
+  -- payment_status becomes Paid, at which point it's folded into check_out
+  -- and cleared. See src/lib/extension-hold.ts.
+  pending_extension_check_out date,          -- the check_out that will be applied once payment confirms
+  pending_extension_nights int,              -- extra nights requested, for display only
+  pending_extension_amount numeric(10,2),    -- additional cost already folded into total_amount, kept separately so it can be cleanly subtracted back out if the hold expires or conflicts
+  pending_extension_requested_at timestamptz, -- hold + payment window both expire 3 hours after this
+
   -- Door code / WiFi password live on `rooms`, not here — they're property
   -- details, not per-booking secrets. The guest portal shows them (once
   -- payment_status = 'Paid' AND id_verification_status = 'Verified') by
@@ -259,6 +276,10 @@ create index if not exists idx_bookings_access_token on bookings (access_token);
 create index if not exists idx_bookings_guest_id on bookings (guest_id);
 create index if not exists idx_guest_requests_booking_id on guest_requests (booking_id);
 create index if not exists idx_reviews_booking_id on reviews (booking_id);
+-- Covers room_id lookups on its own (the composite idx_bookings_room_dates
+-- above requires check_in/check_out too to be used) — flagged separately
+-- by the performance advisor.
+create index if not exists idx_bookings_room_id on bookings (room_id);
 
 -- ============================================================
 -- Row Level Security
@@ -275,91 +296,126 @@ alter table business_expenses enable row level security;
 alter table login_attempts enable row level security;
 alter table rate_limits enable row level security;
 
+-- Every policy below wraps auth.uid() as (select auth.uid()) — lets
+-- Postgres cache it once per statement instead of re-evaluating per row
+-- (Supabase performance advisor's InitPlan recommendation), pure
+-- performance, no behavior change.
+
 -- --- site_content: public can read; only admins can write ---
 create policy "anyone can view site content" on site_content
-  for select using (true);
+  for select
+  to anon
+  using (true);
 
 create policy "admins manage site content" on site_content
-  for all using (auth.uid() in (select id from admin_users))
-  with check (auth.uid() in (select id from admin_users));
+  for all
+  to authenticated
+  using ((select auth.uid()) in (select id from admin_users))
+  with check ((select auth.uid()) in (select id from admin_users));
 
 -- --- social_links: public can read active links; admins manage all ---
 create policy "anyone can view active social links" on social_links
-  for select using (is_active = true);
+  for select
+  to anon
+  using (is_active = true);
 
 create policy "admins manage social links" on social_links
-  for all using (auth.uid() in (select id from admin_users))
-  with check (auth.uid() in (select id from admin_users));
+  for all
+  to authenticated
+  using ((select auth.uid()) in (select id from admin_users))
+  with check ((select auth.uid()) in (select id from admin_users));
 
 -- --- business_expenses: admin-only, no public/guest access at all ---
 create policy "admins manage business expenses" on business_expenses
-  for all using (auth.uid() in (select id from admin_users))
-  with check (auth.uid() in (select id from admin_users));
+  for all
+  using ((select auth.uid()) in (select id from admin_users))
+  with check ((select auth.uid()) in (select id from admin_users));
 
 -- --- rooms: public can browse active rooms; admins manage all ---
 create policy "anyone can view active rooms" on rooms
-  for select using (is_active = true);
+  for select
+  to anon
+  using (is_active = true);
 
 create policy "admins manage rooms" on rooms
-  for all using (auth.uid() in (select id from admin_users))
-  with check (auth.uid() in (select id from admin_users));
+  for all
+  to authenticated
+  using ((select auth.uid()) in (select id from admin_users))
+  with check ((select auth.uid()) in (select id from admin_users));
 
 -- --- bookings: public can create; only admins can read/update directly ---
--- Guests never SELECT this table with the anon key. The guest portal
--- (door code, WiFi, ID upload, checkout) is served by a server-side API
--- route using the service-role key, keyed off the booking's access_token —
--- never an open SELECT policy, since this table holds ID document paths.
+-- Guests never SELECT this table with the anon key beyond the narrow
+-- availability grant below. The guest portal (door code, WiFi, ID upload,
+-- checkout) is served by a server-side API route using the service-role
+-- key, keyed off the booking's access_token — never an open SELECT
+-- policy, since this table holds ID document paths.
 create policy "anyone can create a booking" on bookings
-  for insert with check (true);
+  for insert
+  to anon
+  with check (true);
 
 create policy "admins manage bookings" on bookings
-  for all using (auth.uid() in (select id from admin_users))
-  with check (auth.uid() in (select id from admin_users));
+  for all
+  to authenticated
+  using ((select auth.uid()) in (select id from admin_users))
+  with check ((select auth.uid()) in (select id from admin_users));
 
 -- --- guests: public can create; only admins can read ---
 create policy "anyone can create a guest record" on guests
   for insert with check (true);
 
 create policy "admins view guests" on guests
-  for select using (auth.uid() in (select id from admin_users));
+  for select using ((select auth.uid()) in (select id from admin_users));
 
 -- --- admin_users: a user can check and update their own admin membership ---
 create policy "admins can read their own row" on admin_users
-  for select using (auth.uid() = id);
+  for select using ((select auth.uid()) = id);
 
 create policy "admins can update their own row" on admin_users
-  for update using (auth.uid() = id) with check (auth.uid() = id);
+  for update using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
 
 -- --- guest_requests: written by the service role from the guest portal
 -- API route (validated via access_token, not a public policy); read/
 -- resolved by admins only ---
 create policy "admins manage guest requests" on guest_requests
-  for all using (auth.uid() in (select id from admin_users))
-  with check (auth.uid() in (select id from admin_users));
+  for all
+  using ((select auth.uid()) in (select id from admin_users))
+  with check ((select auth.uid()) in (select id from admin_users));
 
 -- --- reviews: public can read (displayed on the site); written by the
 -- service role from the post-stay review link (validated via
 -- access_token) ---
 create policy "anyone can read reviews" on reviews
-  for select using (true);
+  for select
+  to anon
+  using (true);
 
 create policy "admins manage reviews" on reviews
-  for all using (auth.uid() in (select id from admin_users))
-  with check (auth.uid() in (select id from admin_users));
+  for all
+  to authenticated
+  using ((select auth.uid()) in (select id from admin_users))
+  with check ((select auth.uid()) in (select id from admin_users));
 
 -- ============================================================
 -- Availability — public can see booked/blocked date ranges per
--- room ONLY (no guest details, no payment/ID info).
+-- room ONLY (no guest details, no payment/ID info), including a
+-- synthetic extra range for a booking's *pending* stay-extension hold
+-- (see the pending_extension_* columns above) so the calendar blocks
+-- those nights for other guests during the guest's ~3 hour payment
+-- window, even though check_out itself hasn't moved yet.
 --
 -- The view runs security_invoker (not the default security_definer),
 -- so it only ever sees what anon itself is allowed to see below — a
--- real column-level grant plus a row-level policy, not a permission
+-- real column-level grant plus row-level policies, not a permission
 -- bypass. Nothing else in the app queries bookings as anon (every other
 -- read/write goes through the service-role client or an authenticated
 -- admin session), so this is the only door anon has into the table.
 -- ============================================================
 revoke select on bookings from anon;
-grant select (room_id, check_in, check_out, booking_status) on bookings to anon;
+grant select (
+  room_id, check_in, check_out, booking_status,
+  payment_status, pending_extension_check_out, pending_extension_requested_at
+) on bookings to anon;
 
 create policy "anon can view availability rows" on bookings
   for select
@@ -369,21 +425,46 @@ create policy "anon can view availability rows" on bookings
 create or replace view availability_view as
   select room_id, check_in, check_out, booking_status
   from bookings
-  where booking_status in ('Confirmed', 'Blocked', 'Pending Verification');
+  where booking_status in ('Confirmed', 'Blocked', 'Pending Verification')
+  union all
+  select room_id, check_out as check_in, pending_extension_check_out as check_out, booking_status
+  from bookings
+  where pending_extension_check_out is not null
+    and payment_status = 'Pending'
+    and pending_extension_requested_at > (now() - interval '3 hours')
+    and booking_status = 'Confirmed';
 
 alter view availability_view set (security_invoker = true);
 
 grant select on availability_view to anon, authenticated;
 
 -- ============================================================
--- Private storage bucket for national ID uploads.
--- No public policies are attached — access is exclusively via the
--- service-role key from server-side API routes (upload during guest
--- portal Step 1; signed-URL viewing from the admin dashboard).
+-- Storage buckets
 -- ============================================================
+
+-- Private bucket for national ID uploads. No public policies are
+-- attached — access is exclusively via the service-role key from
+-- server-side API routes (upload during guest portal Step 1;
+-- signed-URL viewing from the admin dashboard).
 insert into storage.buckets (id, name, public)
 values ('id-documents', 'id-documents', false)
 on conflict (id) do nothing;
+
+-- Public bucket for room/site photos and branding (logo, hero images,
+-- etc.) — served straight through next/image, no signed URLs needed.
+-- Uploaded from the admin dashboard's various content forms
+-- (see src/app/api/admin/upload-image/route.ts).
+insert into storage.buckets (id, name, public)
+values ('site-images', 'site-images', true)
+on conflict (id) do nothing;
+
+create policy "anyone can view site images" on storage.objects
+  for select using (bucket_id = 'site-images');
+
+create policy "admins manage site images" on storage.objects
+  for all
+  using (bucket_id = 'site-images' and auth.uid() in (select id from admin_users))
+  with check (bucket_id = 'site-images' and auth.uid() in (select id from admin_users));
 
 -- ============================================================
 -- Sample rooms — replace name/price/description with the real thing,
@@ -416,6 +497,14 @@ on conflict (slug) do nothing;
 
 -- ============================================================
 -- Making yourself an admin:
+--
+-- Option A — scripted (recommended): run
+--   node scripts/bootstrap-admin.mjs you@example.com 'a-strong-password'
+-- with SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_URL set in your
+-- environment. Creates the Auth user and the matching admin_users row in
+-- one step.
+--
+-- Option B — manual:
 -- 1. Create your login in Supabase Dashboard > Authentication > Users
 --    ("Add user"), or sign up once a sign-up flow exists.
 -- 2. Then run, with your real user id (from that Users table) and email:

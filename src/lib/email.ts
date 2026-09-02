@@ -12,7 +12,7 @@ export function isEmailConfigured() {
 // only delivers to the Resend account's own signup address — fine for
 // local dev/testing, not for real guests.
 function fromAddress() {
-  return process.env.EMAIL_FROM_ADDRESS ?? "Pamhok Homes <onboarding@resend.dev>";
+  return process.env.EMAIL_FROM_ADDRESS ?? `${SITE.name} <onboarding@resend.dev>`;
 }
 
 let client: Resend | null = null;
@@ -30,10 +30,10 @@ function wrapper(bodyHtml: string): string {
   return `<div style="background:#FBF7F1; padding:32px 16px;">
     <style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Plus+Jakarta+Sans:wght@400;600&display=swap');</style>
     <div style="font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; max-width: 480px; margin: 0 auto; color: #2a2118; font-size: 15px; line-height: 1.6;">
-      <h1 style="font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 22px; margin: 0 0 20px;">Pamhok Homes</h1>
+      <h1 style="font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 22px; margin: 0 0 20px;">${SITE.name}</h1>
       ${bodyHtml}
       <p style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #EBDFC6; font-size: 13px; color: #8a7d6e;">
-        Near Thika Road Mall (TRM), Nairobi, Kenya · +254 704 393 189
+        ${SITE.address} · ${SITE.phone}
       </p>
     </div>
   </div>`;

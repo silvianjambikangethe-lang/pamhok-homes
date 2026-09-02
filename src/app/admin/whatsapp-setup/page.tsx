@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import WhatsappSetupForm from "@/components/admin/WhatsappSetupForm";
+import { pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "WhatsApp Contact — Pamhok Homes",
+  title: pageTitle("WhatsApp Contact"),
   robots: { index: false, follow: false },
 };
 

@@ -5,7 +5,7 @@ import { format, isPast, parseISO, startOfDay } from "date-fns";
 import { Broom, CalendarBlank, ClockCountdown, Info, Phone, WhatsappLogo } from "@phosphor-icons/react";
 import type { PortalBooking } from "@/lib/portal";
 import type { DisplayCurrency } from "@/lib/currency";
-import { whatsappLink } from "@/lib/site";
+import { SITE, whatsappLink } from "@/lib/site";
 import { useWhatsappVisibility } from "@/components/WhatsappVisibilityContext";
 import PageBanner from "@/components/PageBanner";
 import PaymentSection from "@/components/portal/PaymentSection";
@@ -89,7 +89,7 @@ export default function PortalClient({
       <PageBanner
         color="taupePortal"
         eyebrow="Your Stay"
-        title={booking.room?.name ?? "Pamhok Homes"}
+        title={booking.room?.name ?? SITE.name}
       />
 
       <div className="container-page max-w-3xl py-12 sm:py-16">
@@ -148,7 +148,7 @@ export default function PortalClient({
           <ArrivalSection
             mapsUrl={mapsUrl}
             guestDisplayName={firstNameLastInitial(booking.guest?.full_name)}
-            roomName={booking.room?.name ?? "Pamhok Homes"}
+            roomName={booking.room?.name ?? SITE.name}
             checkIn={booking.check_in}
             checkOut={booking.check_out}
             bookingReference={passReference}
@@ -294,7 +294,7 @@ export default function PortalClient({
           <>
             <div className="rounded-2xl border border-forest-500/30 bg-forest-500/10 p-6 shadow-card">
               <p className="font-serif text-h2 text-ink">
-                Thanks for staying with Pamhok Homes — hope to host you again!
+                Thanks for staying with {SITE.name} — hope to host you again!
               </p>
             </div>
             {!booking.hasReview && <ReviewForm token={token} />}

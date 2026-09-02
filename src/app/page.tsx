@@ -4,6 +4,7 @@ import PhotoCard from "@/components/PhotoCard";
 import Eyebrow from "@/components/Eyebrow";
 import { getAmenitiesContent, getFeaturedReviews, getHomepageContent } from "@/lib/data";
 import { getAmenityIcon } from "@/lib/amenity-icons";
+import { SITE } from "@/lib/site";
 
 // Real property photos will eventually make this a photo hero. Until
 // then, a flat color (not a photo-placeholder gradient) keeps white text
@@ -90,7 +91,7 @@ export default async function HomePage() {
               More than a place to sleep
             </h2>
             <p className="mt-5 text-body text-ink/80">
-              Pamhok Homes started with a simple idea: guests should feel
+              {SITE.name} started with a simple idea: guests should feel
               genuinely cared for, not just checked in. Every room is
               thoughtfully furnished, every stay is guided personally, and
               every question gets a real, quick answer — not an automated

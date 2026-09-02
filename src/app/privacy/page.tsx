@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import PageBanner from "@/components/PageBanner";
-import { SITE } from "@/lib/site";
+import { SITE, pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Pamhok Homes",
+  title: pageTitle("Privacy Policy"),
   robots: { index: false, follow: false },
 };
 

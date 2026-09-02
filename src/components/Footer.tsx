@@ -49,7 +49,7 @@ export default async function Footer() {
           <ul className="mt-4 space-y-3 text-sm text-white/70">
             <li className="flex items-start gap-2">
               <MapPin size={18} className="mt-0.5 shrink-0" />
-              <span>Near Thika Road Mall (TRM), Nairobi, Kenya</span>
+              <span>{SITE.address}</span>
             </li>
             <li className="flex items-center gap-2">
               <Phone size={18} className="shrink-0" />
@@ -71,7 +71,7 @@ export default async function Footer() {
               Quick question about your stay? Message us directly.
             </p>
             <a
-              href={whatsappLink(adminPhone, "Hi Pamhok Homes! I have a question about a stay.")}
+              href={whatsappLink(adminPhone, `Hi ${SITE.name}! I have a question about a stay.`)}
               target="_blank"
               rel="noopener noreferrer"
               className="focus-ring mt-4 inline-flex items-center gap-2 rounded-full bg-success px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"

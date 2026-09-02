@@ -10,7 +10,16 @@ import type { NextConfig } from "next";
 // iframe, so it needs no CSP allowance at all. No third-party embeds,
 // no Google Maps JS SDK (directions open as plain links), no iframes
 // anywhere in the codebase.
-const SUPABASE_ORIGIN = "https://ajxijucojqkxszfkepqr.supabase.co";
+//
+// Derived from NEXT_PUBLIC_SUPABASE_URL rather than hardcoded, so this
+// file works unchanged for any Supabase project (not just this one) —
+// falls back to this project's origin only for tooling that evaluates
+// next.config.ts without an env file loaded (e.g. some lint/build
+// steps), never at runtime, since NEXT_PUBLIC_SUPABASE_URL is always
+// set in every real environment (local, Vercel).
+const SUPABASE_ORIGIN = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+  : "https://ajxijucojqkxszfkepqr.supabase.co";
 
 const CSP = [
   `default-src 'self'`,
@@ -36,7 +45,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "ajxijucojqkxszfkepqr.supabase.co",
+        hostname: new URL(SUPABASE_ORIGIN).hostname,
         pathname: "/storage/v1/object/public/**",
       },
     ],

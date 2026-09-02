@@ -4,10 +4,10 @@ import { SealCheck, Warning } from "@phosphor-icons/react/dist/ssr";
 import PageBanner from "@/components/PageBanner";
 import { getBookingByToken } from "@/lib/portal";
 import { firstNameLastInitial } from "@/lib/guest-display-name";
-import { SITE } from "@/lib/site";
+import { SITE, pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Verify a Guest — Pamhok Homes",
+  title: pageTitle("Verify a Guest"),
   robots: { index: false, follow: false },
 };
 
@@ -26,7 +26,7 @@ export default async function VerifyPassPage({
 
   return (
     <div>
-      <PageBanner color="sage" eyebrow="Guest Verification" title="Pamhok Homes" />
+      <PageBanner color="sage" eyebrow="Guest Verification" title={SITE.name} />
 
       <div className="container-page max-w-md py-12 sm:py-16">
         {isValid ? (

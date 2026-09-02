@@ -5,6 +5,7 @@ import { CheckCircle, Plus, Trash } from "@phosphor-icons/react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import MapsLinkField from "@/components/admin/MapsLinkField";
 import type { NeighborhoodContent, NeighborhoodItem } from "@/lib/supabase/types";
+import { SITE } from "@/lib/site";
 
 const EMPTY_ITEM: NeighborhoodItem = {
   name: "",
@@ -77,10 +78,10 @@ function CategoryEditor({
                 inputBg="bg-surface"
               />
               <p className="mt-1 text-xs text-ink/65">
-                Adds a &quot;Get Directions from Pamhok Homes&quot; button for
+                Adds a &quot;Get Directions from {SITE.name}&quot; button for
                 this place on the public page. Paste either the place&apos;s
-                own Google Maps pin, or a &quot;Directions from Pamhok
-                Homes&quot; link shared straight from Maps — both work.
+                own Google Maps pin, or a &quot;Directions from {SITE.name}
+                &quot; link shared straight from Maps — both work.
               </p>
             </div>
             <div className="mt-3 flex items-end justify-between gap-3">
@@ -155,7 +156,7 @@ export default function NeighborhoodContentForm({
     >
       <h2 className="font-serif text-lg font-semibold text-ink">Neighborhood</h2>
       <p className="mt-1 text-xs text-ink/65">
-        Suggested places to eat and things to do near Pamhok Homes — shown on
+        Suggested places to eat and things to do near {SITE.name} — shown on
         the public Neighborhood page.
       </p>
 

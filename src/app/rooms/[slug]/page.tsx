@@ -5,6 +5,7 @@ import RoomPhoto from "@/components/RoomPhoto";
 import BookingWidget from "@/components/BookingWidget";
 import { getAvailability, getRoomBySlug } from "@/lib/data";
 import { getExchangeRates } from "@/lib/currency";
+import { pageTitle } from "@/lib/site";
 
 export async function generateMetadata({
   params,
@@ -13,9 +14,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const { room } = await getRoomBySlug(slug);
-  if (!room) return { title: "Room not found — Pamhok Homes" };
+  if (!room) return { title: pageTitle("Room not found") };
   return {
-    title: `${room.name} — Pamhok Homes`,
+    title: pageTitle(room.name),
     description: room.description,
   };
 }

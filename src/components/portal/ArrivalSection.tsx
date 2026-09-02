@@ -37,7 +37,7 @@ export default function ArrivalSection({
         <h2 className="font-serif text-h3 text-ink">On your way?</h2>
       </div>
       <p className="mt-1 text-sm text-ink/65">
-        Get directions to Pamhok Homes, or let us know once you&apos;re here.
+        Get directions to {SITE.name}, or let us know once you&apos;re here.
       </p>
 
       <div className="mt-4 flex flex-wrap gap-3">
@@ -70,7 +70,7 @@ export default function ArrivalSection({
 
             <Confetti size={32} weight="fill" className="text-terracotta-600" />
             <h2 className="mt-3 font-serif text-h2 text-ink">
-              Congratulations on your arrival, welcome to Pamhok Homes!
+              Congratulations on your arrival, welcome to {SITE.name}!
             </h2>
             <p className="mt-2 text-sm text-ink/80">
               Show this pass to building security or reception to be let in.

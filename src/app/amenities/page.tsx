@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import PageBanner from "@/components/PageBanner";
 import { getAmenitiesContent } from "@/lib/data";
 import { getAmenityIcon } from "@/lib/amenity-icons";
+import { pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Amenities — Pamhok Homes",
+  title: pageTitle("Amenities"),
   description:
     "Free WiFi, free parking, a full kitchen, an in-room safe, and dry cleaning — everything you need for a comfortable stay at Pamhok Homes.",
 };

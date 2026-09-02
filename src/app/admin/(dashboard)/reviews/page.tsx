@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import ReviewsManager from "@/components/admin/ReviewsManager";
+import { pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Reviews — Pamhok Homes",
+  title: pageTitle("Reviews"),
   robots: { index: false, follow: false },
 };
 

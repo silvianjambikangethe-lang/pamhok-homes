@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — .env.example is the one intentional exception, committed as
+# a template with no real values (see README.md's setup steps)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -42,6 +44,3 @@ supabase/.temp/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-.vercel
-.env*

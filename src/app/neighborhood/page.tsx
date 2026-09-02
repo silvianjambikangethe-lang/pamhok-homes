@@ -6,9 +6,10 @@ import GetDirectionsButton from "@/components/GetDirectionsButton";
 import { getContactContent, getNeighborhoodContent } from "@/lib/data";
 import { buildDirectionsUrl } from "@/lib/maps";
 import type { NeighborhoodItem } from "@/lib/supabase/types";
+import { SITE, pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Around the Neighborhood — Pamhok Homes",
+  title: pageTitle("Around the Neighborhood"),
   description:
     "Food and recreation near Pamhok Homes, close to Thika Road Mall, Nairobi.",
 };
@@ -70,7 +71,7 @@ function NeighborhoodGrid({
               <div className="mt-4">
                 <GetDirectionsButton
                   mapsUrl={directionsUrl}
-                  label="Get Directions from Pamhok Homes"
+                  label={`Get Directions from ${SITE.name}`}
                   needsLocationPrompt={false}
                 />
               </div>
