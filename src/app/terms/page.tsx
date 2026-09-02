@@ -106,6 +106,13 @@ export default function TermsPage() {
         <Section title="6. Cancellations & Refunds">
           <ul className="list-disc space-y-1.5 pl-5">
             <li>
+              To cancel a booking, contact the host directly by phone —
+              cancellations are not self-service through the site. This
+              applies whether or not a refund applies, so the reservation
+              can be removed from the calendar and the room freed up for
+              other guests.
+            </li>
+            <li>
               Cancellations made at least 48 hours before check-in are
               eligible for a full refund.
             </li>
@@ -117,10 +124,10 @@ export default function TermsPage() {
               possible depending on the circumstances.
             </li>
             <li>
-              All cancellations, whether refundable or not, must be
-              confirmed with the host directly by phone so the reservation
-              can be removed from the calendar and the room freed up for
-              other guests.
+              Refunds are processed manually by the host (M-Pesa, bank
+              transfer, or through PayPal, depending on how you paid) after
+              the cancellation is confirmed — they are not issued
+              automatically by the site.
             </li>
           </ul>
         </Section>

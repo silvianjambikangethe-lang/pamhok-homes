@@ -619,6 +619,45 @@ local-only reference file, not something `git status` will ever show).
     pre-payment with the new accurate messaging. Admin notification
     ("Guest moved to Room X for extra nights...") confirmed in
     `guest_requests`. All test data cleaned up afterward.
+- **Cancellation refund flag fixed + Terms wording tightened
+  (2026-08-27)** — owner asked whether the site has a cancellation/refund
+  policy, then to make sure it's genuinely manual end-to-end (admin
+  contacted by phone, admin sends the refund themselves, never automatic)
+  and that the Terms actually say so. Found and fixed a real gap:
+  `/api/admin/bookings/[id]/cancel/route.ts` only ever set
+  `booking_status: 'Cancelled'` — it never touched `refund_status`, so
+  cancelling a *paid* booking left no trace anywhere that a refund was
+  owed. The Overview "Refunds needed" card and the Bookings table's "Mark
+  Refunded" button both key off `refund_status` being non-null, so
+  neither would ever surface a cancelled-but-unrefunded booking — an
+  admin could cancel a paid stay and have nothing remind them money was
+  still owed. Fixed by having `cancel` check `payment_status` before
+  cancelling and, if it was `'Paid'`, set `refund_status: 'Needs Manual
+  Refund'` — same value the existing ID-verification-rejection path
+  already uses, so it plugs into the same Overview card/Mark Refunded
+  button with no new UI needed. **Deliberately does not call any payment
+  provider's refund API** — this mirrors the Terms' actual promise (admin
+  phones the guest, sends the refund themselves via M-Pesa/bank/PayPal,
+  then clicks the existing Mark Refunded button to close it out) and is
+  intentionally different from the ID-rejection path, which *does*
+  auto-attempt a PayPal refund for that specific, undisputed scenario —
+  left untouched, out of scope for this ask.
+  Verified the full loop against the database directly (no admin
+  password is stored anywhere for a Claude session to use, by design —
+  see "Reference: real admin account" below): a Paid test booking,
+  cancelled the same way the route would, confirmed `refund_status`
+  correctly flips to `'Needs Manual Refund'` and shows up in a query
+  matching the Overview card's exact filter, then replicated Mark
+  Refunded closing it out (`payment_status: 'Refunded'`, `refund_status`
+  cleared, `refund_amount`/`refund_reference`/`refunded_at` recorded).
+  Test data deleted after.
+  Also tightened `/terms` Section 6 wording to match: added an explicit
+  line that cancellations aren't self-service and always go through a
+  phone call to the host, and a new line stating refunds are sent
+  manually by the host after that call — not issued automatically by the
+  site — so a guest reading the 48-hour "eligible for a full refund" line
+  doesn't assume an instant automatic refund the system was never built
+  to do.
 - **"I've Arrived" flow in the guest portal** — once paid + verified, a
   guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
   latter pops up a congratulations message plus their verification pass
