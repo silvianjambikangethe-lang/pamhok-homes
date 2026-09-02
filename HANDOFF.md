@@ -703,6 +703,103 @@ local-only reference file, not something `git status` will ever show).
   the admin UI (grepped — only read/written in API routes), so real-world
   impact was limited to data consistency, not anything a guest or admin
   would have seen.
+- **Pre-review security tightening pass (2026-08-27)** — owner said the
+  site is about to be externally reviewed and asked for a "no loose
+  ropes, no mistakes" pass. Found and fixed one genuinely serious,
+  self-inflicted regression, plus two smaller cleanups; extensively
+  empirically tested rather than assumed correct given the stakes.
+  1. **`availability_view` had regressed to `SECURITY DEFINER`** (fresh
+     ERROR on the Supabase security advisor). Root cause: this exact
+     issue was already fixed once, in an earlier session
+     (`20260808221023_fix_availability_view_security_definer.sql` —
+     revoke anon's broad default SELECT, grant back only the 4
+     non-sensitive columns via column-level GRANT + a matching RLS
+     policy, set `security_invoker = true`). Today's extension-hold
+     migration used `create or replace view` to add the pending-hold
+     UNION clause, which silently reset the view's `security_invoker`
+     option back to Postgres's default — undoing that earlier fix
+     without anyone noticing, because `CREATE OR REPLACE VIEW` doesn't
+     preserve `ALTER VIEW ... SET` options.
+     Fixed properly, matching the original migration's exact pattern
+     (not just re-flipping the flag): the view's new WHERE clause (the
+     pending-extension half) also touches `payment_status`,
+     `pending_extension_check_out`, and `pending_extension_requested_at`
+     — columns Postgres requires SELECT privilege on for *any* clause
+     that references them, not just the SELECT list — which the
+     original 4-column grant didn't cover. Granted those three
+     additionally (none sensitive: an enum-like payment status and two
+     hold timestamps, no guest identity attached), then re-enabled
+     `security_invoker = true`.
+     **Verified empirically at every step, not just by reasoning through
+     it**: confirmed live (curl against the real Supabase REST endpoint
+     with the actual anon key) that setting `security_invoker=true`
+     before adding the grant broke the public availability check
+     entirely (`permission denied for table bookings`) — caught and
+     reverted within the same pass rather than left broken; confirmed
+     the fixed version returns real booking data through the view as
+     anon; confirmed a `Cancelled` booking's dates are correctly excluded
+     from what anon sees (proving row-scoping still works, not just "no
+     error thrown"); confirmed direct-table access to sensitive columns
+     (`guest_id`, `total_amount`, `access_token`, `select *`) is still
+     denied to anon. Advisor re-run afterward: the `security_definer_view`
+     ERROR is gone, only the two long-standing accepted items remain
+     (`rls_enabled_no_policy` on `login_attempts`/`rate_limits` — INFO,
+     intentional default-deny; `auth_leaked_password_protection` — WARN,
+     Pro-plan gated, see pending-issues item 5).
+  2. **Found and removed a redundant, looser RLS policy of my own
+     making.** While fixing the above, added a new anon SELECT policy on
+     `bookings` before realizing a tighter one already existed
+     (`"anon can view availability rows"`, scoped to
+     `booking_status IN ('Confirmed','Blocked','Pending Verification')`)
+     that this session simply hadn't queried `pg_policies` directly to
+     see before. Permissive RLS policies OR together, so the new
+     `using (true)` policy was strictly worse — it let anon see bookings
+     of *any* status, silently overriding the existing policy's
+     restriction. Dropped it once noticed; the pre-existing policy plus
+     the column grants above are sufficient alone. Re-verified the
+     Cancelled-booking exclusion test after dropping it to confirm the
+     tighter scoping was actually back in effect, not just assumed.
+  3. **Dropped an unused `rls_test` table** — leftover debug scaffolding
+     (2 columns, `id`/`note`) from an old RLS investigation, 0 rows,
+     referenced nowhere in the app or migrations (confirmed via grep
+     before dropping) — the kind of stray artifact that looks odd under
+     an external schema review.
+  4. **`/terms` and `/privacy` now stay reachable during maintenance
+     lockdown** — owner's explicit ask: these are static, non-parameterized
+     pages with no Supabase reads and no session-derived content, so
+     there's no security reason they need the "Shut Down Website" gate at
+     all, and a real reason they shouldn't (a guest with an existing
+     booking, or anyone checking policy, shouldn't hit a maintenance wall
+     to read them). Added to `proxy.ts`'s exclusion regex the same way
+     `/portal` and `/verify` already were. Verified the regex directly
+     (not via a live toggle — flipping `is_open` would have affected the
+     real production site, not just a local test, so this was checked by
+     testing the exact matcher pattern against sample paths instead,
+     confirming `/terms`/`/privacy` are excluded while lookalikes like
+     `/terms-of-service`/`/privacyx` correctly still match, i.e. no
+     over-broad exclusion). Also ran this specific diff through a
+     dedicated security-review subagent independently — no findings.
+  5. **Full-project sweep, nothing else found**: re-ran `npm audit`
+     (0 vulnerabilities), confirmed RLS is enabled on every `public`
+     table with no gaps, confirmed `availability_view` is the *only*
+     view in the schema (so no other security-definer risk exists),
+     confirmed no `.env*` file has ever been committed to git history,
+     confirmed CSP/HSTS/X-Frame-Options/nosniff/Referrer-Policy headers
+     in `next.config.ts` are already comprehensive from an earlier
+     session with no gaps found, and confirmed (empirically, via direct
+     REST calls) that although `anon` holds Supabase's default raw
+     Postgres INSERT/UPDATE grants on every column of `bookings` (a
+     platform default, not something this project set), RLS has zero
+     UPDATE/DELETE policies for `anon` on any table project-wide — so
+     those grants are inert. Tested this directly: attempted to PATCH a
+     real test booking's `payment_status` to `'Paid'` as anon, both by
+     row filter and by the booking's own valid `access_token` (i.e.
+     could a guest bypass the app's server-side validation and write to
+     their own booking directly?) — both denied, row confirmed unchanged
+     via the service-role connection afterward. All guest-facing writes
+     genuinely have to go through the Next.js API routes and their
+     business logic; there is no direct-REST bypass.
+  All test bookings/guests created for verification deleted afterward.
 - **"I've Arrived" flow in the guest portal** — once paid + verified, a
   guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
   latter pops up a congratulations message plus their verification pass
