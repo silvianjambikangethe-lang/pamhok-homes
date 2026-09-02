@@ -8,7 +8,7 @@ export type IdVerificationStatus =
   | "Rejected";
 export type IdVerificationMethod = "automatic" | "manual_override";
 // Only set while a refund needs attention — cleared once resolved.
-export type RefundStatus = "Needs Manual Refund" | "Refund Failed";
+export type RefundStatus = "Needs Manual Refund";
 // Summary of an automated ID verification job, stored for the admin's
 // manual-override decision when the auto-check doesn't pass. Provider-
 // agnostic shape — unused until an automated verification provider is

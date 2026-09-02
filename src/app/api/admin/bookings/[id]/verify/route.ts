@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getPaypalAccessToken, refundPaypalCapture } from "@/lib/paypal";
 import { sendEmail, idVerificationResultEmail } from "@/lib/email";
 import type { Booking } from "@/lib/supabase/types";
 
@@ -21,7 +20,7 @@ export async function POST(
   const { data: booking, error: fetchError } = await supabase
     .from("bookings")
     .select(
-      "id, access_token, booking_status, payment_status, payment_method, payment_reference, total_amount, currency, guest:guests(full_name, email), room:rooms(name)",
+      "id, access_token, booking_status, payment_status, total_amount, currency, guest:guests(full_name, email), room:rooms(name)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -65,10 +64,15 @@ export async function POST(
   }
 
   // status === "Rejected" — decline the booking and free the calendar.
-  // Only attempt a refund if money was actually received. A refund that
-  // needs manual attention (M-Pesa has no refund API, or a PayPal attempt
-  // failed) shows up on the dashboard's "Refunds needed" card — no
-  // separate alert to send, that card already reads refund_status directly.
+  // Normally a booking can't reach "Paid" before its ID is "Verified"
+  // (the guest portal only shows the payment step once verified), so
+  // this only fires in practice when an admin revokes an *earlier*
+  // approval on a booking that already paid. Either way, no refund is
+  // ever issued automatically here — same manual-refund policy as
+  // cancellations (see cancel/route.ts): flag it and let the admin send
+  // the money themselves, then confirm via the dashboard's existing Mark
+  // Refunded button (which already reads refund_status directly, so no
+  // separate alert to send).
   const rejectUpdate: Partial<Booking> = {
     id_verification_status: "Rejected",
     booking_status: "Cancelled",
@@ -85,30 +89,8 @@ export async function POST(
       maximumFractionDigits: 0,
     }).format(amount);
 
-    if (booking.payment_method === "paypal" && booking.payment_reference) {
-      try {
-        const accessToken = await getPaypalAccessToken();
-        const result = await refundPaypalCapture(accessToken, booking.payment_reference);
-        if (result.ok) {
-          rejectUpdate.payment_status = "Refunded";
-          rejectUpdate.refund_reference = result.refundId;
-          rejectUpdate.refund_amount = amount;
-          rejectUpdate.refunded_at = new Date().toISOString();
-          refundNote = `Since your booking was already paid, we've refunded ${amountText} to your original payment method.`;
-        } else {
-          rejectUpdate.refund_status = "Refund Failed";
-          refundNote = `Since your booking was already paid, we're processing your refund of ${amountText} — you'll hear from us shortly.`;
-        }
-      } catch {
-        rejectUpdate.refund_status = "Refund Failed";
-        refundNote = `Since your booking was already paid, we're processing your refund of ${amountText} — you'll hear from us shortly.`;
-      }
-    } else {
-      // M-Pesa (no refund API wired up) or an unexpected/missing method —
-      // flag for the admin to refund by hand.
-      rejectUpdate.refund_status = "Needs Manual Refund";
-      refundNote = `Since your booking was already paid, we're processing your refund of ${amountText} — you'll hear from us shortly.`;
-    }
+    rejectUpdate.refund_status = "Needs Manual Refund";
+    refundNote = `Since your booking was already paid, we're processing your refund of ${amountText} — you'll hear from us shortly.`;
   }
 
   const { error: updateError } = await supabase.from("bookings").update(rejectUpdate).eq("id", id);

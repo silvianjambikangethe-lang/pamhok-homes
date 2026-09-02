@@ -658,6 +658,51 @@ local-only reference file, not something `git status` will ever show).
   site — so a guest reading the 48-hour "eligible for a full refund" line
   doesn't assume an instant automatic refund the system was never built
   to do.
+- **Removed the last automatic refund in the system (2026-08-27)** —
+  immediate owner follow-up after the above: pointed out that since
+  payment only ever happens once ID verification is already `Verified`
+  (the guest portal only shows the payment step then — see
+  `PortalClient.tsx`), a rejection refunding money is an edge case, not
+  the normal path, and it should never be automatic either. Found the
+  actual trigger: `/api/admin/bookings/[id]/verify/route.ts`'s Rejected
+  branch didn't check the booking's *current* verification state before
+  applying a rejection — so an admin revoking an *earlier* approval on a
+  booking that had already paid would hit a real automatic PayPal refund
+  call (`refundPaypalCapture`, live credentials). Removed that call
+  entirely; the Rejected branch now does exactly what `cancel/route.ts`
+  does for a paid booking — sets `refund_status: 'Needs Manual Refund'`
+  and nothing else — so `payment_status` and `payment_reference` are left
+  completely untouched and no money moves without the admin doing it by
+  hand. This was the only remaining code path anywhere in the project
+  that could move real money without a human deciding to. Also dropped
+  the now-dead `payment_method`/`payment_reference` columns from this
+  route's select and the unused `refundPaypalCapture` import (the
+  function itself is left in `lib/paypal.ts`, just unused — not deleted,
+  in case a genuinely automatic refund is ever wanted again on purpose).
+  Verified against the database the same way as the cancel fix: a real
+  Verified+Paid test booking, rejected the same way the route would,
+  confirmed `payment_status` stayed `'Paid'` and `payment_reference`
+  stayed untouched (proof no refund API was ever called) while
+  `refund_status` correctly flipped to `'Needs Manual Refund'`. Test data
+  deleted after.
+  Also narrowed `RefundStatus` (`lib/supabase/types.ts`) from `"Needs
+  Manual Refund" | "Refund Failed"` down to just the one value —
+  `"Refund Failed"` was only ever set by the automatic-refund-attempt
+  code just removed, and leaving it in the type would misleadingly imply
+  an automatic attempt still happens somewhere. Re-running the typecheck
+  after that narrowing caught a real, already-*live* bug from the
+  room-transfer feature earlier the same day:
+  `extend/transfer/route.ts` was inserting `id_verification_method:
+  "Manual"`, which isn't a valid `IdVerificationMethod` value (only
+  `"automatic" | "manual_override"` are) — Postgres has no CHECK
+  constraint on this column so the insert never actually errored, it just
+  silently stored an inconsistent value. Fixed to `"manual_override"`,
+  matching what the admin-approval path in `verify/route.ts` already
+  uses for the same "a human, not the automated checker, decided this"
+  meaning. Confirmed this field is never actually displayed anywhere in
+  the admin UI (grepped — only read/written in API routes), so real-world
+  impact was limited to data consistency, not anything a guest or admin
+  would have seen.
 - **"I've Arrived" flow in the guest portal** — once paid + verified, a
   guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
   latter pops up a congratulations message plus their verification pass

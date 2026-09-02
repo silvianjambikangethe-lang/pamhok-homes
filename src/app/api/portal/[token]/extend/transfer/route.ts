@@ -102,7 +102,7 @@ export async function POST(
         booking_reference: generateBookingReference(),
         pass_reference: generatePassReference(booking.check_out, room.display_order),
         id_verification_status: "Verified",
-        id_verification_method: booking.id_verification_method ?? "Manual",
+        id_verification_method: booking.id_verification_method ?? "manual_override",
       })
       .select("access_token, booking_reference")
       .single();
