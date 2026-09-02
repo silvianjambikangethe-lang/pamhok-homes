@@ -187,15 +187,31 @@ export type SiteStatus = {
   is_open: boolean;
 };
 
+// Each section's body is lightweight plain-text markup, not full markdown:
+// lines starting with "- " render as a bullet list, blank lines separate
+// paragraphs, and `**text**` renders bold — enough to reproduce the
+// original hardcoded Terms page's formatting (bullet lists, bold house
+// rules) from a plain textarea, without a rich-text editor.
+export type TermsSection = {
+  title: string;
+  body: string;
+};
+
+export type TermsContent = {
+  last_updated: string;
+  sections: TermsSection[];
+};
+
 export type SiteContent = {
-  key: "homepage" | "about" | "amenities" | "contact" | "neighborhood" | "site_status";
+  key: "homepage" | "about" | "amenities" | "contact" | "neighborhood" | "site_status" | "terms";
   value:
     | HomepageContent
     | AboutContent
     | AmenityItem[]
     | ContactContent
     | NeighborhoodContent
-    | SiteStatus;
+    | SiteStatus
+    | TermsContent;
   updated_at: string;
 };
 

@@ -9,6 +9,7 @@ const VALID_KEYS: SiteContent["key"][] = [
   "contact",
   "neighborhood",
   "site_status",
+  "terms",
 ];
 
 export async function PATCH(

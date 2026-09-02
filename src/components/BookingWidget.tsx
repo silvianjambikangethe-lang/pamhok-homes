@@ -209,7 +209,6 @@ export default function BookingWidget({
               value={guest.fullName}
               onChange={(e) => setGuest((g) => ({ ...g, fullName: e.target.value }))}
               className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
-              placeholder="Jane Doe"
               autoComplete="name"
             />
           </div>
@@ -224,7 +223,6 @@ export default function BookingWidget({
               value={guest.email}
               onChange={(e) => setGuest((g) => ({ ...g, email: e.target.value }))}
               className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
-              placeholder="jane@example.com"
               autoComplete="email"
             />
           </div>
@@ -239,7 +237,6 @@ export default function BookingWidget({
               value={guest.phone}
               onChange={(e) => setGuest((g) => ({ ...g, phone: e.target.value }))}
               className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
-              placeholder="+254 7XX XXX XXX"
               autoComplete="tel"
             />
           </div>

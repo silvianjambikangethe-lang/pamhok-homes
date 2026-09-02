@@ -14,6 +14,7 @@ import type {
   SiteContent,
   SiteStatus,
   SocialLink,
+  TermsContent,
 } from "@/lib/supabase/types";
 
 export function isSupabaseConfigured() {
@@ -325,6 +326,56 @@ const DEFAULT_AMENITIES_CONTENT: AmenityItem[] = [
   },
 ];
 
+// Seeded from the Terms page's original hardcoded copy so converting it
+// to admin-editable content doesn't lose or change any existing wording.
+// The check-in/check-out times are written as plain text here (matching
+// the site.ts CHECK_IN_TIME/CHECK_OUT_TIME constants at the time of this
+// migration) rather than interpolated live — those constants aren't
+// admin-editable anywhere else in the app either, so this doesn't
+// introduce a new inconsistency; if they're ever changed in code, this
+// section's wording would need a matching manual edit here too.
+const DEFAULT_TERMS_CONTENT: TermsContent = {
+  last_updated: "4 August 2026",
+  sections: [
+    {
+      title: "1. Booking & Payment",
+      body: "- All bookings are confirmed only once payment has been received in full through one of our accepted payment methods: M-Pesa or PayPal (which also accepts cards directly, no PayPal account required).\n- Prices are listed in Kenyan Shillings (KES); amounts shown in other currencies are approximate conversions for reference only.\n- A unique booking reference number is issued upon confirmation.",
+    },
+    {
+      title: "2. Identity Verification",
+      body: "- Guests are required to submit a valid government-issued ID for verification before receiving access details (door code, WiFi).\n- ID verification is processed automatically through a third-party verification service. In some cases, the host may manually review and approve a booking if automated verification is inconclusive.\n- Access to the property will not be granted until both payment and ID verification are complete.",
+    },
+    {
+      title: "3. Check-In & Check-Out",
+      body: "- Self check-in instructions, including the door code and WiFi password, are provided once verification is complete.\n- **Check-in time: 1:00 PM**\n- **Check-out time: 10:00 AM**\n- Check-out must be confirmed through the guest portal, including completion of the check-out checklist (lights off, room locked, keys in the keybox).\n- Late check-out may be requested as a stay extension, subject to availability and additional payment.",
+    },
+    {
+      title: "4. Stay Extensions",
+      body: "Guests may request to extend their stay through the guest portal, subject to availability. Extensions are confirmed only once additional payment is received.",
+    },
+    {
+      title: "5. Additional Services",
+      body: "Laundry pickup service may be requested through the guest portal during an active stay. Laundry is charged separately from your room rate and is priced per kilogram: items are weighed at pickup, and you will be shown the total price and asked to confirm before any payment is taken.",
+    },
+    {
+      title: "6. Cancellations & Refunds",
+      body: "- To cancel a booking, contact the host directly by phone — cancellations are not self-service through the site. This applies whether or not a refund applies, so the reservation can be removed from the calendar and the room freed up for other guests.\n- Cancellations made at least 48 hours before check-in are eligible for a full refund.\n- Cancellations made less than 48 hours before check-in are not eligible for a refund through the site. In this case, please contact the host directly by phone as soon as possible — refund or credit at the host's discretion may still be possible depending on the circumstances.\n- Refunds are processed manually by the host (M-Pesa, bank transfer, or through PayPal, depending on how you paid) after the cancellation is confirmed — they are not issued automatically by the site.",
+    },
+    {
+      title: "7. House Rules",
+      body: "- **Maximum occupancy: 2 people per booking.**\n- **No parties or events of any kind.**\n- **No pets allowed.**\n- **No smoking inside the property** — this includes, but is not limited to, tobacco and bangi (marijuana). Any smoking of any substance inside the property is strictly prohibited.\n- Guests found in violation of these house rules may have their booking cancelled without refund, at the host's discretion.",
+    },
+    {
+      title: "8. Liability",
+      body: "- Pamhok Homes is not liable for loss, theft, or damage to personal belongings during a guest's stay, except where caused by proven negligence on the part of the host.\n- Guests are responsible for any damage caused to the property during their stay beyond normal wear and tear.",
+    },
+    {
+      title: "9. Changes to These Terms",
+      body: "Pamhok Homes may update these Terms from time to time. Continued use of the site or a new booking after changes constitutes acceptance of the updated Terms.",
+    },
+  ],
+};
+
 const DEFAULT_CONTACT_CONTENT: ContactContent = {
   address_text: "Near Thika Road Mall (TRM), Nairobi, Kenya",
   address_note: "Exact address shared after booking confirmation",
@@ -380,6 +431,10 @@ export function getSiteStatus(): Promise<SiteStatus> {
 
 export function getNeighborhoodContent(): Promise<NeighborhoodContent> {
   return getSiteContentValue("neighborhood", DEFAULT_NEIGHBORHOOD_CONTENT);
+}
+
+export function getTermsContent(): Promise<TermsContent> {
+  return getSiteContentValue("terms", DEFAULT_TERMS_CONTENT);
 }
 
 // The public site's "Chat on WhatsApp" / "Contact Host" buttons link to

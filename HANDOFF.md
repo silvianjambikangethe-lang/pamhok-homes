@@ -800,6 +800,48 @@ local-only reference file, not something `git status` will ever show).
      genuinely have to go through the Next.js API routes and their
      business logic; there is no direct-REST bypass.
   All test bookings/guests created for verification deleted afterward.
+- **Terms & Conditions now admin-editable; booking-form placeholders
+  removed (2026-08-27)** — two small owner requests handled together.
+  1. `/terms` was the only page still fully hardcoded in
+     `src/app/terms/page.tsx` (9 sections of prose/bullets/bold house
+     rules) while every other page (Homepage, About, Amenities, Contact,
+     Neighborhood) has been admin-editable via `/admin/content` for a
+     while. Converted it to the same `site_content` pattern: new
+     `TermsContent` type (`lib/supabase/types.ts`) — `last_updated` plus
+     an ordered array of `{ title, body }` sections, sections addable/
+     removable from the admin form just like Amenities items or
+     Neighborhood places. `body` is lightweight plain-text markup rather
+     than full rich text (a line starting with `"- "` renders as a
+     bullet, `**text**` renders bold) — enough to reproduce the original
+     page's exact formatting from a plain textarea, via a new shared
+     helper (`lib/terms-render.tsx`) the public page uses to render it.
+     Seeded the real database row with the original hardcoded copy
+     word-for-word (including today's earlier cancellation-policy
+     wording fix) so nothing changed on the live page — verified this by
+     reading the rendered page back and confirming all 9 sections match,
+     and by checking computed `font-weight` on every `<strong>` the
+     renderer produced (all 700, all wrapping exactly the intended
+     phrase — e.g. "No smoking inside the property" bold, the rest of
+     that bullet plain). `/terms` gained `revalidate = 300`, matching
+     About/Homepage's ISR pattern. Note: the check-in/check-out time
+     bullets in Section 3 are seeded as plain text ("1:00 PM"/"10:00 AM")
+     rather than pulled live from `site.ts`'s `CHECK_IN_TIME`/
+     `CHECK_OUT_TIME` constants — those aren't admin-editable anywhere
+     else in the app either (e.g. the check-in-confirmation email quotes
+     them directly too), so this doesn't introduce a new inconsistency,
+     but if those constants are ever changed in code, this section's
+     wording needs a matching manual edit in `/admin/content`.
+     Privacy Policy was **not** converted — only Terms was asked for, and
+     it's a separate, smaller page; the same pattern could be reused for
+     it later if wanted.
+  2. Removed the "Jane Doe" / "jane@example.com" / "+254 7XX XXX XXX"
+     example placeholders from the real public booking form's guest-
+     details step (`BookingWidget.tsx`) — the owner didn't like them.
+     Labels ("Full name", "Email", "Phone") are already clear without an
+     example value. Left the same placeholders alone in
+     `ManualBookingForm.tsx` (admin's own phone/walk-in booking form) and
+     `ContactForm.tsx` (the Contact page) since only the guest booking
+     form was mentioned.
 - **"I've Arrived" flow in the guest portal** — once paid + verified, a
   guest sees "Get Directions" and "I've Arrived" buttons. Tapping the
   latter pops up a congratulations message plus their verification pass

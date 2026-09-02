@@ -4,6 +4,7 @@ import {
   getContactContent,
   getHomepageContent,
   getNeighborhoodContent,
+  getTermsContent,
 } from "@/lib/data";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import HomepageContentForm from "@/components/admin/HomepageContentForm";
@@ -11,18 +12,20 @@ import AboutContentForm from "@/components/admin/AboutContentForm";
 import AmenitiesContentForm from "@/components/admin/AmenitiesContentForm";
 import ContactContentForm from "@/components/admin/ContactContentForm";
 import NeighborhoodContentForm from "@/components/admin/NeighborhoodContentForm";
+import TermsContentForm from "@/components/admin/TermsContentForm";
 import SocialLinksForm from "@/components/admin/SocialLinksForm";
 
 export default async function AdminContentPage() {
   const supabase = await createServerSupabaseClient();
 
-  const [homepage, about, amenities, contact, neighborhood, { data: socialLinks }] =
+  const [homepage, about, amenities, contact, neighborhood, terms, { data: socialLinks }] =
     await Promise.all([
       getHomepageContent(),
       getAboutContent(),
       getAmenitiesContent(),
       getContactContent(),
       getNeighborhoodContent(),
+      getTermsContent(),
       supabase.from("social_links").select("*").order("display_order", { ascending: true }),
     ]);
 
@@ -41,6 +44,7 @@ export default async function AdminContentPage() {
       <AmenitiesContentForm initial={amenities} />
       <ContactContentForm initial={contact} />
       <NeighborhoodContentForm initial={neighborhood} />
+      <TermsContentForm initial={terms} />
       <SocialLinksForm initial={socialLinks ?? []} />
     </div>
   );
