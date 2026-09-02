@@ -12,6 +12,11 @@ function fromAddress(): string {
   return Deno.env.get("EMAIL_FROM_ADDRESS") ?? "Pamhok Homes <onboarding@resend.dev>";
 }
 
+// Mirrors src/lib/site.ts's SITE.contactEmail — Deno can't import that
+// file, so this is a deliberate duplicate, same as this file's own
+// existence. Keep in sync if the contact address ever changes.
+const REPLY_TO = "hello@pamhokhomes.com";
+
 function wrapper(bodyHtml: string): string {
   return `<div style="background:#FBF7F1; padding:32px 16px;">
     <style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Plus+Jakarta+Sans:wght@400;600&display=swap');</style>
@@ -101,7 +106,13 @@ export async function sendPaymentSucceededEmail(
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from: fromAddress(), to: guest.email, subject, html }),
+      body: JSON.stringify({
+        from: fromAddress(),
+        to: guest.email,
+        subject,
+        html,
+        reply_to: REPLY_TO,
+      }),
     });
     if (!res.ok) console.error("Resend send failed:", await res.text());
   } catch (err) {

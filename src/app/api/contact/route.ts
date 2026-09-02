@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { sendEmail, contactMessageEmail } from "@/lib/email";
+import { SITE } from "@/lib/site";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -31,11 +33,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid submission" }, { status: 400 });
   }
 
-  // TODO(owner): wire this up to an email provider (e.g. Resend) once
-  // ready. For now it just confirms receipt to the guest.
-  console.log("[contact] message received:", {
-    name: body.name,
-    email: body.email,
+  const { subject, html } = contactMessageEmail({
+    name: body.name.trim(),
+    email: body.email.trim(),
+    message: body.message.trim(),
+  });
+
+  // Best-effort — sendEmail() already swallows its own errors, and a
+  // delivery failure shouldn't make the visitor think their message
+  // wasn't received when the validation above already succeeded.
+  // replyTo is the visitor's own address (not the sendEmail() default of
+  // SITE.contactEmail) so replying from hello@ reaches them directly,
+  // not back to hello@ itself.
+  await sendEmail({
+    to: SITE.contactEmail,
+    subject,
+    html,
+    replyTo: body.email.trim(),
   });
 
   return NextResponse.json({ ok: true });

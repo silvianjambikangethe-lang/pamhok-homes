@@ -1,10 +1,52 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-08-26. Written for continuing this project in a
+Last updated: 2026-09-02. Written for continuing this project in a
 **new chat** — paste a link to this file (or its contents) so the new session
-has full context. This supersedes the previous version of this file (dated
-2026-08-12) — that one's content is folded into this one, updated for
-everything since. See "Session update (2026-08-26)" below for what's new.
+has full context. Many small "Update handoff doc: X" commits have landed
+between the last full rewrite (2026-08-26) and now — check `git log
+HANDOFF.md` if something here seems stale; this doc has been maintained
+incrementally rather than fully rewritten each session.
+
+## Session update (2026-09-02) — client contact email consolidated
+
+Owner wanted a single, consistent "reach out to us" address for
+guests/visitors, distinct from the admin login email:
+
+- **`SITE.contactEmail`** (`src/lib/site.ts`) — the one place this is
+  defined — changed from `pamhokhomes@gmail.com` to
+  **`hello@pamhokhomes.com`** (a real, monitored Zoho mailbox, confirmed
+  live in an earlier session). This alone updated every page that reads
+  it: Footer, `/contact`, `/verify/[token]`, and the portal's
+  ArrivalSection. `/privacy` had its own separate hardcoded copy of the
+  old address (not reading the constant) — fixed to match.
+  **Deliberately untouched: the admin login email stays
+  `pamhokhomes@gmail.com`** regardless of this change, unless the admin
+  changes it themselves later — this constant only controls what's
+  *displayed*, not any auth credential.
+- **The Contact page form actually sends an email now** — previously it
+  only `console.log`ged and told the visitor "thanks," with a TODO to
+  wire up a real provider once Resend existed. Now sends via
+  `sendEmail()` to `SITE.contactEmail`, with `replyTo` set to the
+  *visitor's own* submitted address (not `SITE.contactEmail` itself) so
+  replying from the inbox goes straight to them.
+  **Verified for real**, not just typechecked: sent an actual test
+  message through the live route, then confirmed via Resend's own API
+  that it was `delivered` to `hello@pamhokhomes.com` with the correct
+  `reply_to`. Also deliberately included `<script>`/quote characters in
+  the test message and confirmed via the same API call that the HTML
+  came back properly escaped — the guest `message` field is raw
+  open-ended text with no HTML-safety constraint at the input layer, so
+  `escapeHtml()` in `email.ts` is the only thing standing between a
+  submitted message and live HTML in whoever's mail client opens it.
+- **Every automated notification email's reply-to now defaults to
+  `hello@pamhokhomes.com`** — `sendEmail()` in `src/lib/email.ts` gained
+  an optional `replyTo` parameter defaulting to `SITE.contactEmail`, so a
+  guest hitting "Reply" on a booking confirmation, checkout reminder,
+  etc. reaches a real monitored inbox rather than the `bookings@` sending
+  address (which may not be one). Mirrored by hand in the Deno-side
+  duplicate (`supabase/functions/_shared/email.ts`, which can't import
+  the Next.js file) as a `REPLY_TO` constant — keep both in sync if this
+  address ever changes again.
 
 ---
 

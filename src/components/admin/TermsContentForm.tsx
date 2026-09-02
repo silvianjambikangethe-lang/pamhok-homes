@@ -61,7 +61,7 @@ export default function TermsContentForm({ initial }: { initial: TermsContent })
       <h2 className="font-serif text-lg font-semibold text-ink">Terms & Conditions</h2>
       <p className="mt-1 text-xs text-ink/65">
         Shown on the public /terms page, and linked from every booking and payment step.
-        Each section's text: start a line with &quot;- &quot; for a bullet point, and wrap
+        Each section&apos;s text: start a line with &quot;- &quot; for a bullet point, and wrap
         text in **double asterisks** to bold it.
       </p>
 

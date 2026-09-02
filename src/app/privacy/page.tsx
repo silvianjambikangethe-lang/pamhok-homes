@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PageBanner from "@/components/PageBanner";
+import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Pamhok Homes",
@@ -110,10 +111,10 @@ export default function PrivacyPage() {
           <p>
             To exercise any of these rights, contact us at{" "}
             <a
-              href="mailto:pamhokhomes@gmail.com"
+              href={`mailto:${SITE.contactEmail}`}
               className="focus-ring rounded text-terracotta-600 hover:text-terracotta-700"
             >
-              pamhokhomes@gmail.com
+              {SITE.contactEmail}
             </a>
             .
           </p>
