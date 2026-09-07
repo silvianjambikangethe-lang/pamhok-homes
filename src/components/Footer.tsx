@@ -115,9 +115,6 @@ export default async function Footer() {
               })}
             </div>
           )}
-          <Link href="/admin/login" className="focus-ring rounded hover:text-white/80">
-            Host Login
-          </Link>
         </div>
       </div>
     </footer>
