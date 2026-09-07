@@ -196,14 +196,20 @@ create table if not exists bookings (
 );
 
 -- ------------------------------------------------------------
--- Guest-initiated requests (room service, cleaning, personal issues)
+-- Guest-initiated requests (room service, cleaning, personal issues) —
+-- also doubles as the maintenance-staff task list (see the "Maintenance
+-- staff" section below, which adds completed_by/is_turnover columns
+-- once staff_members exists): a staff-completed cleaning/laundry task is
+-- a row here, not a separate table, so a guest's request and staff
+-- marking it done are always the same row.
 -- ------------------------------------------------------------
 create table if not exists guest_requests (
   id uuid primary key default gen_random_uuid(),
   booking_id uuid references bookings(id) on delete cascade,
-  request_type text not null,   -- 'cleaning' | 'assistance' | 'other' | 'laundry'
+  request_type text not null,   -- 'cleaning' | 'assistance' | 'other' | 'laundry' | 'extension'
   message text,
-  -- 'cleaning'/'assistance'/'other': 'Open' | 'Resolved'
+  -- 'cleaning': 'Open' | 'In Progress' | 'Resolved'
+  -- 'assistance'/'other'/'extension': 'Open' | 'Resolved'
   -- 'laundry': 'Open' | 'Picked Up' | 'Cleaning' | 'Ready' | 'Returned' | 'Closed'
   status text not null default 'Open',
   created_at timestamptz default now()
@@ -264,6 +270,61 @@ create table if not exists site_content (
   updated_at timestamptz not null default now()
 );
 
+-- ------------------------------------------------------------
+-- Maintenance staff — a second, restricted login for cleaners/laundry
+-- staff, separate from admin_users on purpose (see the RLS section
+-- below): admin_users membership grants blanket access via several
+-- "admins manage X" policies, so a role column there would make staff
+-- inherit full access to bookings/guests/payments. staff_users instead
+-- gets its own table with none of those policies, and staff reach data
+-- only through the purpose-built views further down.
+-- ------------------------------------------------------------
+
+-- The ONE shared Supabase Auth account every worker logs in with — not
+-- one row per worker. Individual accountability comes from staff_members
+-- (the "tap your name" roster) + guest_requests.completed_by /
+-- shift_logs.staff_member_id, not from separate logins.
+create table if not exists staff_users (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
+  created_at timestamptz not null default now()
+);
+
+-- The tap-list of worker names, managed by the host from the admin
+-- dashboard. Deactivating someone (active = false) removes them from the
+-- tap list immediately — no password reset needed, since there's no
+-- per-worker password to reset.
+create table if not exists staff_members (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+-- Clock in/out shift log, internal tracking only (never guest-facing).
+create table if not exists shift_logs (
+  id uuid primary key default gen_random_uuid(),
+  -- on delete restrict: a worker with shift history can be deactivated
+  -- (staff_members.active = false) but not hard-deleted, so the
+  -- accountability trail this table exists for can't be destroyed.
+  staff_member_id uuid not null references staff_members(id) on delete restrict,
+  clock_in_at timestamptz not null default now(),
+  clock_out_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- Now that staff_members exists, extend guest_requests for staff use.
+alter table guest_requests
+  -- Which tapped staff_members row advanced/completed this task — null
+  -- for guest-initiated requests no staff member has touched yet, and
+  -- always null for admin-resolved (non-staff) requests.
+  add column if not exists completed_by uuid references staff_members(id) on delete set null,
+  -- true only for the auto-generated checkout/turnover cleaning row a
+  -- staff device creates from the Cleaning Schedule view — distinguishes
+  -- it from a guest-initiated mid-stay cleaning request, since a booking
+  -- can legitimately have both at once.
+  add column if not exists is_turnover boolean not null default false;
+
 -- Indexes for the calendar + admin dashboard
 create index if not exists idx_bookings_room_dates on bookings (room_id, check_in, check_out);
 create index if not exists idx_bookings_status on bookings (booking_status);
@@ -281,6 +342,24 @@ create index if not exists idx_reviews_booking_id on reviews (booking_id);
 -- by the performance advisor.
 create index if not exists idx_bookings_room_id on bookings (room_id);
 
+create index if not exists idx_shift_logs_staff_member_id on shift_logs (staff_member_id);
+-- Enforces "at most one open shift per worker" at the database level —
+-- also what makes clock-in race-safe (two devices clocking the same
+-- worker in within moments of each other get a clean unique-violation,
+-- not two simultaneously open shifts).
+create unique index if not exists shift_logs_one_open_per_worker
+  on shift_logs (staff_member_id)
+  where clock_out_at is null;
+
+-- Prevents duplicate turnover-cleaning rows for the same checkout even
+-- under two staff devices tapping "Start" on the same schedule item at
+-- nearly the same moment, without blocking a booking from having
+-- multiple separate guest-initiated cleaning requests over a long stay
+-- (those all have is_turnover = false, outside this partial index).
+create unique index if not exists guest_requests_turnover_unique
+  on guest_requests (booking_id)
+  where is_turnover = true and request_type = 'cleaning';
+
 -- ============================================================
 -- Row Level Security
 -- ============================================================
@@ -295,6 +374,9 @@ alter table social_links enable row level security;
 alter table business_expenses enable row level security;
 alter table login_attempts enable row level security;
 alter table rate_limits enable row level security;
+alter table staff_users enable row level security;
+alter table staff_members enable row level security;
+alter table shift_logs enable row level security;
 
 -- Every policy below wraps auth.uid() as (select auth.uid()) — lets
 -- Postgres cache it once per statement instead of re-evaluating per row
@@ -396,6 +478,43 @@ create policy "admins manage reviews" on reviews
   using ((select auth.uid()) in (select id from admin_users))
   with check ((select auth.uid()) in (select id from admin_users));
 
+-- --- staff_users: a staff session can check its own membership, same
+-- self-row-only shape as admin_users. No write policy at all — the host
+-- edits this account exclusively via the service-role client from
+-- /api/admin/staff-credentials, never through an authenticated session. ---
+create policy "staff can read their own row" on staff_users
+  for select
+  to authenticated
+  using ((select auth.uid()) = id);
+
+-- --- staff_members: admins manage the full roster; staff can only see
+-- active names (for the tap screen) — a deactivated worker is genuinely
+-- invisible to a staff session, not just hidden by the UI. No PII here,
+-- so a normal row-level policy is enough, no view needed. ---
+create policy "admins manage staff members" on staff_members
+  for all
+  to authenticated
+  using ((select auth.uid()) in (select id from admin_users))
+  with check ((select auth.uid()) in (select id from admin_users));
+
+create policy "staff can view active staff members" on staff_members
+  for select
+  to authenticated
+  using (
+    active = true
+    and (select auth.uid()) in (select id from staff_users)
+  );
+
+-- --- shift_logs: admins get read access for reporting. Deliberately NO
+-- staff-facing policy on this base table at all — every staff clock
+-- action goes through the staff_clock_updates view further down, so a
+-- staff session hitting this table directly gets nothing back (RLS
+-- defaults to deny-all once enabled with no matching policy). ---
+create policy "admins view shift logs" on shift_logs
+  for select
+  to authenticated
+  using ((select auth.uid()) in (select id from admin_users));
+
 -- ============================================================
 -- Availability — public can see booked/blocked date ranges per
 -- room ONLY (no guest details, no payment/ID info), including a
@@ -437,6 +556,118 @@ create or replace view availability_view as
 alter view availability_view set (security_invoker = true);
 
 grant select on availability_view to anon, authenticated;
+
+-- ============================================================
+-- Maintenance staff task views.
+--
+-- Admin and staff sessions both authenticate as the SAME Postgres
+-- `authenticated` role — unlike anon vs authenticated above, there is no
+-- way to GRANT a column/row restriction that applies to staff but not
+-- admin on the base tables themselves. So these views deliberately do
+-- NOT use security_invoker (the opposite of availability_view above):
+-- security_invoker = false means each view runs as ITS OWNER, which
+-- bypasses RLS/grants on the base tables entirely — the staff_users
+-- membership check and the guest-free column list baked into each
+-- view's own SQL are the entire security boundary. Because a view is
+-- its own relation, it gets its own independent GRANT, genuinely
+-- narrower than guest_requests'/shift_logs' own (unrestricted,
+-- admin-facing) grants. Staff get zero RLS policies on bookings,
+-- guests, or the base guest_requests/shift_logs tables at all — a raw
+-- REST call from a staff session against those tables returns nothing,
+-- by construction, not by app-code discipline.
+--
+-- Every view below is `revoke all` THEN a narrow `grant` — Supabase's
+-- default privileges give every new relation full INSERT/UPDATE/DELETE/
+-- TRUNCATE to `authenticated` automatically, and privileges are
+-- additive, so a narrow grant alone (with no revoke first) grants
+-- nothing extra-restrictive: `authenticated` would still have the
+-- default full access underneath it. Confirmed this the hard way against
+-- the live project (caught in verification, before any real staff
+-- session existed) — mirrors exactly why bookings -> anon needed its own
+-- explicit revoke before availability_view's narrow grant above.
+-- ============================================================
+
+-- Ad-hoc cleaning + laundry requests, guest-free. Excludes turnover rows
+-- (is_turnover) on purpose — those surface on the Cleaning Schedule view
+-- instead, so nothing shows in both places at once.
+create view staff_cleaning_laundry_feed as
+select
+  gr.id,
+  gr.request_type,
+  gr.status,
+  gr.message,
+  gr.created_at,
+  gr.completed_by,
+  b.room_id,
+  r.name as room_name
+from guest_requests gr
+join bookings b on b.id = gr.booking_id
+join rooms r on r.id = b.room_id
+where gr.request_type in ('cleaning', 'laundry')
+  and not (gr.request_type = 'cleaning' and gr.is_turnover)
+  and (select auth.uid()) in (select id from staff_users);
+
+alter view staff_cleaning_laundry_feed set (security_invoker = false);
+revoke all on staff_cleaning_laundry_feed from authenticated;
+grant select on staff_cleaning_laundry_feed to authenticated;
+
+-- Checkout-driven turnover schedule, guest-free — computed live from
+-- bookings (today/tomorrow checkouts not yet checked out), no cron
+-- needed, always in sync with real booking data. cleaning_status/
+-- cleaning_request_id are null until a staff device first taps a status
+-- on a schedule item (see /api/staff/schedule/[bookingId]/status).
+create view staff_checkout_schedule as
+select
+  b.id as booking_id,
+  b.room_id,
+  r.name as room_name,
+  b.check_out,
+  gr.id as cleaning_request_id,
+  gr.status as cleaning_status
+from bookings b
+join rooms r on r.id = b.room_id
+left join guest_requests gr
+  on gr.booking_id = b.id
+  and gr.request_type = 'cleaning'
+  and gr.is_turnover = true
+where b.checked_out_at is null
+  and b.booking_status in ('Confirmed', 'Pending Verification')
+  and b.check_out in (current_date, current_date + 1)
+  and (select auth.uid()) in (select id from staff_users);
+
+alter view staff_checkout_schedule set (security_invoker = false);
+revoke all on staff_checkout_schedule from authenticated;
+grant select on staff_checkout_schedule to authenticated;
+
+-- Narrow, single-table updatable view for advancing an EXISTING cleaning/
+-- laundry request's status. The column-level grants below apply to THIS
+-- view relation only — completely independent of guest_requests' own
+-- grants, so admin's ability to edit message/booking_id on the base
+-- table is untouched.
+create view staff_task_updates as
+select id, request_type, status, completed_by
+from guest_requests
+where request_type in ('cleaning', 'laundry')
+  and (select auth.uid()) in (select id from staff_users);
+
+alter view staff_task_updates set (security_invoker = false);
+revoke all on staff_task_updates from authenticated;
+grant select (id, request_type, status, completed_by) on staff_task_updates to authenticated;
+grant update (status, completed_by) on staff_task_updates to authenticated;
+
+-- Narrow updatable view for clocking out. Only ever exposes currently-
+-- OPEN shifts, so it doubles as "am I clocked in" for the Clock In/Out
+-- page's read.
+create view staff_clock_updates as
+select id, staff_member_id, clock_in_at, clock_out_at
+from shift_logs
+where clock_out_at is null
+  and (select auth.uid()) in (select id from staff_users);
+
+alter view staff_clock_updates set (security_invoker = false);
+revoke all on staff_clock_updates from authenticated;
+grant select (id, staff_member_id, clock_in_at, clock_out_at) on staff_clock_updates to authenticated;
+grant update (clock_out_at) on staff_clock_updates to authenticated;
 
 -- ============================================================
 -- Storage buckets
@@ -510,4 +741,17 @@ on conflict (slug) do nothing;
 -- 2. Then run, with your real user id (from that Users table) and email:
 --
 --   insert into admin_users (id, email) values ('<your-auth-user-id>', 'you@example.com');
+-- ============================================================
+
+-- ============================================================
+-- Setting up the shared maintenance-staff login (one time, after the
+-- schema above exists):
+--
+--   node scripts/bootstrap-staff.mjs staff@pamhokhomes.com 'a-strong-password'
+--
+-- with SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_URL set in your
+-- environment. Creates the Auth user and the matching staff_users row in
+-- one step — this is the ONE shared account every worker logs in with,
+-- not one per worker. Add worker names for the tap screen from
+-- /admin/settings once logged in as the host.
 -- ============================================================

@@ -21,11 +21,15 @@ export type IdVerificationResult = {
   checkedAt: string;
 };
 export type GuestRequestType = "cleaning" | "assistance" | "other" | "laundry" | "extension";
-// 'cleaning'/'assistance'/'other' use Open|Resolved; 'laundry' cycles
-// through its own richer stage list — the column itself is unconstrained
-// text in the DB, so both sets of values are valid here.
+// 'cleaning' uses Open|In Progress|Resolved; 'assistance'/'other'/
+// 'extension' use Open|Resolved; 'laundry' cycles through its own richer
+// stage list — the column itself is unconstrained text in the DB, so all
+// three sets of values are valid here. The staff dashboard displays
+// "Open"/"Resolved" as "Pending"/"Done" — the DB keeps one canonical
+// status space shared by both dashboards, no separate vocabulary to sync.
 export type GuestRequestStatus =
   | "Open"
+  | "In Progress"
   | "Resolved"
   | "Picked Up"
   | "Cleaning"
@@ -75,6 +79,32 @@ export type AdminUser = {
   created_at: string;
 };
 
+// The one shared maintenance-staff login — a single row, not one per
+// worker. Deliberately separate from admin_users so staff never inherit
+// any of the "admins manage X" RLS policies — see supabase/schema.sql's
+// "Maintenance staff" section.
+export type StaffUser = {
+  id: string;
+  email: string;
+  created_at: string;
+};
+
+// The "tap your name" roster, managed by the host from /admin/settings.
+export type StaffMember = {
+  id: string;
+  name: string;
+  active: boolean;
+  created_at: string;
+};
+
+export type ShiftLog = {
+  id: string;
+  staff_member_id: string;
+  clock_in_at: string;
+  clock_out_at: string | null;
+  created_at: string;
+};
+
 export type Booking = {
   id: string;
   room_id: string | null;
@@ -117,7 +147,36 @@ export type GuestRequest = {
   request_type: GuestRequestType;
   message: string | null;
   status: GuestRequestStatus;
+  // Which staff_members row advanced/completed this — null until a
+  // staff member (or an admin, who never sets this) touches it.
+  completed_by: string | null;
+  // true only for an auto-generated checkout/turnover cleaning row —
+  // see staff_checkout_schedule in supabase/schema.sql.
+  is_turnover: boolean;
   created_at: string;
+};
+
+// Row shapes for the staff-facing views (supabase/schema.sql's
+// "Maintenance staff task views" section) — guest-free by construction,
+// each field here is exactly what the underlying view selects.
+export type StaffCleaningLaundryFeedRow = {
+  id: string;
+  request_type: GuestRequestType;
+  status: GuestRequestStatus;
+  message: string | null;
+  created_at: string;
+  completed_by: string | null;
+  room_id: string;
+  room_name: string;
+};
+
+export type StaffCheckoutScheduleRow = {
+  booking_id: string;
+  room_id: string;
+  room_name: string;
+  check_out: string;
+  cleaning_request_id: string | null;
+  cleaning_status: GuestRequestStatus | null;
 };
 
 export type Review = {
@@ -364,10 +423,54 @@ export interface Database {
         Update: Partial<RateLimit>;
         Relationships: [];
       };
+      staff_users: {
+        Row: StaffUser;
+        Insert: Partial<StaffUser>;
+        Update: Partial<StaffUser>;
+        Relationships: [];
+      };
+      staff_members: {
+        Row: StaffMember;
+        Insert: Partial<StaffMember>;
+        Update: Partial<StaffMember>;
+        Relationships: [];
+      };
+      shift_logs: {
+        Row: ShiftLog;
+        Insert: Partial<ShiftLog>;
+        Update: Partial<ShiftLog>;
+        Relationships: [
+          {
+            foreignKeyName: "shift_logs_staff_member_id_fkey";
+            columns: ["staff_member_id"];
+            isOneToOne: false;
+            referencedRelation: "staff_members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       availability_view: {
         Row: AvailabilityRow;
+        Relationships: [];
+      };
+      staff_cleaning_laundry_feed: {
+        Row: StaffCleaningLaundryFeedRow;
+        Relationships: [];
+      };
+      staff_checkout_schedule: {
+        Row: StaffCheckoutScheduleRow;
+        Relationships: [];
+      };
+      staff_task_updates: {
+        Row: Pick<GuestRequest, "id" | "request_type" | "status" | "completed_by">;
+        Update: Partial<Pick<GuestRequest, "status" | "completed_by">>;
+        Relationships: [];
+      };
+      staff_clock_updates: {
+        Row: Pick<ShiftLog, "id" | "staff_member_id" | "clock_in_at" | "clock_out_at">;
+        Update: Partial<Pick<ShiftLog, "clock_out_at">>;
         Relationships: [];
       };
     };

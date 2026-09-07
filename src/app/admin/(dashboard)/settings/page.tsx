@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteStatus } from "@/lib/data";
 import ChangePasswordForm from "@/components/admin/ChangePasswordForm";
 import ChangePhoneForm from "@/components/admin/ChangePhoneForm";
 import SiteStatusForm from "@/components/admin/SiteStatusForm";
+import StaffCredentialsForm from "@/components/admin/StaffCredentialsForm";
+import StaffMembersForm from "@/components/admin/StaffMembersForm";
 import { pageTitle } from "@/lib/site";
+import type { StaffMember } from "@/lib/supabase/types";
 
 export const metadata: Metadata = {
   title: pageTitle("Settings"),
@@ -12,8 +16,22 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminSettingsPage() {
-  await requireAdmin();
+  const { supabase } = await requireAdmin();
   const siteStatus = await getSiteStatus();
+
+  // staff_users has no admin-facing RLS policy at all (the host manages
+  // it exclusively via the service-role client, see
+  // /api/admin/staff-credentials) — so reading the current staff email
+  // for this page also needs the service-role client, not the session
+  // client used everywhere else on this page.
+  const adminClient = createAdminSupabaseClient();
+  const { data: staffUser } = await adminClient.from("staff_users").select("email").maybeSingle();
+
+  const { data: staffMembersData } = await supabase
+    .from("staff_members")
+    .select("id, name, active, created_at")
+    .order("name", { ascending: true });
+  const staffMembers = (staffMembersData ?? []) as StaffMember[];
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -26,6 +44,8 @@ export default async function AdminSettingsPage() {
         <SiteStatusForm initial={siteStatus} />
         <ChangePasswordForm />
         <ChangePhoneForm />
+        {staffUser && <StaffCredentialsForm currentEmail={staffUser.email} />}
+        <StaffMembersForm initial={staffMembers} />
       </div>
     </div>
   );
