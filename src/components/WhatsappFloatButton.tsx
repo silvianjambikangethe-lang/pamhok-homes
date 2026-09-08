@@ -22,10 +22,12 @@ export default function WhatsappFloatButton({ phone }: { phone: string | null })
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Guest-facing only — the host doesn't need a "chat with us" bubble on
-  // their own dashboard. `hidden` lets a specific step (the portal's
+  // Guest-facing only — the host/staff don't need a "chat with us" bubble
+  // on their own dashboards. `hidden` lets a specific step (the portal's
   // payment-pending / ID-verification state) suppress it too.
-  if (!phone || hidden || pathname?.startsWith("/admin")) return null;
+  if (!phone || hidden || pathname?.startsWith("/admin") || pathname?.startsWith("/staff")) {
+    return null;
+  }
 
   return (
     <a

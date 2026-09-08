@@ -52,7 +52,7 @@ export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
     <div className="space-y-3">
       {requests.map((r) => {
         const isLaundry = r.request_type === "laundry";
-        const isOpenState = isLaundry ? r.status !== "Closed" : r.status === "Open";
+        const isOpenState = isLaundry ? r.status !== "Closed" : r.status !== "Resolved";
 
         return (
           <div
@@ -99,7 +99,7 @@ export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
                 </select>
               </div>
             ) : (
-              r.status === "Open" && (
+              r.status !== "Resolved" && (
                 <button
                   onClick={() => handleResolve(r.id)}
                   disabled={busyId === r.id}

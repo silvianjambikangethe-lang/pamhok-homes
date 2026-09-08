@@ -61,7 +61,10 @@ export default async function AdminOverviewPage() {
     supabase
       .from("guest_requests")
       .select("id, request_type, message, created_at, booking:bookings(room:rooms(name))")
-      .eq("status", "Open")
+      // Not just status = "Open": "In Progress" (cleaning) and every
+      // laundry stage before "Closed" (Picked Up/Cleaning/Ready/Returned)
+      // are still open too — this used to undercount those.
+      .not("status", "in", '("Resolved","Closed")')
       .order("created_at", { ascending: false })
       .limit(5),
     supabase
