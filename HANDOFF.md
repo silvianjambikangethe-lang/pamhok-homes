@@ -523,6 +523,27 @@ explanation.
     calls before and after. Supabase advisor WARN count: ~40 → 0 (2
     harmless INFO-level "unused index" notices remain, expected for
     brand-new indexes with no traffic yet).
+13. **Rotate `SUPABASE_SERVICE_ROLE_KEY` again before launch.** A Claude
+    Code session passed the real value as a plaintext command-line
+    argument (cleaning up test-upload storage files) on 2026-09-08 —
+    contained to this session's own tool-call transcript, never printed
+    to a shared terminal, git, or any third party. The owner asked to
+    rotate; the attempt got partway through (a new secret key created in
+    Supabase's dashboard, an interim value briefly live on Vercel
+    Production) before being deliberately abandoned and fully reverted —
+    the original key was restored in Vercel and verified working via a
+    real request against `www.pamhokhomes.com`, not just assumed. Owner
+    decided to defer the actual rotation to right before launch rather
+    than mid-build. Two things worth knowing for whoever does it then:
+    * A leftover unused secret key (`service_role_20260908`) may still
+      exist in Supabase's dashboard (Settings > API Keys > Secret API
+      keys) from the abandoned attempt — check for it and delete if so.
+    * `SUPABASE_SERVICE_ROLE_KEY` cannot be set as a Supabase Edge
+      Function secret — Supabase reserves the `SUPABASE_` prefix and
+      auto-injects that variable into every Edge Function itself
+      (`mpesa-initiate`/`mpesa-callback` included), so rotating only
+      means updating Vercel's Production env var and local `.env.local`;
+      there's no third place to touch.
 
 ### Untested, not code issues — just flagging
 
