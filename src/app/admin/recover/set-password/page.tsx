@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import RecoverSetPasswordForm from "@/components/admin/RecoverSetPasswordForm";
+import { pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Set New Password — Pamhok Homes",
+  title: pageTitle("Set New Password"),
   robots: { index: false, follow: false },
 };
 

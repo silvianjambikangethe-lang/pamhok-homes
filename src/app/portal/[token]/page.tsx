@@ -5,9 +5,10 @@ import { getExchangeRates } from "@/lib/currency";
 import { generateQrDataUrl } from "@/lib/qrcode";
 import { getAdminContactPhone, getContactContent } from "@/lib/data";
 import PortalClient from "@/components/portal/PortalClient";
+import { pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Your Stay — Pamhok Homes",
+  title: pageTitle("Your Stay"),
   robots: { index: false, follow: false },
 };
 

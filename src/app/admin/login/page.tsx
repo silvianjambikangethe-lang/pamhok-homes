@@ -51,7 +51,7 @@ function LoginForm() {
           Owner Login
         </h1>
         <p className="mt-1 text-center text-sm text-ink/80">
-          Pamhok Homes admin dashboard
+          {SITE.name} admin dashboard
         </p>
 
         {notAuthorized && (

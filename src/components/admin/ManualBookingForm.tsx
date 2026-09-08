@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { Check, Copy } from "@phosphor-icons/react";
-import { CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/site";
+import { CHECK_IN_TIME, CHECK_OUT_TIME, SITE } from "@/lib/site";
 
 type GuestCard = {
   roomName: string;
@@ -16,7 +16,7 @@ type GuestCard = {
 
 function guestCardText(card: GuestCard) {
   return [
-    "Pamhok Homes — Booking Confirmation",
+    `${SITE.name} — Booking Confirmation`,
     "",
     `Guest: ${card.guestName}`,
     `Room: ${card.roomName}`,

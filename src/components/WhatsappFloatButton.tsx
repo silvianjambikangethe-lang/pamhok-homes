@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { WhatsappLogo } from "@phosphor-icons/react";
-import { whatsappLink } from "@/lib/site";
+import { SITE, whatsappLink } from "@/lib/site";
 import { useWhatsappVisibility } from "@/components/WhatsappVisibilityContext";
 
-const GREETING = "Hello there. Welcome to Pamhok Homes. How may I help you?";
+const GREETING = `Hello there. Welcome to ${SITE.name}. How may I help you?`;
 
 export default function WhatsappFloatButton({ phone }: { phone: string | null }) {
   const pathname = usePathname();

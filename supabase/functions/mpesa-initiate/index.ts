@@ -21,12 +21,15 @@
 //          JENGA_MERCHANT_CODE=... JENGA_ACCOUNT_NUMBER=... JENGA_ENV=sandbox \
 //          JENGA_PRIVATE_KEY="$(cat private_pkcs8.pem)"
 //
-// ⚠️ UNCONFIRMED AGAINST A LIVE SANDBOX CALL — unlike the Daraja integration
-// this replaces (verified against Safaricom's real sandbox before being
-// trusted), none of this has been exercised against Jenga's sandbox yet.
-// Built from Jenga/Finserve's own public docs, which are genuinely
-// inconsistent across pages for this API generation. Test a real STK push
-// in sandbox before taking a live booking through this:
+// ⚠️ CONFIRMED WORKING UP TO JENGA'S OWN PRODUCT AUTHORIZATION — tested
+// against Jenga's real sandbox (2026-08-27+): the token/auth call and the
+// RSA-SHA256 request signing below both genuinely work as written. The
+// STK/USSD-push call itself currently returns
+// `502 "Not Authorized to access the API"` from Jenga — external to this
+// code, not a bug here: Jenga/Equity hasn't authorized this merchant
+// account for that specific product yet. Follow up with Jenga/Equity
+// support to get the account authorized, then re-test end to end before
+// taking a real booking through this.
 //   - The token endpoint below needs merchantCode + consumerSecret + an
 //     Api-Key header. **Confirmed against the owner's actual Jenga
 //     dashboard (2026-08-26)**: Merchant Code is a real, distinct value
@@ -40,13 +43,14 @@
 //     authenticates the request.
 //   - The Signature header (RSA-SHA256 over
 //     accountNumber+ref+mobileNumber+telco+amount+currency, per Jenga's
-//     API-explorer page for this exact STK/USSD-push endpoint) isn't
-//     mentioned in Jenga's general auth guide, which may mean it only
-//     applies to money-movement endpoints like this one — kept here, but
-//     confirm the actual sandbox response before trusting it.
+//     API-explorer page for this exact STK/USSD-push endpoint) is
+//     confirmed correct against the real sandbox — the request reaches
+//     Jenga and is rejected on authorization grounds, not a signature or
+//     auth error.
 //   - Which field in the STK response (`reference` vs `transactionId`)
-//     matches the callback's `transactionReference` is also unconfirmed —
-//     see mpesa-callback/index.ts.
+//     matches the callback's `transactionReference` is still unconfirmed,
+//     since no request has gotten past the 502 yet — see
+//     mpesa-callback/index.ts.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { EnvelopeSimple, MapPin, Phone, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
-import { SITE, whatsappLink } from "@/lib/site";
+import { SITE, pageTitle, whatsappLink } from "@/lib/site";
 import { getAdminContactPhone, getContactContent } from "@/lib/data";
 import ContactForm from "@/components/ContactForm";
 import PageBanner from "@/components/PageBanner";
 import GetDirectionsButton from "@/components/GetDirectionsButton";
 
 export const metadata: Metadata = {
-  title: "Contact & Location — Pamhok Homes",
+  title: pageTitle("Contact & Location"),
   description:
     "Get in touch with Pamhok Homes — WhatsApp, phone, email, or send us a message directly.",
 };
@@ -52,7 +52,7 @@ export default async function ContactPage() {
 
             {adminPhone && (
               <a
-                href={whatsappLink(adminPhone, "Hi Pamhok Homes! I have a question.")}
+                href={whatsappLink(adminPhone, `Hi ${SITE.name}! I have a question.`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="focus-ring mt-6 flex items-center justify-center gap-2 rounded-full bg-success px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"

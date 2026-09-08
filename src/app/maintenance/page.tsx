@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { HouseLine, Phone, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
-import { SITE, whatsappLink } from "@/lib/site";
+import { SITE, pageTitle, whatsappLink } from "@/lib/site";
 import { getAdminContactPhone } from "@/lib/data";
 
 export const metadata: Metadata = {
-  title: "We'll Be Right Back — Pamhok Homes",
+  title: pageTitle("We'll Be Right Back"),
   robots: { index: false, follow: false },
 };
 
@@ -17,7 +17,7 @@ export default async function MaintenancePage() {
         <HouseLine size={40} weight="light" className="mx-auto text-terracotta-600" />
         <h1 className="mt-4 font-serif text-h2 text-ink">We&apos;ll be right back</h1>
         <p className="mt-3 text-body-sm text-ink/80">
-          Welcome to Pamhok Homes! We&apos;re briefly offline for essential
+          Welcome to {SITE.name}! We&apos;re briefly offline for essential
           maintenance. To check availability or make a booking right now,
           message us directly — we usually reply within minutes.
         </p>
@@ -27,7 +27,7 @@ export default async function MaintenancePage() {
             <a
               href={whatsappLink(
                 adminPhone,
-                "Hi! I'd like to check availability at Pamhok Homes.",
+                `Hi! I'd like to check availability at ${SITE.name}.`,
               )}
               target="_blank"
               rel="noopener noreferrer"

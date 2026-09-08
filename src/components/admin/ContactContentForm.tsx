@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle } from "@phosphor-icons/react";
 import MapsLinkField from "@/components/admin/MapsLinkField";
 import type { ContactContent } from "@/lib/supabase/types";
+import { SITE } from "@/lib/site";
 
 export default function ContactContentForm({ initial }: { initial: ContactContent }) {
   const [value, setValue] = useState(initial);
@@ -77,7 +78,7 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
           />
           <p className="mt-1 text-xs text-ink/65">
             Powers the &quot;Get Directions&quot; button on the Contact page,
-            the guest portal, and the &quot;from Pamhok Homes&quot; directions
+            the guest portal, and the &quot;from {SITE.name}&quot; directions
             on the Neighborhood page. Share a pin from Google Maps and paste
             the link here.
           </p>

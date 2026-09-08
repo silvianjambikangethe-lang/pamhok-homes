@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MapPin, NavigationArrow } from "@phosphor-icons/react";
+import { SITE } from "@/lib/site";
 
 export default function GetDirectionsButton({
   mapsUrl,
@@ -72,7 +73,7 @@ export default function GetDirectionsButton({
             <h2 className="mt-3 font-serif text-h3 text-ink">Enable location?</h2>
             <p className="mt-2 text-sm text-ink/80">
               Allow location access so Google Maps can give you turn-by-turn
-              directions to Pamhok Homes and track your route as you drive.
+              directions to {SITE.name} and track your route as you drive.
             </p>
             <div className="mt-5 flex flex-col gap-2">
               <button

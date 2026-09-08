@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import ExpensesPanel from "@/components/admin/ExpensesPanel";
+import { pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Expenses — Pamhok Homes",
+  title: pageTitle("Expenses"),
   robots: { index: false, follow: false },
 };
 

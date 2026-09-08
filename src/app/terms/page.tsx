@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import PageBanner from "@/components/PageBanner";
 import { getTermsContent } from "@/lib/data";
 import { renderTermsBody } from "@/lib/terms-render";
+import { pageTitle } from "@/lib/site";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions — Pamhok Homes",
+  title: pageTitle("Terms & Conditions"),
   robots: { index: false, follow: false },
 };
 

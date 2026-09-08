@@ -8,23 +8,30 @@
 // Requires the RESEND_API_KEY and (optionally) EMAIL_FROM_ADDRESS Supabase
 // secrets — same values as the Next.js side's .env.local/Vercel env vars.
 
+// Mirrors src/lib/site.ts's SITE object — Deno can't import that file, so
+// this is a deliberate duplicate, same as this file's own existence. Keep
+// in sync if the business name/address/phone/contact email ever change.
+const SITE = {
+  name: "Pamhok Homes",
+  address: "Near Thika Road Mall (TRM), Nairobi, Kenya",
+  phone: "+254 704 393 189",
+  contactEmail: "hello@pamhokhomes.com",
+};
+
 function fromAddress(): string {
-  return Deno.env.get("EMAIL_FROM_ADDRESS") ?? "Pamhok Homes <onboarding@resend.dev>";
+  return Deno.env.get("EMAIL_FROM_ADDRESS") ?? `${SITE.name} <onboarding@resend.dev>`;
 }
 
-// Mirrors src/lib/site.ts's SITE.contactEmail — Deno can't import that
-// file, so this is a deliberate duplicate, same as this file's own
-// existence. Keep in sync if the contact address ever changes.
-const REPLY_TO = "hello@pamhokhomes.com";
+const REPLY_TO = SITE.contactEmail;
 
 function wrapper(bodyHtml: string): string {
   return `<div style="background:#FBF7F1; padding:32px 16px;">
     <style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Plus+Jakarta+Sans:wght@400;600&display=swap');</style>
     <div style="font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; max-width: 480px; margin: 0 auto; color: #2a2118; font-size: 15px; line-height: 1.6;">
-      <h1 style="font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 22px; margin: 0 0 20px;">Pamhok Homes</h1>
+      <h1 style="font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 22px; margin: 0 0 20px;">${SITE.name}</h1>
       ${bodyHtml}
       <p style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #EBDFC6; font-size: 13px; color: #8a7d6e;">
-        Near Thika Road Mall (TRM), Nairobi, Kenya · +254 704 393 189
+        ${SITE.address} · ${SITE.phone}
       </p>
     </div>
   </div>`;
