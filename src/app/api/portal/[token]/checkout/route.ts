@@ -12,7 +12,7 @@ export async function POST(
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
     .select(
-      "id, guest_id, checked_out_at, id_document_path, id_selfie_path, guest:guests(full_name, email), room:rooms(name)",
+      "id, guest_id, checked_out_at, id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2, guest:guests(full_name, email), room:rooms(name)",
     )
     .eq("access_token", token)
     .maybeSingle();
@@ -34,20 +34,29 @@ export async function POST(
     return NextResponse.json({ error: "Could not confirm check-out." }, { status: 500 });
   }
 
-  // Privacy cleanup: the ID photo/selfie and phone number have real privacy
-  // risk and no ongoing business use once a stay ends. Name, email, dates,
-  // payment info, booking_reference, id_verification_status, reviews, and
-  // guest_requests all stay for record-keeping.
-  const idPaths = [booking.id_document_path, booking.id_selfie_path].filter(
-    (p): p is string => !!p,
-  );
+  // Privacy cleanup: the ID front/back photos and phone number have real
+  // privacy risk and no ongoing business use once a stay ends. Name, email,
+  // dates, payment info, booking_reference, id_verification_status,
+  // reviews, and guest_requests all stay for record-keeping. Covers both
+  // verification attempts, not just the first.
+  const idPaths = [
+    booking.id_document_path,
+    booking.id_document_back_path,
+    booking.id_document_path_2,
+    booking.id_document_back_path_2,
+  ].filter((p): p is string => !!p);
   await Promise.all([
     idPaths.length > 0
       ? supabase.storage.from("id-documents").remove(idPaths)
       : Promise.resolve(),
     supabase
       .from("bookings")
-      .update({ id_document_path: null, id_selfie_path: null })
+      .update({
+        id_document_path: null,
+        id_document_back_path: null,
+        id_document_path_2: null,
+        id_document_back_path_2: null,
+      })
       .eq("id", booking.id),
     booking.guest_id
       ? supabase.from("guests").update({ phone: null }).eq("id", booking.guest_id)

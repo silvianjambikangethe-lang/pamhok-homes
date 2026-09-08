@@ -188,7 +188,7 @@ export default function PortalClient({
             <IdUploadForm
               token={token}
               rejected={true}
-              attemptsLeft={Math.max(0, 3 - booking.id_verification_attempts)}
+              attemptsLeft={Math.max(0, 2 - booking.id_verification_attempts)}
             />
           )}
         {booking.id_verification_status === "Pending" &&

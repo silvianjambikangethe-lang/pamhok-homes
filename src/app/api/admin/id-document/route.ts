@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
+type DocType = "front" | "back" | "front2" | "back2";
+const VALID_TYPES: DocType[] = ["front", "back", "front2", "back2"];
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const bookingId = searchParams.get("bookingId");
-  const type = searchParams.get("type") === "selfie" ? "selfie" : "id";
+  const typeParam = searchParams.get("type");
+  const type: DocType = VALID_TYPES.includes(typeParam as DocType) ? (typeParam as DocType) : "front";
   if (!bookingId) {
     return NextResponse.json({ error: "Missing bookingId." }, { status: 400 });
   }
@@ -15,7 +19,7 @@ export async function GET(request: Request) {
   const sessionClient = await createServerSupabaseClient();
   const { data: booking, error } = await sessionClient
     .from("bookings")
-    .select("id_document_path, id_selfie_path")
+    .select("id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2")
     .eq("id", bookingId)
     .maybeSingle();
 
@@ -23,7 +27,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Not authorized or not found." }, { status: 403 });
   }
 
-  const path = type === "selfie" ? booking.id_selfie_path : booking.id_document_path;
+  const pathByType: Record<DocType, string | null> = {
+    front: booking.id_document_path,
+    back: booking.id_document_back_path,
+    front2: booking.id_document_path_2,
+    back2: booking.id_document_back_path_2,
+  };
+  const path = pathByType[type];
   if (!path) {
     return NextResponse.json({ error: "No document uploaded." }, { status: 404 });
   }

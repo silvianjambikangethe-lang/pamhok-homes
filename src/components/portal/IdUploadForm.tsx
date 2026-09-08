@@ -14,19 +14,19 @@ export default function IdUploadForm({
   attemptsLeft?: number;
 }) {
   const router = useRouter();
-  const idInputRef = useRef<HTMLInputElement>(null);
-  const selfieInputRef = useRef<HTMLInputElement>(null);
-  const [idFileName, setIdFileName] = useState<string | null>(null);
-  const [selfieFileName, setSelfieFileName] = useState<string | null>(null);
+  const frontInputRef = useRef<HTMLInputElement>(null);
+  const backInputRef = useRef<HTMLInputElement>(null);
+  const [frontFileName, setFrontFileName] = useState<string | null>(null);
+  const [backFileName, setBackFileName] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const idFile = idInputRef.current?.files?.[0];
-    const selfieFile = selfieInputRef.current?.files?.[0];
-    if (!idFile || !selfieFile) {
-      setError("Please choose both an ID photo and a selfie.");
+    const frontFile = frontInputRef.current?.files?.[0];
+    const backFile = backInputRef.current?.files?.[0];
+    if (!frontFile || !backFile) {
+      setError("Please choose both the front and back of your ID.");
       return;
     }
 
@@ -34,8 +34,8 @@ export default function IdUploadForm({
     setError(null);
 
     const formData = new FormData();
-    formData.append("file", idFile);
-    formData.append("selfie", selfieFile);
+    formData.append("file", frontFile);
+    formData.append("back", backFile);
 
     try {
       const res = await fetch(`/api/portal/${token}/upload-id`, {
@@ -71,38 +71,38 @@ export default function IdUploadForm({
       </h2>
       <p className="mt-1 text-sm text-ink/80">
         {attemptsLeft !== undefined
-          ? `We couldn't verify that automatically. Please upload a clearer photo of your ID and a selfie — you have ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} left before this needs a quick manual review from your host.`
+          ? `We couldn't verify that automatically. Please upload clearer photos of the front and back of your ID — you have ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} left before this needs a quick manual review from your host.`
           : rejected
-            ? "Your previous upload couldn't be verified. Please upload a clear photo of your national ID or passport, plus a selfie."
-            : "Upload a clear photo of your national ID or passport, plus a quick selfie — your host will review it shortly."}
+            ? "Your previous upload couldn't be verified. Please upload clear photos of the front and back of your national ID or passport."
+            : "Upload clear photos of the front and back of your national ID or passport — your host will review it shortly."}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
         <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
           <UploadSimple size={28} className="text-terracotta-600" />
           <span className="text-sm font-medium text-ink/80">
-            {idFileName ?? "Click to choose your ID (JPG, PNG, or PDF)"}
+            {frontFileName ?? "Click to choose the front of your ID (JPG, PNG, or PDF)"}
           </span>
           <input
-            ref={idInputRef}
+            ref={frontInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp,application/pdf"
             className="sr-only"
-            onChange={(e) => setIdFileName(e.target.files?.[0]?.name ?? null)}
+            onChange={(e) => setFrontFileName(e.target.files?.[0]?.name ?? null)}
           />
         </label>
 
         <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
           <UploadSimple size={28} className="text-terracotta-600" />
           <span className="text-sm font-medium text-ink/80">
-            {selfieFileName ?? "Click to choose a selfie (JPG, PNG, or WebP)"}
+            {backFileName ?? "Click to choose the back of your ID (JPG, PNG, or PDF)"}
           </span>
           <input
-            ref={selfieInputRef}
+            ref={backInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
             className="sr-only"
-            onChange={(e) => setSelfieFileName(e.target.files?.[0]?.name ?? null)}
+            onChange={(e) => setBackFileName(e.target.files?.[0]?.name ?? null)}
           />
         </label>
 
