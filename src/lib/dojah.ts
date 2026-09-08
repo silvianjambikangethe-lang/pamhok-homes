@@ -6,11 +6,14 @@ import type { IdVerificationResult } from "@/lib/supabase/types";
 // Works globally, not just Kenya, so it handles any guest's national ID or
 // passport. See https://api.dojah.io (sandbox host below) for the full
 // contract; DOJAH_ENV picks sandbox vs production the same way JENGA_ENV
-// does for the M-Pesa integration.
-const DOJAH_BASE_URL =
-  process.env.DOJAH_ENV === "production"
-    ? "https://api.dojah.io"
-    : "https://sandbox.dojah.io";
+// does for the M-Pesa integration. The App ID is shared across both
+// environments, but the secret key differs, so sandbox and production keys
+// are kept in separate env vars (DOJAH_SECRET_KEY_SANDBOX /
+// DOJAH_SECRET_KEY_PRODUCTION) rather than one var that gets overwritten —
+// that way flipping DOJAH_ENV back to sandbox for local testing doesn't
+// require digging up the sandbox key again.
+const isProduction = process.env.DOJAH_ENV === "production";
+const DOJAH_BASE_URL = isProduction ? "https://api.dojah.io" : "https://sandbox.dojah.io";
 
 type DojahDocumentStatus = {
   overall_status?: number | string;
@@ -31,9 +34,12 @@ export type DocumentAnalysisOutcome =
 
 export async function analyzeIdDocument(frontBase64: string): Promise<DocumentAnalysisOutcome> {
   const appId = process.env.DOJAH_APP_ID;
-  const secretKey = process.env.DOJAH_SECRET_KEY;
+  const secretKey = isProduction
+    ? process.env.DOJAH_SECRET_KEY_PRODUCTION
+    : process.env.DOJAH_SECRET_KEY_SANDBOX;
   if (!appId || !secretKey) {
-    return { ok: false, error: "Dojah is not configured (missing DOJAH_APP_ID/DOJAH_SECRET_KEY)." };
+    const missingKeyVar = isProduction ? "DOJAH_SECRET_KEY_PRODUCTION" : "DOJAH_SECRET_KEY_SANDBOX";
+    return { ok: false, error: `Dojah is not configured (missing DOJAH_APP_ID/${missingKeyVar}).` };
   }
 
   let response: Response;
