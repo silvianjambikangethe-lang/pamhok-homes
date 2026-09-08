@@ -547,11 +547,11 @@ explanation.
 
 ### Untested, not code issues — just flagging
 
-13. **M-Pesa's real "Paid" outcome** — now via Jenga, not Daraja, and
+14. **M-Pesa's real "Paid" outcome** — now via Jenga, not Daraja, and
     unlike the Daraja plumbing it replaced, this hasn't been proven
     correct against a sandbox call at all yet (missing RSA key, unverified
     credential mapping — see the M-Pesa section above).
-14. **An unexplained RLS anomaly** from early in the project (a
+15. **An unexplained RLS anomaly** from early in the project (a
     textbook-correct insert policy still rejected `anon` inserts on a
     fresh table) — worked around via the service-role client
     everywhere writes happen; root cause never found. Worth a Supabase
