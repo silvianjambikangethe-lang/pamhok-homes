@@ -2,7 +2,11 @@ export const SITE = {
   name: "Pamhok Homes",
   tagline: "A home away from home, near Thika Road Mall",
   city: "Nairobi, Kenya",
-  contactEmail: "pamhokhomes@gmail.com",
+  // Client-facing "reach out to us" address — shown site-wide and used as
+  // the default reply-to on automated emails. Deliberately NOT the admin
+  // login email (pamhokhomes@gmail.com), which stays whatever the admin
+  // signed in with regardless of this value.
+  contactEmail: "hello@pamhokhomes.com",
   phone: "+254 704 393 189",
   // Lockup (icon + "Pamhok Homes" wordmark) — homepage header only, per
   // logo-placement-guide.md. Everywhere else uses logoIconUrl instead.

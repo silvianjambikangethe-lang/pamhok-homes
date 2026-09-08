@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Supabase Edge Functions are Deno, not Node/Next.js — a different
+    // runtime with its own globals (Deno.*), its own import scheme
+    // (npm:/jsr: specifiers), and its own linter (`deno lint`, which
+    // understands `// deno-lint-ignore` comments this config doesn't).
+    // Linting them with this config produces false positives, not real
+    // findings — keep them out of scope entirely.
+    "supabase/functions/**",
   ]),
 ]);
 

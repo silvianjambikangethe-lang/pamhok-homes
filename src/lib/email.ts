@@ -1,5 +1,6 @@
 import "server-only";
 import { Resend } from "resend";
+import { SITE } from "@/lib/site";
 
 export function isEmailConfigured() {
   return Boolean(process.env.RESEND_API_KEY);
@@ -46,6 +47,22 @@ function button(url: string, label: string): string {
 
 function link(url: string): string {
   return `<p style="margin: 8px 0;"><a href="${url}" style="color:#8C4A23;">${url}</a></p>`;
+}
+
+// Every other template's interpolated values (guest names, room names,
+// dates) come from the database, already constrained by their own input
+// validation at write time. The contact form is different — it's raw,
+// open-ended visitor text with no such constraint — so escape it before
+// it goes into an HTML email body, or a submitted "<script>..." or
+// similarly crafted message would render as live HTML in whatever mail
+// client opens it.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export function bookingConfirmationEmail({
@@ -262,17 +279,44 @@ export function checkoutCompleteEmail({
   };
 }
 
+export function contactMessageEmail({
+  name,
+  email,
+  message,
+}: {
+  name: string;
+  email: string;
+  message: string;
+}) {
+  return {
+    subject: `New contact message from ${escapeHtml(name)}`,
+    html: wrapper(`
+      <p><strong>${escapeHtml(name)}</strong> (${escapeHtml(email)}) sent a message via the Contact page:</p>
+      <p style="white-space: pre-wrap;">${escapeHtml(message)}</p>
+      <p style="margin-top:24px; font-size:13px; color:#8a7d6e;">Reply to this email to respond directly to them.</p>
+    `),
+  };
+}
+
 // Best-effort send — callers should not fail the calling operation (a
 // booking, a cron run) just because an email didn't go out. Logs and
 // swallows errors rather than throwing.
+//
+// replyTo defaults to SITE.contactEmail (hello@pamhokhomes.com, a real
+// monitored Zoho mailbox) so a guest hitting "Reply" on any automated
+// notification reaches a real inbox, not the from-address the mail was
+// sent under. Override it (e.g. the contact form does, to the visitor's
+// own address) when a reply should go somewhere else instead.
 export async function sendEmail({
   to,
   subject,
   html,
+  replyTo = SITE.contactEmail,
 }: {
   to: string;
   subject: string;
   html: string;
+  replyTo?: string;
 }): Promise<boolean> {
   if (!isEmailConfigured()) return false;
 
@@ -282,6 +326,7 @@ export async function sendEmail({
       to,
       subject,
       html,
+      replyTo,
     });
     if (error) {
       console.error("Resend send failed:", error);

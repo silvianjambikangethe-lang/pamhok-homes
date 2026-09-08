@@ -48,13 +48,13 @@ export default function AdminNav({ email }: { email: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-start justify-between border-b border-forest-500/40 dark:border-white/10 p-6">
+      <div className="flex flex-col gap-3 border-b border-forest-500/40 dark:border-white/10 p-6">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={SITE.logoIconUrl} alt={SITE.name} className="h-8 w-8 shrink-0 rounded-md object-cover" />
-          <div>
-            <p className="font-serif text-lg font-semibold text-white">{SITE.name}</p>
-            <p className="mt-0.5 text-xs text-white/60">{email}</p>
+          <div className="min-w-0">
+            <p className="truncate font-serif text-lg font-semibold text-white">{SITE.name}</p>
+            <p className="mt-0.5 truncate text-xs text-white/60">{email}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
