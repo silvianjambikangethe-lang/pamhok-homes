@@ -124,9 +124,9 @@ export type Booking = {
   booking_status: BookingStatus;
   block_note: string | null;
   id_document_path: string | null;
-  id_selfie_path: string | null;
+  id_document_back_path: string | null;
   id_document_path_2: string | null;
-  id_selfie_path_2: string | null;
+  id_document_back_path_2: string | null;
   id_verification_status: IdVerificationStatus;
   id_verification_method: IdVerificationMethod | null;
   id_verification_attempts: number;

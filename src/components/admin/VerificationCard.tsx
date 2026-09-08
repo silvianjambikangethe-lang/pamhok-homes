@@ -13,14 +13,14 @@ export interface VerificationRow {
   guestName: string | null;
   roomName: string | null;
   hasDocument: boolean;
-  hasSelfie: boolean;
+  hasDocumentBack: boolean;
   hasDocument2: boolean;
-  hasSelfie2: boolean;
+  hasDocumentBack2: boolean;
   verificationResult: IdVerificationResult | null;
   verificationResult2: IdVerificationResult | null;
 }
 
-type DocType = "id" | "selfie" | "id2" | "selfie2";
+type DocType = "front" | "back" | "front2" | "back2";
 
 function resultCopy(result: IdVerificationResult) {
   if (result.resultCode === "provider_error") {
@@ -50,7 +50,7 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
   const [urls, setUrls] = useState<Partial<Record<DocType, string>>>({});
   const [loadingDoc, setLoadingDoc] = useState<DocType | null>(null);
 
-  const hasSecondAttempt = row.hasDocument2 || row.hasSelfie2 || !!row.verificationResult2;
+  const hasSecondAttempt = row.hasDocument2 || row.hasDocumentBack2 || !!row.verificationResult2;
 
   async function handleView(type: DocType) {
     setLoadingDoc(type);
@@ -99,10 +99,10 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
         </div>
 
         <div className="flex flex-wrap justify-end gap-2">
-          {row.hasDocument && viewButton("id", `View ID${hasSecondAttempt ? " (Attempt 1)" : ""}`)}
-          {row.hasSelfie && viewButton("selfie", `View Selfie${hasSecondAttempt ? " (Attempt 1)" : ""}`)}
-          {row.hasDocument2 && viewButton("id2", "View ID (Attempt 2)")}
-          {row.hasSelfie2 && viewButton("selfie2", "View Selfie (Attempt 2)")}
+          {row.hasDocument && viewButton("front", `View ID Front${hasSecondAttempt ? " (Attempt 1)" : ""}`)}
+          {row.hasDocumentBack && viewButton("back", `View ID Back${hasSecondAttempt ? " (Attempt 1)" : ""}`)}
+          {row.hasDocument2 && viewButton("front2", "View ID Front (Attempt 2)")}
+          {row.hasDocumentBack2 && viewButton("back2", "View ID Back (Attempt 2)")}
         </div>
       </div>
 
@@ -117,35 +117,35 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
       )}
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        {urls.id && (
+        {urls.front && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={urls.id}
-            alt={`${row.guestName ?? "Guest"}'s ID document (attempt 1)`}
+            src={urls.front}
+            alt={`${row.guestName ?? "Guest"}'s ID front (attempt 1)`}
             className="max-h-96 w-full rounded-xl border border-taupe/20 object-contain"
           />
         )}
-        {urls.selfie && (
+        {urls.back && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={urls.selfie}
-            alt={`${row.guestName ?? "Guest"}'s selfie (attempt 1)`}
+            src={urls.back}
+            alt={`${row.guestName ?? "Guest"}'s ID back (attempt 1)`}
             className="max-h-96 w-full rounded-xl border border-taupe/20 object-contain"
           />
         )}
-        {urls.id2 && (
+        {urls.front2 && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={urls.id2}
-            alt={`${row.guestName ?? "Guest"}'s ID document (attempt 2)`}
+            src={urls.front2}
+            alt={`${row.guestName ?? "Guest"}'s ID front (attempt 2)`}
             className="max-h-96 w-full rounded-xl border border-taupe/20 object-contain"
           />
         )}
-        {urls.selfie2 && (
+        {urls.back2 && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={urls.selfie2}
-            alt={`${row.guestName ?? "Guest"}'s selfie (attempt 2)`}
+            src={urls.back2}
+            alt={`${row.guestName ?? "Guest"}'s ID back (attempt 2)`}
             className="max-h-96 w-full rounded-xl border border-taupe/20 object-contain"
           />
         )}

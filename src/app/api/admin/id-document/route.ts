@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
-type DocType = "id" | "selfie" | "id2" | "selfie2";
-const VALID_TYPES: DocType[] = ["id", "selfie", "id2", "selfie2"];
+type DocType = "front" | "back" | "front2" | "back2";
+const VALID_TYPES: DocType[] = ["front", "back", "front2", "back2"];
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const bookingId = searchParams.get("bookingId");
   const typeParam = searchParams.get("type");
-  const type: DocType = VALID_TYPES.includes(typeParam as DocType) ? (typeParam as DocType) : "id";
+  const type: DocType = VALID_TYPES.includes(typeParam as DocType) ? (typeParam as DocType) : "front";
   if (!bookingId) {
     return NextResponse.json({ error: "Missing bookingId." }, { status: 400 });
   }
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const sessionClient = await createServerSupabaseClient();
   const { data: booking, error } = await sessionClient
     .from("bookings")
-    .select("id_document_path, id_selfie_path, id_document_path_2, id_selfie_path_2")
+    .select("id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2")
     .eq("id", bookingId)
     .maybeSingle();
 
@@ -28,10 +28,10 @@ export async function GET(request: Request) {
   }
 
   const pathByType: Record<DocType, string | null> = {
-    id: booking.id_document_path,
-    selfie: booking.id_selfie_path,
-    id2: booking.id_document_path_2,
-    selfie2: booking.id_selfie_path_2,
+    front: booking.id_document_path,
+    back: booking.id_document_back_path,
+    front2: booking.id_document_path_2,
+    back2: booking.id_document_back_path_2,
   };
   const path = pathByType[type];
   if (!path) {

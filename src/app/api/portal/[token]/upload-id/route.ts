@@ -5,8 +5,6 @@ import type { IdVerificationResult } from "@/lib/supabase/types";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ID_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-// Selfies must be a real photo — a face image is required for manual review.
-const SELFIE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_ATTEMPTS = 2;
 
 function validateFile(file: unknown, allowedTypes: string[]): file is File {
@@ -50,18 +48,18 @@ export async function POST(
   }
 
   const formData = await request.formData().catch(() => null);
-  const idFile = formData?.get("file");
-  const selfieFile = formData?.get("selfie");
+  const frontFile = formData?.get("file");
+  const backFile = formData?.get("back");
 
-  if (!validateFile(idFile, ID_TYPES)) {
+  if (!validateFile(frontFile, ID_TYPES)) {
     return NextResponse.json(
-      { error: "Please upload a clear JPG, PNG, WebP, or PDF of your ID (under 10MB)." },
+      { error: "Please upload a clear JPG, PNG, WebP, or PDF of the front of your ID (under 10MB)." },
       { status: 400 },
     );
   }
-  if (!validateFile(selfieFile, SELFIE_TYPES)) {
+  if (!validateFile(backFile, ID_TYPES)) {
     return NextResponse.json(
-      { error: "Please upload a clear JPG, PNG, or WebP selfie (under 10MB)." },
+      { error: "Please upload a clear JPG, PNG, WebP, or PDF of the back of your ID (under 10MB)." },
       { status: 400 },
     );
   }
@@ -76,45 +74,45 @@ export async function POST(
   const attemptNumber = isFreshCycle ? 1 : booking.id_verification_attempts + 1;
   const attemptSlot = attemptNumber >= 2 ? 2 : 1;
 
-  const idExtension = idFile.name.split(".").pop() ?? "bin";
-  const selfieExtension = selfieFile.name.split(".").pop() ?? "bin";
+  const frontExtension = frontFile.name.split(".").pop() ?? "bin";
+  const backExtension = backFile.name.split(".").pop() ?? "bin";
   const stamp = Date.now();
   const slotSuffix = attemptSlot === 2 ? "-2" : "";
-  const idPath = `${booking.id}/id${slotSuffix}-${stamp}.${idExtension}`;
-  const selfiePath = `${booking.id}/selfie${slotSuffix}-${stamp}.${selfieExtension}`;
+  const frontPath = `${booking.id}/id${slotSuffix}-${stamp}.${frontExtension}`;
+  const backPath = `${booking.id}/id-back${slotSuffix}-${stamp}.${backExtension}`;
 
-  const [idUpload, selfieUpload] = await Promise.all([
-    supabase.storage.from("id-documents").upload(idPath, idFile, {
-      contentType: idFile.type,
+  const [frontUpload, backUpload] = await Promise.all([
+    supabase.storage.from("id-documents").upload(frontPath, frontFile, {
+      contentType: frontFile.type,
       upsert: false,
     }),
-    supabase.storage.from("id-documents").upload(selfiePath, selfieFile, {
-      contentType: selfieFile.type,
+    supabase.storage.from("id-documents").upload(backPath, backFile, {
+      contentType: backFile.type,
       upsert: false,
     }),
   ]);
 
-  if (idUpload.error || selfieUpload.error) {
+  if (frontUpload.error || backUpload.error) {
     return NextResponse.json({ error: "Upload failed. Please try again." }, { status: 500 });
   }
 
-  // Dojah's document analysis endpoint only takes an image — a PDF ID
-  // can't be analyzed automatically, so it goes straight to manual review
-  // like a provider error would (see below), without spending an attempt.
-  const canAutoAnalyze = idFile.type !== "application/pdf";
+  // Dojah's document analysis endpoint only takes images — a PDF ID can't
+  // be analyzed automatically, so it goes straight to manual review like a
+  // provider error would (see below), without spending an attempt.
+  const canAutoAnalyze = frontFile.type !== "application/pdf" && backFile.type !== "application/pdf";
 
   const outcome = canAutoAnalyze
-    ? await analyzeIdDocument(await fileToBase64(idFile))
+    ? await analyzeIdDocument(await fileToBase64(frontFile), await fileToBase64(backFile))
     : { ok: false as const, error: "Uploaded ID is a PDF; automated analysis only supports images." };
 
   const pathFields =
     attemptSlot === 2
-      ? { id_document_path_2: idPath, id_selfie_path_2: selfiePath }
-      : { id_document_path: idPath, id_selfie_path: selfiePath };
+      ? { id_document_path_2: frontPath, id_document_back_path_2: backPath }
+      : { id_document_path: frontPath, id_document_back_path: backPath };
 
   const clearedStaleAttempt2 =
     isFreshCycle
-      ? { id_document_path_2: null, id_selfie_path_2: null, id_verification_result_2: null }
+      ? { id_document_path_2: null, id_document_back_path_2: null, id_verification_result_2: null }
       : {};
 
   if (!outcome.ok) {

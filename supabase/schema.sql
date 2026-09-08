@@ -139,14 +139,15 @@ create table if not exists bookings (
   block_note text,              -- only used when booking_status = 'Blocked'
 
   -- ID verification gate. Automated via Dojah document analysis
-  -- (src/lib/dojah.ts) — a guest gets 2 attempts (upload-id route) before
-  -- the booking is flagged 'Pending' + booking_status 'Pending Verification'
-  -- for manual admin review. A Dojah-side/config error falls back to the
-  -- same manual-review path without spending an attempt.
-  id_document_path text,        -- attempt 1's ID photo — private storage path, never a public URL
-  id_selfie_path text,          -- attempt 1's selfie — private storage path
-  id_document_path_2 text,      -- attempt 2's ID photo, only present if attempt 1 failed automatically
-  id_selfie_path_2 text,        -- attempt 2's selfie, only present if attempt 1 failed automatically
+  -- (src/lib/dojah.ts) — front + back of the ID, no selfie/face-match — a
+  -- guest gets 2 attempts (upload-id route) before the booking is flagged
+  -- 'Pending' + booking_status 'Pending Verification' for manual admin
+  -- review. A Dojah-side/config error falls back to the same manual-review
+  -- path without spending an attempt.
+  id_document_path text,           -- attempt 1's ID front photo — private storage path, never a public URL
+  id_document_back_path text,      -- attempt 1's ID back photo — private storage path
+  id_document_path_2 text,         -- attempt 2's ID front photo, only present if attempt 1 failed automatically
+  id_document_back_path_2 text,    -- attempt 2's ID back photo, only present if attempt 1 failed automatically
   id_verification_status text not null default 'Not Submitted',
   -- 'Not Submitted' | 'Pending' | 'Verified' | 'Rejected'
   id_verification_method text,  -- 'automatic' | 'manual_override', set once a status is reached

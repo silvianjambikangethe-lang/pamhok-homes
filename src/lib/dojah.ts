@@ -1,8 +1,7 @@
 import "server-only";
 import type { IdVerificationResult } from "@/lib/supabase/types";
 
-// Dojah document analysis — front-side-only ID check (imagebackside is
-// optional in their API and we only collect one ID photo from the guest).
+// Dojah document analysis — front + back ID check, no selfie/face-match.
 // Works globally, not just Kenya, so it handles any guest's national ID or
 // passport. See https://api.dojah.io (sandbox host below) for the full
 // contract; DOJAH_ENV picks sandbox vs production the same way JENGA_ENV
@@ -32,7 +31,10 @@ export type DocumentAnalysisOutcome =
   // one of the guest's two attempts.
   | { ok: false; error: string };
 
-export async function analyzeIdDocument(frontBase64: string): Promise<DocumentAnalysisOutcome> {
+export async function analyzeIdDocument(
+  frontBase64: string,
+  backBase64: string,
+): Promise<DocumentAnalysisOutcome> {
   const appId = process.env.DOJAH_APP_ID;
   const secretKey = isProduction
     ? process.env.DOJAH_SECRET_KEY_PRODUCTION
@@ -55,6 +57,7 @@ export async function analyzeIdDocument(frontBase64: string): Promise<DocumentAn
       body: JSON.stringify({
         input_type: "base64",
         imagefrontside: frontBase64,
+        imagebackside: backBase64,
       }),
     });
   } catch {

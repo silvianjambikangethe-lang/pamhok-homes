@@ -7,7 +7,7 @@ export default async function AdminVerificationsPage() {
   const { data: bookings } = await supabase
     .from("bookings")
     .select(
-      "id, check_in, check_out, id_document_path, id_selfie_path, id_document_path_2, id_selfie_path_2, id_verification_result, id_verification_result_2, guest:guests(full_name), room:rooms(name)",
+      "id, check_in, check_out, id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2, id_verification_result, id_verification_result_2, guest:guests(full_name), room:rooms(name)",
     )
     .eq("id_verification_status", "Pending")
     // Only bookings that exhausted both automated Dojah attempts (or hit a
@@ -23,9 +23,9 @@ export default async function AdminVerificationsPage() {
     guestName: (b as unknown as { guest?: { full_name?: string } }).guest?.full_name ?? null,
     roomName: (b as unknown as { room?: { name?: string } }).room?.name ?? null,
     hasDocument: Boolean(b.id_document_path),
-    hasSelfie: Boolean(b.id_selfie_path),
+    hasDocumentBack: Boolean(b.id_document_back_path),
     hasDocument2: Boolean(b.id_document_path_2),
-    hasSelfie2: Boolean(b.id_selfie_path_2),
+    hasDocumentBack2: Boolean(b.id_document_back_path_2),
     verificationResult: b.id_verification_result,
     verificationResult2: b.id_verification_result_2,
   }));

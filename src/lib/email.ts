@@ -175,7 +175,7 @@ export function idVerificationResultEmail({
     subject: "We couldn't verify your ID",
     html: wrapper(`
       <p>Hi ${guestName},</p>
-      <p>We weren't able to verify the ID you uploaded for your stay in ${roomName}. Please upload a clearer photo of your ID and a selfie to try again.</p>
+      <p>We weren't able to verify the ID you uploaded for your stay in ${roomName}. Please upload clearer photos of the front and back of your ID to try again.</p>
       ${refundNote ? `<p>${refundNote}</p>` : ""}
       ${button(portalUrl, "Re-upload my ID")}
     `),
