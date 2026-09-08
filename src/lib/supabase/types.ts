@@ -9,10 +9,11 @@ export type IdVerificationStatus =
 export type IdVerificationMethod = "automatic" | "manual_override";
 // Only set while a refund needs attention — cleared once resolved.
 export type RefundStatus = "Needs Manual Refund";
-// Summary of an automated ID verification job, stored for the admin's
-// manual-override decision when the auto-check doesn't pass. Provider-
-// agnostic shape — unused until an automated verification provider is
-// configured; every upload currently goes straight to manual review.
+// Summary of an automated ID verification job (Dojah document analysis —
+// see src/lib/dojah.ts), stored for the admin's manual-override decision
+// when the auto-check doesn't pass. resultCode is "provider_error" (rather
+// than a real Dojah verdict) when Dojah itself was unreachable/misconfigured
+// — that outcome doesn't count against the guest's attempts.
 export type IdVerificationResult = {
   success: boolean;
   resultCode: string | null;
@@ -124,10 +125,13 @@ export type Booking = {
   block_note: string | null;
   id_document_path: string | null;
   id_selfie_path: string | null;
+  id_document_path_2: string | null;
+  id_selfie_path_2: string | null;
   id_verification_status: IdVerificationStatus;
   id_verification_method: IdVerificationMethod | null;
   id_verification_attempts: number;
   id_verification_result: IdVerificationResult | null;
+  id_verification_result_2: IdVerificationResult | null;
   refund_status: RefundStatus | null;
   refund_amount: number | null;
   refund_reference: string | null;

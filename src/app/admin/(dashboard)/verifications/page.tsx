@@ -7,11 +7,12 @@ export default async function AdminVerificationsPage() {
   const { data: bookings } = await supabase
     .from("bookings")
     .select(
-      "id, check_in, check_out, id_document_path, id_selfie_path, id_verification_result, id_verification_attempts, guest:guests(full_name), room:rooms(name)",
+      "id, check_in, check_out, id_document_path, id_selfie_path, id_document_path_2, id_selfie_path_2, id_verification_result, id_verification_result_2, guest:guests(full_name), room:rooms(name)",
     )
     .eq("id_verification_status", "Pending")
-    // No automated provider is configured, so every upload lands straight
-    // here for manual review.
+    // Only bookings that exhausted both automated Dojah attempts (or hit a
+    // provider error) land here — a booking still mid-retry stays off this
+    // list until it either passes or is escalated.
     .eq("booking_status", "Pending Verification")
     .order("created_at", { ascending: true });
 
@@ -23,16 +24,18 @@ export default async function AdminVerificationsPage() {
     roomName: (b as unknown as { room?: { name?: string } }).room?.name ?? null,
     hasDocument: Boolean(b.id_document_path),
     hasSelfie: Boolean(b.id_selfie_path),
+    hasDocument2: Boolean(b.id_document_path_2),
+    hasSelfie2: Boolean(b.id_selfie_path_2),
     verificationResult: b.id_verification_result,
-    attempts: b.id_verification_attempts,
+    verificationResult2: b.id_verification_result_2,
   }));
 
   return (
     <div>
       <h1 className="font-serif text-h2 text-ink">ID Verifications</h1>
       <p className="mt-1 text-sm text-ink/80">
-        No automated verification provider is configured, so every guest ID
-        upload lands here for you to review and approve or reject below.
+        Guests get two automated Dojah checks before landing here — these are
+        the ones that need your call.
       </p>
 
       <div className="mt-6 space-y-4">

@@ -138,23 +138,23 @@ create table if not exists bookings (
   booking_status text not null default 'Confirmed',
   block_note text,              -- only used when booking_status = 'Blocked'
 
-  -- ID verification gate
-  id_document_path text,        -- private storage path, never a public URL
-  id_selfie_path text,          -- private storage path for the matching selfie
+  -- ID verification gate. Automated via Dojah document analysis
+  -- (src/lib/dojah.ts) — a guest gets 2 attempts (upload-id route) before
+  -- the booking is flagged 'Pending' + booking_status 'Pending Verification'
+  -- for manual admin review. A Dojah-side/config error falls back to the
+  -- same manual-review path without spending an attempt.
+  id_document_path text,        -- attempt 1's ID photo — private storage path, never a public URL
+  id_selfie_path text,          -- attempt 1's selfie — private storage path
+  id_document_path_2 text,      -- attempt 2's ID photo, only present if attempt 1 failed automatically
+  id_selfie_path_2 text,        -- attempt 2's selfie, only present if attempt 1 failed automatically
   id_verification_status text not null default 'Not Submitted',
   -- 'Not Submitted' | 'Pending' | 'Verified' | 'Rejected'
-  -- No automated verification provider is currently configured — every
-  -- upload lands as 'Pending' for manual admin review (see the verify
-  -- route). 'automatic' below is a ready hook for a future provider:
-  -- would auto-set 'Verified' on a pass, leaving 'Pending' otherwise.
   id_verification_method text,  -- 'automatic' | 'manual_override', set once a status is reached
-  -- Counts failed automated verification attempts (upload-id route), for
-  -- whenever an automated provider is wired up again — unused while
-  -- verification is manual-only; every upload goes straight to admin
-  -- review without spending an attempt. See
-  -- /api/portal/[token]/upload-id/route.ts.
+  -- Automated Dojah attempts made this verification cycle (max 2 before
+  -- manual-review escalation). See /api/portal/[token]/upload-id/route.ts.
   id_verification_attempts int not null default 0,
-  id_verification_result jsonb,  -- { success, resultCode, resultText, actions, checkedAt } — provider-agnostic, unused until an automated provider is configured
+  id_verification_result jsonb,    -- attempt 1's Dojah result — { success, resultCode, resultText, actions, checkedAt }
+  id_verification_result_2 jsonb,  -- attempt 2's Dojah result, only present if attempt 1 failed automatically
 
   -- Refund bookkeeping — set when an admin rejects a booking that was
   -- already paid (see /api/admin/bookings/[id]/verify). refund_status is
