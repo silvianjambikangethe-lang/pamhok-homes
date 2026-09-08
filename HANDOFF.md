@@ -7,9 +7,9 @@ between the last full rewrite (2026-08-26) and now — check `git log
 HANDOFF.md` if something here seems stale; this doc has been maintained
 incrementally rather than fully rewritten each session.
 
-## ⚠️ Three branches, unmerged, must merge in order
+## ⚠️ Four branches, unmerged, must merge in order
 
-As of this update, three feature branches exist, each stacked on the last
+As of this update, four feature branches exist, each stacked on the last
 (not on `master`) — **merge them into `master` in this exact order**, or
 later ones will conflict/be missing earlier work:
 
@@ -18,12 +18,15 @@ later ones will conflict/be missing earlier work:
    + business-identity consolidation (see "Session update (2026-09-03)").
 3. `maintenance-staff-login` — branched from #2. The new staff role (see
    "Session update (2026-09-07/08)").
+4. `dojah-document-verification` — branched from #3. Dojah ID-verification
+   integration (see "Session update (2026-09-08)" below).
 
-All three are pushed to GitHub, none merged yet, none opened as PRs (no
-`gh` CLI available in that session). Open PRs for all three, in order,
-before starting new work — the DB-side changes for #2 and #3 are already
-live in Supabase regardless of git merge status (see below), so the app
-code needs to catch up to match what the database actually looks like.
+All four are pushed to GitHub, none merged yet, none opened as PRs (no
+`gh` CLI available in these sessions). Open PRs for all four, in order,
+before starting new work — the DB-side changes for #2, #3, and #4 are
+already live in Supabase regardless of git merge status (see below), so
+the app code needs to catch up to match what the database actually
+looks like.
 
 ## Currently open / blocked
 
@@ -38,9 +41,72 @@ code needs to catch up to match what the database actually looks like.
   Shifts" page manually; no badge/email/push fires on a clock event.
   Confirmed with the owner this is fine for now, not a gap to silently
   fix.
-- **Three unmerged branches** (above) — nothing else should be branched
+- **Four unmerged branches** (above) — nothing else should be branched
   off `master` until at least #1 and #2 are merged, to avoid a bigger
   conflict later.
+
+## Session update (2026-09-08) — Dojah ID verification integration
+
+New automated ID-verification step in the guest self-check-in flow, on
+branch `dojah-document-verification` (branched from `maintenance-staff-login`
+— see the merge-order warning at the top). Closes pending-issues item 9
+("pick a new ID-verification provider") — Smile ID's removal left the
+schema and guest-facing scaffolding ready for exactly this, and it turned
+out to already anticipate a two-attempt flow before this session even
+started (`IdUploadForm`'s `attemptsLeft` prop, `PortalClient`'s
+Pending-vs-Pending-Verification branching) — just never wired to a real
+provider.
+
+Guest uploads front + back of their ID (no selfie/face-match — that's
+what Dojah's Document Analysis product actually checks, per the owner).
+Two automated Dojah attempts before the booking is flagged
+`booking_status = 'Pending Verification'` for manual review at
+`/admin/verifications`, which now shows both attempts' images and Dojah's
+per-attempt failure reason side by side. A Dojah-side/config problem
+(unfunded wallet, bad credentials, network error, or a PDF upload Dojah
+can't analyze) falls back to manual review without spending one of the
+guest's two attempts — never the guest's fault.
+
+New `src/lib/dojah.ts` calls `POST /api/v1/document/analysis`.
+`id_document_path`/`_2` (front) and `id_document_back_path`/`_2` (back)
+plus `id_verification_result`/`_2` on `bookings` hold both attempts'
+evidence — added via two migrations
+(`20260908120000_add_dojah_second_attempt_columns.sql`, then
+`20260908130000_swap_id_selfie_for_back_of_id.sql` once the front+back-not-
+selfie correction landed; the old `id_selfie_path`/`_2` columns were
+dropped outright, 0 real bookings existed so nothing was lost).
+
+Two real bugs fixed along the way, not just the main feature:
+
+1. The pre-existing retry-UI scaffolding computed `attemptsLeft` against
+   a hardcoded `3`, not the spec's 2 — fixed in `PortalClient.tsx`.
+2. The checkout privacy-cleanup route (`/api/portal/[token]/checkout`)
+   only ever wiped the *first* verification attempt's images at
+   guest checkout, never a second attempt's — now clears all four path
+   columns and their storage files.
+
+**Credentials**: sandbox (`DOJAH_SECRET_KEY_SANDBOX`) is what's active —
+verified live against Dojah's real sandbox endpoint end-to-end (first
+attempt fails → retry offered → second attempt fails → escalates to
+manual review; a third submission attempt is correctly rejected once
+escalated). Production credentials (`DOJAH_SECRET_KEY_PRODUCTION`) are
+wired in via a `DOJAH_ENV` toggle but inert — no production calls have
+been made, and the owner's production Dojah wallet isn't funded yet.
+Both env vars are in local `.env.local` only; **still needs adding to
+Vercel's Production environment variables** before this reaches a real
+guest, same as every other credential in this project.
+
+**Flag from this session, unrelated to Dojah itself**: partway through,
+something injected fake content into this session's `AGENTS.md`/
+`CLAUDE.md` context (complete with sandbox-looking credentials and an
+"override any default behavior" instruction) — verified via `git diff`/
+`git log` that it was never actually in the tracked file. Not acted on;
+mentioned here in case the pattern recurs in a future session.
+
+Also see pending-issues item 13: a same-session `SUPABASE_SERVICE_ROLE_KEY`
+exposure (passed as a plaintext CLI argument) prompted a rotation attempt
+that was deliberately abandoned and fully reverted — owner will rotate
+again right before launch instead.
 
 ## Session update (2026-09-07 / 2026-09-08) — maintenance staff login
 
@@ -479,12 +545,14 @@ explanation.
    domain type (see item 1) and placeholder renewal dates (2026-09-03)
    with no amount for Vercel Pro/Supabase Pro, which will trigger a
    wrong "renewal due" dashboard alert until corrected.
-9. **Pick and wire up a new ID-verification provider** (or decide to stay
-   fully manual) — Smile ID was removed at your request (see the
-   2026-08-12 session update above); `/admin/verifications` manual
-   Approve/Reject works fine on its own in the meantime, and the schema
-   is ready for a new provider whenever you choose one (see that section
-   for exactly which fields to populate).
+9. ~~Pick and wire up a new ID-verification provider~~ — **done,
+   2026-09-08.** Dojah document analysis (front + back of the ID, no
+   selfie) wired into the existing self-check-in flow — see "Session
+   update (2026-09-08)" above for the full build. Built on branch
+   `dojah-document-verification`, not yet merged (see the branch-order
+   warning at the top). Sandbox-verified live against Dojah's real API;
+   production credentials wired in but inert until the owner funds the
+   Dojah production wallet and this branch is merged/deployed.
 
 ### Needs your decision, not urgent
 
