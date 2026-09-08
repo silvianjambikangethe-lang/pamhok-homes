@@ -1,11 +1,191 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-09-02. Written for continuing this project in a
+Last updated: 2026-09-08. Written for continuing this project in a
 **new chat** — paste a link to this file (or its contents) so the new session
 has full context. Many small "Update handoff doc: X" commits have landed
 between the last full rewrite (2026-08-26) and now — check `git log
 HANDOFF.md` if something here seems stale; this doc has been maintained
 incrementally rather than fully rewritten each session.
+
+## ⚠️ Three branches, unmerged, must merge in order
+
+As of this update, three feature branches exist, each stacked on the last
+(not on `master`) — **merge them into `master` in this exact order**, or
+later ones will conflict/be missing earlier work:
+
+1. `consolidate-contact-email-and-lint-audit` — the 2026-09-02 work below.
+2. `finetune-and-templatize` — branched from #1. Schema-drift reconciliation
+   + business-identity consolidation (see "Session update (2026-09-03)").
+3. `maintenance-staff-login` — branched from #2. The new staff role (see
+   "Session update (2026-09-07/08)").
+
+All three are pushed to GitHub, none merged yet, none opened as PRs (no
+`gh` CLI available in that session). Open PRs for all three, in order,
+before starting new work — the DB-side changes for #2 and #3 are already
+live in Supabase regardless of git merge status (see below), so the app
+code needs to catch up to match what the database actually looks like.
+
+## Currently open / blocked
+
+- **M-Pesa (Jenga) STK push**: `502 "Not Authorized to access the API"`
+  on the actual STK/USSD-push endpoint. Auth and RSA request-signing are
+  confirmed genuinely working against Jenga's real sandbox — this is
+  external, not a code bug: Jenga/Equity hasn't authorized this merchant
+  account for that specific product yet. Needs the owner to follow up
+  with Jenga/Equity support directly. See the header comment in
+  `supabase/functions/mpesa-initiate/index.ts` for the full trail.
+- **Clock in/out has no notification** — admin has to check the "Staff
+  Shifts" page manually; no badge/email/push fires on a clock event.
+  Confirmed with the owner this is fine for now, not a gap to silently
+  fix.
+- **Three unmerged branches** (above) — nothing else should be branched
+  off `master` until at least #1 and #2 are merged, to avoid a bigger
+  conflict later.
+
+## Session update (2026-09-07 / 2026-09-08) — maintenance staff login
+
+New, second login role for cleaning/laundry staff, on branch
+`maintenance-staff-login`. Full spec was owner-supplied (a detailed build
+spec pasted into chat); implementation deviated from its literal wording
+in two places, both **explicitly confirmed with the owner first**:
+
+- **Reuses `guest_requests`** (which already had the full cleaning/laundry
+  request lifecycle, including laundry's 6-stage guest-notification
+  emails) instead of building the spec's literal `cleaning_tasks`/
+  `laundry_requests` tables — avoids two parallel systems that could drift
+  apart.
+- **New `staff_users` table**, not a `role` column on `admin_users` — the
+  latter would've been a real security hole: `admin_users` membership
+  currently grants blanket access via 9 different "admins manage X" RLS
+  policies with zero role check anywhere, so a role column would've made
+  staff inherit full access to bookings/guests/payments by accident.
+
+**Live now**: the shared staff login (`staff@pamhokhomes.com`, password as
+set — the owner changed it during testing via `/admin/settings`'s new
+"Staff Login" section, so whatever's in Supabase Auth now is current, not
+necessarily the original `pamhokhomes.staff9856` from the spec). Staff
+sign in at `/staff/login`, tap their name (managed by the host in
+`/admin/settings`'s new "Staff Members" section), and reach four
+sections: Cleaning, Laundry, Schedule (checkout-driven, computed live from
+bookings, no cron), Clock In/Out. Zero staff-session access to guest
+names, contact info, payments, or bookings — verified directly against
+live Supabase grants, not just by reading the RLS policy SQL.
+
+New admin-side page: **"Staff Shifts"** (`/admin/staff`, added to
+`AdminNav`) — who's currently clocked in + recent shift history. Added
+mid-session at the owner's request, not in the original spec.
+
+Also removed the **"Host Login" link from the public footer** (Footer.tsx)
+— the owner's spec was explicit that neither login should be discoverable
+on the public site, staff never had one added, but the pre-existing admin
+link was missed until the owner caught it. Both logins are now reachable
+only by direct URL (bookmark / "Add to Home Screen" per device, per the
+spec) — `pamhokhomes.com/admin` and `pamhokhomes.com/staff/login`.
+
+**Two real bugs found and fixed during verification** (not just
+typechecked — actually exercised live against Supabase + in the browser):
+
+1. **A genuine security gap**: the four new staff-facing database views
+   (`staff_cleaning_laundry_feed`, `staff_checkout_schedule`,
+   `staff_task_updates`, `staff_clock_updates`) are deliberately
+   `security_invoker = false` (run as owner, bypassing RLS on the base
+   tables) — necessary because admin and staff sessions both authenticate
+   as the same Postgres `authenticated` role, so there's no `GRANT` that
+   can apply to one and not the other on a shared base table the way
+   `anon` vs `authenticated` works for `availability_view`. But Supabase's
+   default privileges grant every new relation full
+   INSERT/UPDATE/DELETE/TRUNCATE to `authenticated` automatically, and
+   privileges are additive — so the initial narrow `grant select (...)`/
+   `grant update (...)` statements did **nothing** to restrict access; a
+   staff session could have deleted rows outright. Caught by querying
+   `information_schema.table_privileges`/`column_privileges` directly
+   against the live project right after applying the migration, before
+   any real staff session existed. Fixed with an explicit `revoke all`
+   before each narrow grant (mirrors the existing `bookings → anon`
+   pattern) — both the live database (a follow-up migration,
+   `20260907000100_lock_down_staff_view_default_grants.sql`) and
+   `supabase/schema.sql` are corrected.
+2. **A cookie-scoping bug**: the "which worker tapped in" cookie was set
+   with `path: "/staff"`, which browsers correctly never send to
+   `/api/staff/...` routes (different path prefix) — so every staff API
+   call (clock in/out, updating a task) silently failed with "No active
+   worker selected" while the *pages* kept working fine (masking the
+   bug, since page loads do match `/staff/*`). Found by clicking through
+   the actual flow in the browser, not just reading the code. Fixed by
+   rescoping to `path: "/"` (the cookie is attribution/UX only, never the
+   real authorization boundary — that's the Supabase session +
+   `staff_users` row check — so a broader path is safe) and making the
+   logout/switch-worker routes defensively clear the old path too.
+
+New provisioning script: `scripts/bootstrap-staff.mjs` (mirrors
+`bootstrap-admin.mjs`) — creates the shared Supabase Auth user + its
+`staff_users` row in one step. Already run once against the live project.
+
+**Not done / open**: no notification (badge, email, push) fires when
+someone clocks in or out — the owner asked about this and was told
+explicitly it isn't built; only a passive "Staff Shifts" page to check
+manually. Also not built: any way for staff to reset their own
+password (deliberate, per spec — host-only via `/admin/settings`).
+
+## Session update (2026-09-03) — `bnb-template` + `bnb-skill` created
+
+Owner wants to reuse this codebase as the basis for other BnB/guesthouse
+client sites. Two deliverables, **outside this repo**, on branch
+`finetune-and-templatize` (the pamhok-homes-side prep work) plus two new
+things elsewhere on disk:
+
+1. **`C:\Users\silvi\.local\bnb-template`** — a separate local git repo
+   (not pushed to GitHub, not part of this repo), forked from this
+   codebase after genericizing it: `SITE` reset to placeholders, sample
+   rooms/reviews/homepage/about/terms copy rewritten as obvious
+   placeholders, Privacy Policy flagged for per-client legal review, a
+   real bug fixed in the fork (the M-Pesa Edge Function was hardcoding
+   "Pamhok Homes" as the merchant name sent to Jenga — would've shown
+   *this* business's name on every future client's guests' payment
+   prompts; now reads `JENGA_MERCHANT_NAME` per client). Includes
+   `INTAKE-FORM.md` (client questionnaire), `CLIENT-SETUP.md`
+   (provisioning checklist), `scripts/seed-content.mjs` (turns intake
+   answers into real `site_content`/`rooms`/`social_links`/`reviews` rows
+   instead of manual Supabase table-editor work).
+2. **`bnb-skill`**, installed at `C:\Users\silvi\.claude\skills\bnb-skill\SKILL.md`
+   (user-level, works from any project) — scaffolds a new client project
+   from `bnb-template` given filled intake answers: copies the template,
+   fills in `SITE`/`package.json`/`.claude/launch.json`, verifies
+   `tsc`/`eslint`/`build` all pass, `git init`s the result. Dry-run tested
+   end-to-end with a fictitious client ("Baobab Stays") before being
+   declared done; test output deleted afterward.
+
+The **pamhok-homes-side prep** (`finetune-and-templatize` branch) is real,
+valuable work on its own regardless of the template — it's what made
+forking a template safe/small in the first place:
+
+- **Fixed real schema drift**: `supabase/schema.sql` and
+  `supabase/migrations/` had silently fallen behind the live database —
+  the "Rebuild stay extensions" feature and a follow-up security fix
+  (both from an earlier session, applied live via the Supabase MCP tool)
+  were never committed as migration files. Reconciled by querying the
+  live project directly (`list_tables`/`pg_policies`/`pg_get_viewdef`) and
+  rewriting `schema.sql` to match exactly, plus a new migration file
+  (`20260902130329_reconcile_stay_extension_and_availability_view_drift.sql`)
+  documenting the gap. **No live database changes** — purely a
+  local-file-accuracy fix.
+- **Consolidated every hardcoded "Pamhok Homes" business-name/phone/
+  address literal** (~30 files) behind the existing `SITE` constant — a
+  new `pageTitle()` helper for page titles, `SITE.address` added for the
+  footer/email duplication. Mechanical, verified via `tsc`/`eslint`/browser
+  smoke test, no behavior change (same values, just one source).
+- `next.config.ts` now derives its Supabase origin from
+  `NEXT_PUBLIC_SUPABASE_URL` instead of a hardcoded hostname.
+- New `.env.example` (README's setup step referenced one that never
+  existed) and `scripts/bootstrap-admin.mjs`-adjacent
+  `scripts/bootstrap-staff.mjs` precedent — see above.
+- Fixed several stale docs/comments found along the way: README's
+  phantom "Pesapal" payment method (documented, never implemented), a
+  stale "M-Pesa untested" comment in `mpesa-initiate/index.ts` (sandbox
+  auth/signing are confirmed working now — the actual blocker is Jenga
+  not having authorized this merchant account for the STK product yet,
+  still unresolved — see "Currently open / blocked" below), a dangling
+  reference to a doc that doesn't exist.
 
 ## Session update (2026-09-02) — client contact email consolidated
 
