@@ -3,12 +3,13 @@ import Link from "next/link";
 import PhotoCard from "@/components/PhotoCard";
 import PageBanner from "@/components/PageBanner";
 import { getAboutContent } from "@/lib/data";
-import { pageTitle } from "@/lib/site";
+import { SITE, pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: pageTitle("About Us"),
   description:
     "The story behind Pamhok Homes — a boutique, host-run stay near Thika Road Mall, Nairobi.",
+  alternates: { canonical: `${SITE.url}/about` },
 };
 
 // Admin-editable copy that changes rarely — ISR instead of hitting

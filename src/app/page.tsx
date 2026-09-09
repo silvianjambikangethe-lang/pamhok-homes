@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Star } from "@phosphor-icons/react/dist/ssr";
 import PhotoCard from "@/components/PhotoCard";
@@ -5,6 +6,10 @@ import Eyebrow from "@/components/Eyebrow";
 import { getAmenitiesContent, getFeaturedReviews, getHomepageContent } from "@/lib/data";
 import { getAmenityIcon } from "@/lib/amenity-icons";
 import { SITE } from "@/lib/site";
+
+export const metadata: Metadata = {
+  alternates: { canonical: SITE.url },
+};
 
 // Real property photos will eventually make this a photo hero. Until
 // then, a flat color (not a photo-placeholder gradient) keeps white text

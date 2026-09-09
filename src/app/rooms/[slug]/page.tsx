@@ -5,7 +5,7 @@ import RoomPhoto from "@/components/RoomPhoto";
 import BookingWidget from "@/components/BookingWidget";
 import { getAvailability, getRoomBySlug } from "@/lib/data";
 import { getExchangeRates } from "@/lib/currency";
-import { pageTitle } from "@/lib/site";
+import { SITE, pageTitle } from "@/lib/site";
 
 export async function generateMetadata({
   params,
@@ -15,9 +15,35 @@ export async function generateMetadata({
   const { slug } = await params;
   const { room } = await getRoomBySlug(slug);
   if (!room) return { title: pageTitle("Room not found") };
+
+  const title = pageTitle(room.name);
+  const canonical = `${SITE.url}/rooms/${room.slug}`;
+  // The room's own first photo if it has one uploaded, else the sitewide
+  // logo already set as the root layout's openGraph/twitter default — set
+  // explicitly here rather than relying on it, since a page-level
+  // openGraph/twitter block replaces the parent's rather than merging into
+  // it field-by-field.
+  const ogImage = room.photo_urls[0] ?? SITE.logoLockupUrl;
+
   return {
-    title: pageTitle(room.name),
+    title,
     description: room.description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      siteName: SITE.name,
+      locale: "en_US",
+      title,
+      description: room.description,
+      url: canonical,
+      images: [{ url: ogImage, alt: room.name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: room.description,
+      images: [ogImage],
+    },
   };
 }
 

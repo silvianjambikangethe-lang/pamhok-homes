@@ -39,10 +39,38 @@ const cormorant = Cormorant({
   style: ["italic"],
 });
 
+const DEFAULT_DESCRIPTION =
+  "Boutique stays near Thika Road Mall, Nairobi. Warm, welcoming rooms with free WiFi, parking, and a personal touch — book directly, no middlemen.";
+
 export const metadata: Metadata = {
+  // Resolves every relative canonical/OG/Twitter URL declared on individual
+  // pages (via alternates.canonical, openGraph.images, etc.) against the
+  // real site origin instead of Next.js's http://localhost default.
+  metadataBase: new URL(SITE.url),
   title: `${SITE.name} — A Home Away From Home in Nairobi`,
-  description:
-    "Boutique stays near Thika Road Mall, Nairobi. Warm, welcoming rooms with free WiFi, parking, and a personal touch — book directly, no middlemen.",
+  description: DEFAULT_DESCRIPTION,
+  // Sitewide fallback — any page that doesn't declare its own openGraph/
+  // twitter block (about, amenities, neighborhood, contact, rooms listing)
+  // inherits this. Room detail pages override with the room's own photo.
+  openGraph: {
+    type: "website",
+    siteName: SITE.name,
+    locale: "en_US",
+    title: `${SITE.name} — A Home Away From Home in Nairobi`,
+    description: DEFAULT_DESCRIPTION,
+    // Real dimensions of the current logo asset (703x700, roughly square) —
+    // not the 1200x630 landscape shape most link-preview UIs prefer, which
+    // means shares may render smaller/cropped. Worth commissioning a proper
+    // landscape OG banner separately; using the real asset's actual size
+    // here rather than a fabricated hint.
+    images: [{ url: SITE.logoLockupUrl, width: 703, height: 700, alt: SITE.name }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE.name} — A Home Away From Home in Nairobi`,
+    description: DEFAULT_DESCRIPTION,
+    images: [SITE.logoLockupUrl],
+  },
 };
 
 export default async function RootLayout({

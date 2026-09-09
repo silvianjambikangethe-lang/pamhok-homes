@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: pageTitle("Around the Neighborhood"),
   description:
     "Food and recreation near Pamhok Homes, close to Thika Road Mall, Nairobi.",
+  alternates: { canonical: `${SITE.url}/neighborhood` },
 };
 
 // Admin-editable copy that changes rarely — ISR instead of hitting

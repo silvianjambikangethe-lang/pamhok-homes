@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: pageTitle("Contact & Location"),
   description:
     "Get in touch with Pamhok Homes — WhatsApp, phone, email, or send us a message directly.",
+  alternates: { canonical: `${SITE.url}/contact` },
 };
 
 export default async function ContactPage() {

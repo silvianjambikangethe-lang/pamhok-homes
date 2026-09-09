@@ -3,12 +3,13 @@ import { Info } from "@phosphor-icons/react/dist/ssr";
 import { getAllAvailability, getRooms } from "@/lib/data";
 import PageBanner from "@/components/PageBanner";
 import RoomsBrowser from "@/components/RoomsBrowser";
-import { pageTitle } from "@/lib/site";
+import { SITE, pageTitle } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: pageTitle("Rooms & Availability"),
   description:
     "Browse our rooms and check live availability at Pamhok Homes, Nairobi.",
+  alternates: { canonical: `${SITE.url}/rooms` },
 };
 
 export default async function RoomsPage() {

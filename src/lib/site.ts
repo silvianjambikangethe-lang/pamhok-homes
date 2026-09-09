@@ -1,5 +1,10 @@
 export const SITE = {
   name: "Pamhok Homes",
+  // Canonical origin — used for metadataBase, sitemap.xml, robots.txt, and
+  // canonical/Open Graph URLs. Same env var the portal's QR code links and
+  // email templates already fall back from; kept in sync here rather than
+  // re-reading process.env in every file that needs an absolute URL.
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.pamhokhomes.com",
   tagline: "A home away from home, near Thika Road Mall",
   city: "Nairobi, Kenya",
   // Short landmark-based address shown in the footer and email templates —
