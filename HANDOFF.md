@@ -1,32 +1,22 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-09-08. Written for continuing this project in a
+Last updated: 2026-09-10. Written for continuing this project in a
 **new chat** — paste a link to this file (or its contents) so the new session
 has full context. Many small "Update handoff doc: X" commits have landed
 between the last full rewrite (2026-08-26) and now — check `git log
 HANDOFF.md` if something here seems stale; this doc has been maintained
 incrementally rather than fully rewritten each session.
 
-## ⚠️ Four branches, unmerged, must merge in order
+## Branch status: everything merged, `master` is current
 
-As of this update, four feature branches exist, each stacked on the last
-(not on `master`) — **merge them into `master` in this exact order**, or
-later ones will conflict/be missing earlier work:
-
-1. `consolidate-contact-email-and-lint-audit` — the 2026-09-02 work below.
-2. `finetune-and-templatize` — branched from #1. Schema-drift reconciliation
-   + business-identity consolidation (see "Session update (2026-09-03)").
-3. `maintenance-staff-login` — branched from #2. The new staff role (see
-   "Session update (2026-09-07/08)").
-4. `dojah-document-verification` — branched from #3. Dojah ID-verification
-   integration (see "Session update (2026-09-08)" below).
-
-All four are pushed to GitHub, none merged yet, none opened as PRs (no
-`gh` CLI available in these sessions). Open PRs for all four, in order,
-before starting new work — the DB-side changes for #2, #3, and #4 are
-already live in Supabase regardless of git merge status (see below), so
-the app code needs to catch up to match what the database actually
-looks like.
+The long branch-order warning that used to live here is gone — all six
+feature branches from 2026-09-02 through 2026-09-10
+(`consolidate-contact-email-and-lint-audit`, `finetune-and-templatize`,
+`maintenance-staff-login`, `dojah-document-verification`,
+`seo-technical-foundation`, `tighten-login-page-metadata`) are merged
+into `master` and deployed to production. **The site is live** — no
+longer in maintenance mode as of 2026-09-09/10 (see "Session update
+(2026-09-10)" below). Nothing is currently branched off `master`.
 
 ## Currently open / blocked
 
@@ -41,9 +31,86 @@ looks like.
   Shifts" page manually; no badge/email/push fires on a clock event.
   Confirmed with the owner this is fine for now, not a gap to silently
   fix.
-- **Four unmerged branches** (above) — nothing else should be branched
-  off `master` until at least #1 and #2 are merged, to avoid a bigger
-  conflict later.
+- **Vercel's Git auto-deploy has intermittently stopped triggering on
+  push/merge** (2026-09-08/09) — happened twice, self-resolved both
+  times with no root cause identified (checked: `vercel.json`, Ignored
+  Build Step, production-branch config, the GitHub App's health — all
+  fine). If a merge doesn't produce a new deployment within a couple
+  minutes, check `list_deployments`/`get_deployment` via the Vercel MCP
+  tools directly rather than assuming it worked — an empty no-op commit
+  push to `master` was the working nudge both times.
+
+## Session update (2026-09-10) — SEO foundation, login-page metadata fix, site went live
+
+**SEO technical foundation** (`seo-technical-foundation`, merged): `SITE.url`
+(from `NEXT_PUBLIC_SITE_URL`), `metadataBase` + sitewide Open Graph/Twitter
+defaults on the root layout (using the real logo asset at its actual
+703x700 dimensions, not a fabricated 1200x630 — worth commissioning a
+proper landscape OG banner separately, the current logo is roughly
+square and will render smaller/cropped in link previews), `src/app/
+robots.ts` (disallows `/admin`, `/staff`, `/api`, `/portal`, `/verify`),
+`src/app/sitemap.ts` (static marketing pages + active rooms only, no
+fabricated `lastModified`), and explicit canonical URLs on every static
+marketing page. Room detail pages get the room's own first photo as
+their Open Graph image instead of the sitewide default. `/terms`/
+`/privacy` deliberately excluded from the sitemap since both are
+already `robots: noindex`. Deliberately does **not** exempt
+`robots.txt`/`sitemap.xml` from `proxy.ts`'s maintenance-mode gate —
+per explicit instruction, a crawl during maintenance should see the
+same "we'll be right back" page a real visitor would, no bypass.
+
+**Login-page metadata fix** (`tighten-login-page-metadata`, merged):
+`/admin/login` and `/staff/login` are both Client Components, which
+can't export `metadata` directly — they were silently inheriting the
+root layout's full marketing title/description/Open Graph photo ever
+since the SEO defaults above were added. Added a `layout.tsx` next to
+each (the standard pattern for this) with a plain title,
+`robots: noindex/nofollow`, and an explicit openGraph/twitter override
+— Next.js merges those objects per-field with the parent's rather than
+replacing them wholesale, so a title-only override still leaked the
+marketing description/photo until `description` was set explicitly too
+(confirmed live before and after the fix).
+
+**Site went live** — maintenance mode (`is_open`) turned off by the
+owner directly; no longer needed for anything I was doing, confirmed via
+a real request against `www.pamhokhomes.com` before merging further
+work. `/robots.txt` and `/sitemap.xml` are now serving real content
+publicly (verified directly, not assumed) — a crawl from this point
+onward will actually work.
+
+**Full public-facing security pass**, prompted by the owner asking to
+confirm nothing public could compromise the site:
+
+* **Git history**: searched every commit (not just current files) for
+  real secret patterns (Supabase `sb_secret_`/`sb_publishable_`,
+  Resend `re_`, Google `AIza`, Stripe-style `sk_live_`/`sk_test_`, JWTs)
+  — nothing found except two lines of prose in this doc describing the
+  naming *convention*, not real values. Confirmed `.env.local` has never
+  once been committed, in the repo's entire history. Nothing to redact,
+  no history to rewrite.
+* **Supabase advisor**: 3 findings, all verified against live data
+  rather than trusted at face value — `rls_enabled_no_policy` on
+  `login_attempts`/`rate_limits` (intentional default-deny),
+  `security_definer_view` on the 4 staff views (intentional design;
+  directly queried `information_schema.column_privileges` on the live
+  project and confirmed the narrow column-level grants from the
+  2026-09-07 lockdown migration are still exactly in place, no silent
+  regression this time), and the known `auth_leaked_password_protection`
+  WARN (dashboard-only, Pro-plan gated, unchanged).
+* **Storage buckets**: `id-documents` confirmed `public: false` with
+  **zero** RLS policies on `storage.objects` for it at all — nothing but
+  the service-role client can touch guest ID photos. `site-images`
+  correctly public, scoped to branding/room photos only.
+* **Live security headers**: CSP, HSTS, X-Frame-Options, nosniff,
+  Referrer-Policy all present and correct on `www.pamhokhomes.com`.
+* **Cleanup**: the dangling `service_role_20260908` Supabase secret key
+  left over from the 2026-09-08 aborted rotation attempt — confirmed by
+  the owner as deleted directly in Supabase's dashboard.
+
+Also hit the same Vercel auto-deploy-not-triggering issue as 2026-09-08
+(see "Currently open / blocked" above) — twice in one session, both
+self-resolved after an empty-commit nudge to `master`. Not fully
+understood, just documented as a recurring, so-far-harmless annoyance.
 
 ## Session update (2026-09-08) — Dojah ID verification integration
 
@@ -546,13 +613,12 @@ explanation.
    with no amount for Vercel Pro/Supabase Pro, which will trigger a
    wrong "renewal due" dashboard alert until corrected.
 9. ~~Pick and wire up a new ID-verification provider~~ — **done,
-   2026-09-08.** Dojah document analysis (front + back of the ID, no
-   selfie) wired into the existing self-check-in flow — see "Session
-   update (2026-09-08)" above for the full build. Built on branch
-   `dojah-document-verification`, not yet merged (see the branch-order
-   warning at the top). Sandbox-verified live against Dojah's real API;
-   production credentials wired in but inert until the owner funds the
-   Dojah production wallet and this branch is merged/deployed.
+   2026-09-08, merged and live 2026-09-09.** Dojah document analysis
+   (front + back of the ID, no selfie) wired into the self-check-in
+   flow — see "Session update (2026-09-08)" below for the full build.
+   Sandbox-verified live against Dojah's real API; production
+   credentials wired in but inert until the owner funds the Dojah
+   production wallet and flips `DOJAH_ENV` to `production`.
 
 ### Needs your decision, not urgent
 
@@ -591,7 +657,7 @@ explanation.
     calls before and after. Supabase advisor WARN count: ~40 → 0 (2
     harmless INFO-level "unused index" notices remain, expected for
     brand-new indexes with no traffic yet).
-13. **Rotate `SUPABASE_SERVICE_ROLE_KEY` again before launch.** A Claude
+13. **Rotate `SUPABASE_SERVICE_ROLE_KEY` — still pending.** A Claude
     Code session passed the real value as a plaintext command-line
     argument (cleaning up test-upload storage files) on 2026-09-08 —
     contained to this session's own tool-call transcript, never printed
@@ -601,11 +667,16 @@ explanation.
     Production) before being deliberately abandoned and fully reverted —
     the original key was restored in Vercel and verified working via a
     real request against `www.pamhokhomes.com`, not just assumed. Owner
-    decided to defer the actual rotation to right before launch rather
-    than mid-build. Two things worth knowing for whoever does it then:
-    * A leftover unused secret key (`service_role_20260908`) may still
-      exist in Supabase's dashboard (Settings > API Keys > Secret API
-      keys) from the abandoned attempt — check for it and delete if so.
+    decided to defer the actual rotation to "right before launch."
+    **The site went live 2026-09-09/10 without this happening** — no
+    longer tied to a pre-launch deadline, just a genuinely open item now.
+    Two things worth knowing for whoever does it:
+    * ~~A leftover unused secret key (`service_role_20260908`) may still
+      exist~~ — **deleted, 2026-09-10**, confirmed by the owner directly
+      in Supabase's dashboard, found during a full public-facing
+      security pass (git history, RLS/grants, storage bucket policies,
+      security headers — all otherwise clean, see "Session update
+      (2026-09-10)" below for the full pass).
     * `SUPABASE_SERVICE_ROLE_KEY` cannot be set as a Supabase Edge
       Function secret — Supabase reserves the `SUPABASE_` prefix and
       auto-injects that variable into every Edge Function itself
@@ -632,9 +703,10 @@ explanation.
 
 **Confirmed genuinely live as of 2026-08-26: https://www.pamhokhomes.com**
 — Vercel account `silvianjambikangethe-8696's projects`, project
-`pamhok-homes`. Currently showing the maintenance page
-(`is_open: false` in `site_content`) — that's an admin-controlled toggle
-in `/admin/settings`, not a deployment problem. Also still fully runnable
+`pamhok-homes`. **Maintenance mode turned off 2026-09-09/10** — the
+real site is now publicly reachable, not the "we'll be right back"
+page. `is_open` in `site_content` remains an admin-controlled toggle in
+`/admin/settings` if it's ever needed again. Also still fully runnable
 locally:
 
 ```bash
