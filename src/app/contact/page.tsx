@@ -13,6 +13,18 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE.url}/contact` },
 };
 
+// Was missing entirely — this page (address, maps link, directions
+// video, admin WhatsApp number) had no revalidate export at all, and
+// getContactContent()/getAdminContactPhone() use the plain (non-cookie)
+// Supabase client, which gives Next.js no reason to treat this route as
+// dynamic. Net effect: the page was fully static from build time and
+// silently never picked up ANY admin edit here (a new WhatsApp number,
+// an updated maps link, the directions video added this session) until
+// the next deployment — confirmed live: the directions video admin
+// uploaded was invisible on production despite existing in the
+// database. Matches About/Amenities' existing revalidate = 300.
+export const revalidate = 300;
+
 export default async function ContactPage() {
   const [content, adminPhone] = await Promise.all([getContactContent(), getAdminContactPhone()]);
 
@@ -84,6 +96,7 @@ export default async function ContactPage() {
               <video
                 src={content.directions_video_url}
                 controls
+                preload="metadata"
                 className="mx-auto mt-3 aspect-[9/16] w-full max-w-[220px] rounded-xl bg-black"
               />
             </div>

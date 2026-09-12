@@ -8,6 +8,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Same gap as page.tsx/contact/page.tsx/rooms/page.tsx: getAdminContactPhone()
+// uses the plain non-cookie Supabase client, so without this the WhatsApp
+// number shown here during an actual outage could be stale from the last
+// deployment. Low real-world odds of mattering (the number rarely changes,
+// and changes even less often specifically during maintenance), but the
+// fix costs one line.
+export const revalidate = 300;
+
 export default async function MaintenancePage() {
   const adminPhone = await getAdminContactPhone();
 

@@ -11,6 +11,18 @@ export const metadata: Metadata = {
   alternates: { canonical: SITE.url },
 };
 
+// Was missing entirely — this page had no revalidate export at all, and
+// getHomepageContent()/getAmenitiesContent()/getFeaturedReviews() use the
+// plain (non-cookie) Supabase client, which gives Next.js no reason to
+// treat this route as dynamic. Net effect: the homepage was fully static
+// from build time and silently never picked up ANY admin edit here (a
+// new hero image, a headline change, a featured review, the video tour
+// clips added this session) until the next deployment — confirmed live:
+// the video tour section admin uploaded was invisible on production
+// despite existing in the database. Matches About/Amenities/Contact's
+// existing revalidate = 300.
+export const revalidate = 300;
+
 // Real property photos will eventually make this a photo hero. Until
 // then, a flat color (not a photo-placeholder gradient) keeps white text
 // at reliable contrast everywhere in the banner, in both themes — a
@@ -124,6 +136,7 @@ export default async function HomePage() {
                 key={url}
                 src={url}
                 controls
+                preload="metadata"
                 className="aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
               />
             ))}
