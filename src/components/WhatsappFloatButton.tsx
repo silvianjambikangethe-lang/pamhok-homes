@@ -35,11 +35,11 @@ export default function WhatsappFloatButton({ phone }: { phone: string | null })
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"
-      className={`fixed bottom-4 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] shadow-warm transition-opacity duration-500 hover:opacity-90 sm:bottom-6 sm:right-6 ${
+      className={`fixed bottom-4 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full border-2 border-mocha-500 bg-surface/80 shadow-[0_0_14px_2px_rgba(111,78,55,0.45)] backdrop-blur-sm transition-all duration-500 hover:shadow-[0_0_20px_4px_rgba(111,78,55,0.65)] dark:border-terracotta-500 dark:shadow-[0_0_14px_2px_rgba(196,113,60,0.45)] dark:hover:shadow-[0_0_20px_4px_rgba(196,113,60,0.65)] sm:bottom-6 sm:right-6 ${
         pastHero ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
-      <WhatsappLogo size={22} weight="fill" className="text-white" />
+      <WhatsappLogo size={22} weight="fill" className="text-mocha-500 dark:text-terracotta-500" />
     </a>
   );
 }
