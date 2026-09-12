@@ -26,8 +26,9 @@ function isValidBody(body: unknown): body is BookingRequestBody {
     !!guest &&
     typeof guest.fullName === "string" &&
     guest.fullName.trim().length > 0 &&
-    guest.fullName.trim().length <= 200 &&
+    guest.fullName.trim().length <= 100 &&
     typeof guest.email === "string" &&
+    guest.email.trim().length <= 254 &&
     EMAIL_RE.test(guest.email.trim()) &&
     typeof guest.phone === "string" &&
     PHONE_RE.test(guest.phone.trim())

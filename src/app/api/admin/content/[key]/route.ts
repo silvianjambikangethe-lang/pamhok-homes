@@ -12,6 +12,27 @@ const VALID_KEYS: SiteContent["key"][] = [
   "terms",
 ];
 
+// This route is generic across 7 unrelated JSON shapes (homepage/about/
+// amenities/terms/etc.), each with its own admin form component and its
+// own real per-field length that would ideally be enforced — but they're
+// admin-authenticated-only writes (no anonymous attacker can reach this
+// without already having admin credentials, at which point far bigger
+// levers already exist), so a blanket recursive string-length cap is a
+// proportionate, schema-agnostic guard rather than hand-modeling all 7
+// shapes here. Prevents an oversized paste or a client bug from writing
+// an unbounded blob that gets rendered on public marketing pages.
+const MAX_STRING_LENGTH = 5000;
+const MAX_SERIALIZED_LENGTH = 100_000;
+
+function findOversizedString(value: unknown): boolean {
+  if (typeof value === "string") return value.length > MAX_STRING_LENGTH;
+  if (Array.isArray(value)) return value.some(findOversizedString);
+  if (value && typeof value === "object") {
+    return Object.values(value).some(findOversizedString);
+  }
+  return false;
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ key: string }> },
@@ -26,6 +47,11 @@ export async function PATCH(
   const body = await request.json().catch(() => null);
   if (!body || typeof body.value === "undefined") {
     return NextResponse.json({ error: "Missing value." }, { status: 400 });
+  }
+
+  const serialized = JSON.stringify(body.value);
+  if (serialized.length > MAX_SERIALIZED_LENGTH || findOversizedString(body.value)) {
+    return NextResponse.json({ error: "Content is too long." }, { status: 400 });
   }
 
   const supabase = await createServerSupabaseClient();

@@ -210,6 +210,7 @@ export default function PaymentSection({
                   id="mpesaPhone"
                   type="tel"
                   required
+                  maxLength={20}
                   value={mpesaPhone}
                   onChange={(e) => setMpesaPhone(e.target.value)}
                   className="focus-ring flex-1 rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"

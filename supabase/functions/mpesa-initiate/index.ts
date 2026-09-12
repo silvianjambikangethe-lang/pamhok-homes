@@ -77,7 +77,13 @@ Deno.serve(async (req) => {
   try {
     const { token, phone, termsAccepted } = await req.json();
 
-    if (!token || !phone) {
+    if (
+      !token ||
+      !phone ||
+      typeof token !== "string" ||
+      token.length > 200 ||
+      String(phone).length > 20
+    ) {
       return new Response(JSON.stringify({ error: "Missing token or phone." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

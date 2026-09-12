@@ -25,10 +25,11 @@ export async function POST(request: Request) {
     typeof body.email !== "string" ||
     typeof body.message !== "string" ||
     !body.name.trim() ||
-    body.name.trim().length > 200 ||
+    body.name.trim().length > 100 ||
+    body.email.trim().length > 254 ||
     !EMAIL_RE.test(body.email.trim()) ||
     !body.message.trim() ||
-    body.message.trim().length > 5000
+    body.message.trim().length > 2000
   ) {
     return NextResponse.json({ error: "Invalid submission" }, { status: 400 });
   }

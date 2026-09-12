@@ -14,9 +14,12 @@ export async function POST(request: Request) {
   if (!email && !password) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
-  if (password && password.length < 8) {
+  if (email && email.length > 254) {
+    return NextResponse.json({ error: "Email is too long." }, { status: 400 });
+  }
+  if (password && (password.length < 8 || password.length > 128)) {
     return NextResponse.json(
-      { error: "Password must be at least 8 characters." },
+      { error: "Password must be 8-128 characters." },
       { status: 400 },
     );
   }

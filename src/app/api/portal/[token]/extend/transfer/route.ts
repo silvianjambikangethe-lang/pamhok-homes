@@ -20,8 +20,9 @@ export async function POST(
 ) {
   const { token } = await params;
   const body = await request.json().catch(() => null);
-  const roomId = typeof body?.roomId === "string" ? body.roomId : null;
-  const checkOut = typeof body?.checkOut === "string" ? body.checkOut : null;
+  const roomId = typeof body?.roomId === "string" && body.roomId.length <= 100 ? body.roomId : null;
+  const checkOut =
+    typeof body?.checkOut === "string" && body.checkOut.length <= 20 ? body.checkOut : null;
 
   if (!roomId || !checkOut) {
     return NextResponse.json({ error: "Missing room or checkout date." }, { status: 400 });

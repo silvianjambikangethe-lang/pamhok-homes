@@ -58,6 +58,7 @@ export default function ContactForm() {
             name="name"
             type="text"
             required
+            maxLength={100}
             autoComplete="name"
             className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/40"
           />
@@ -71,6 +72,7 @@ export default function ContactForm() {
             name="email"
             type="email"
             required
+            maxLength={254}
             autoComplete="email"
             className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/40"
           />
@@ -86,6 +88,7 @@ export default function ContactForm() {
           name="message"
           required
           rows={5}
+          maxLength={2000}
           className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/40"
           placeholder="How can we help?"
         />
