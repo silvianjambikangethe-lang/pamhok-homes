@@ -42,6 +42,7 @@ export default function PortalClient({
   qrDataUrl,
   adminPhone,
   mapsUrl,
+  directionsVideoUrl,
 }: {
   booking: PortalBooking;
   token: string;
@@ -49,6 +50,7 @@ export default function PortalClient({
   qrDataUrl: string | null;
   adminPhone: string | null;
   mapsUrl: string | null;
+  directionsVideoUrl: string | null;
 }) {
   const [showArrival, setShowArrival] = useState(false);
   const checkOutDate = startOfDay(parseISO(booking.check_out));
@@ -119,7 +121,7 @@ export default function PortalClient({
             className="focus-ring flex items-center gap-1.5 text-xs font-semibold text-terracotta-600 hover:underline dark:text-terracotta-400"
           >
             <ReceiptIcon size={16} weight="bold" />
-            Download receipt (image)
+            Download receipt
           </a>
         )}
       </div>
@@ -157,6 +159,7 @@ export default function PortalClient({
         {isVerifiedAndActive && (
           <ArrivalSection
             mapsUrl={mapsUrl}
+            directionsVideoUrl={directionsVideoUrl}
             guestDisplayName={firstNameLastInitial(booking.guest?.full_name)}
             roomName={booking.room?.name ?? SITE.name}
             checkIn={booking.check_in}

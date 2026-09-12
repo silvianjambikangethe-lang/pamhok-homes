@@ -5,7 +5,8 @@ import { getExchangeRates } from "@/lib/currency";
 import { generateQrDataUrl } from "@/lib/qrcode";
 import { getAdminContactPhone, getContactContent } from "@/lib/data";
 import PortalClient from "@/components/portal/PortalClient";
-import { pageTitle } from "@/lib/site";
+import { SITE, pageTitle } from "@/lib/site";
+import { buildDirectionsFromCurrentLocationUrl } from "@/lib/maps";
 
 export const metadata: Metadata = {
   title: pageTitle("Your Stay"),
@@ -36,6 +37,15 @@ export default async function GuestPortalPage({
     getContactContent(),
   ]);
 
+  // A plain place-share link only centers the map on the pin when
+  // opened — it doesn't start a route. A destination-only directions
+  // link does, using the guest's current location as the origin
+  // automatically (see buildDirectionsFromCurrentLocationUrl).
+  const directionsUrl =
+    contactContent.maps_lat != null && contactContent.maps_lng != null
+      ? buildDirectionsFromCurrentLocationUrl(`${SITE.name}, ${SITE.city}`)
+      : contactContent.maps_url;
+
   return (
     <PortalClient
       booking={booking}
@@ -43,7 +53,8 @@ export default async function GuestPortalPage({
       rates={rates}
       qrDataUrl={qrDataUrl}
       adminPhone={adminPhone}
-      mapsUrl={contactContent.maps_url}
+      mapsUrl={directionsUrl}
+      directionsVideoUrl={contactContent.directions_video_url}
     />
   );
 }
