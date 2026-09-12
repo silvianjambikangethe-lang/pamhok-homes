@@ -78,10 +78,10 @@ export default function VideoUploadField({
           <video
             src={currentUrl}
             controls
-            className="h-24 w-40 rounded-lg border border-taupe/25 bg-black object-cover"
+            className="h-44 w-24 rounded-lg border border-taupe/25 bg-black object-cover"
           />
         ) : (
-          <div className="flex h-24 w-40 items-center justify-center rounded-lg border border-dashed border-taupe/40 text-ink/40">
+          <div className="flex h-44 w-24 items-center justify-center rounded-lg border border-dashed border-taupe/40 text-ink/40">
             <VideoCamera size={24} />
           </div>
         )}

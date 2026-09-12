@@ -66,17 +66,22 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      {content.video_url && (
+      {content.videos.length > 0 && (
         <section className="container-page py-16 sm:py-20">
           <div className="flex flex-col gap-2 text-center">
             <Eyebrow>Behind the scenes</Eyebrow>
             <h2 className="font-serif text-h2 text-ink">Get to know Pamhok Homes</h2>
           </div>
-          <video
-            src={content.video_url}
-            controls
-            className="mx-auto mt-8 w-full max-w-3xl rounded-2xl shadow-card"
-          />
+          <div className="mt-8 flex flex-wrap justify-center gap-5">
+            {content.videos.map((url) => (
+              <video
+                key={url}
+                src={url}
+                controls
+                className="aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
+              />
+            ))}
+          </div>
         </section>
       )}
 
