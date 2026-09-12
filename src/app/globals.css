@@ -98,4 +98,36 @@ body {
   .dark .section-texture {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.941 0 0 0 0 0.914 0 0 0 0 0.867 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
+
+  /* Scrollbar, themed instead of left as the browser's generic gray bar.
+   * Reads off --color-page/--color-border directly (not hardcoded per
+   * mode) so it swaps automatically with .dark, same mechanism every
+   * other themed color in this file relies on. The track matches the
+   * page background exactly, so it disappears and only a soft floating
+   * pill-shaped thumb shows — border-color's own accent (terracotta on
+   * hover) for the interactive nudge, matching .photo-frame's hover
+   * treatment above. */
+  ::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgb(var(--color-page));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--color-border) / 0.55);
+    border: 3px solid rgb(var(--color-page));
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #c4713c;
+  }
+
+  html {
+    scrollbar-color: rgb(var(--color-border) / 0.55) rgb(var(--color-page));
+    scrollbar-width: thin;
+  }
 }
