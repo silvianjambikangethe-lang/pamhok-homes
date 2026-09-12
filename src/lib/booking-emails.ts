@@ -5,7 +5,7 @@ import {
   bookingConfirmationEmail,
   stayExtensionConfirmationEmail,
 } from "@/lib/email";
-import { generateReceiptPdf } from "@/lib/receipt";
+import { generateReceiptImage } from "@/lib/receipt-image";
 
 // Single call site for "payment_status just became Paid", used by every
 // path that can cause that transition: PayPal capture, the Jenga M-Pesa
@@ -45,7 +45,7 @@ export async function sendPaymentSucceededEmail(
   // line-item history the schema doesn't track (see the extension email's
   // own "total confirmed for your stay" wording below for the same
   // reasoning).
-  const receiptPdf = await generateReceiptPdf({
+  const receiptImage = await generateReceiptImage({
     guestName: guest.full_name,
     roomName,
     checkIn: booking.check_in,
@@ -59,9 +59,9 @@ export async function sendPaymentSucceededEmail(
   });
   const attachments = [
     {
-      filename: `receipt-${booking.booking_reference ?? bookingId}.pdf`,
-      content: Buffer.from(receiptPdf),
-      contentType: "application/pdf",
+      filename: `receipt-${booking.booking_reference ?? bookingId}.png`,
+      content: Buffer.from(receiptImage),
+      contentType: "image/png",
     },
   ];
 

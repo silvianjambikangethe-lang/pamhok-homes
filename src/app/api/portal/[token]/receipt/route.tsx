@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getBookingByToken } from "@/lib/portal";
-import { generateReceiptPdf } from "@/lib/receipt";
+import { generateReceiptImage } from "@/lib/receipt-image";
 
 // Regenerated on every request rather than stored — a receipt is just a
 // formatted view of columns already on the booking row, so there's
@@ -28,7 +28,7 @@ export async function GET(
     );
   }
 
-  const pdfBytes = await generateReceiptPdf({
+  const imageBytes = await generateReceiptImage({
     guestName: booking.guest?.full_name ?? "Guest",
     roomName: booking.room?.name ?? "Room",
     checkIn: booking.check_in,
@@ -41,11 +41,14 @@ export async function GET(
     paidAt: booking.paid_at,
   });
 
-  return new NextResponse(Buffer.from(pdfBytes), {
+  return new NextResponse(Buffer.from(imageBytes), {
     status: 200,
     headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="receipt-${booking.booking_reference ?? booking.id}.pdf"`,
+      "Content-Type": "image/png",
+      // "attachment", not "inline" — the point of this route is a
+      // one-tap save/share, matching how a guest would already expect to
+      // handle an M-Pesa-style payment confirmation image.
+      "Content-Disposition": `attachment; filename="receipt-${booking.booking_reference ?? booking.id}.png"`,
       "Cache-Control": "private, no-store",
     },
   });

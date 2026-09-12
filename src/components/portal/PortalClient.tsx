@@ -115,12 +115,11 @@ export default function PortalClient({
         {booking.payment_status === "Paid" && (
           <a
             href={`/api/portal/${token}/receipt`}
-            target="_blank"
-            rel="noopener noreferrer"
+            download
             className="focus-ring flex items-center gap-1.5 text-xs font-semibold text-terracotta-600 hover:underline dark:text-terracotta-400"
           >
             <ReceiptIcon size={16} weight="bold" />
-            Download receipt
+            Download receipt (image)
           </a>
         )}
       </div>
