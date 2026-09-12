@@ -3,6 +3,7 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { generateBookingReference, generatePassReference } from "@/lib/booking-reference";
+import { isNameBlocked } from "@/lib/guest-blocklist";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -50,6 +51,16 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminSupabaseClient();
+
+  // Same blocklist gate as the public booking route — the point of the
+  // blocklist is to keep a name out regardless of channel, so a walk-in
+  // entered here is checked too rather than only the guest-facing form.
+  if (await isNameBlocked(supabase, body.guestName)) {
+    return NextResponse.json(
+      { error: "This name is on the blocked guest list. Remove it from the blocklist first if this is a mistake." },
+      { status: 403 },
+    );
+  }
 
   const { data: room, error: roomError } = await supabase
     .from("rooms")

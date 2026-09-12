@@ -29,13 +29,17 @@ export async function POST(
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, booking_status, id_verification_status, id_verification_attempts")
+    .select(
+      "id, booking_status, id_verification_status, id_verification_attempts, guest:guests(full_name)",
+    )
     .eq("access_token", token)
     .maybeSingle();
 
   if (bookingError || !booking) {
     return NextResponse.json({ error: "Booking not found." }, { status: 404 });
   }
+
+  const guestName = (booking as unknown as { guest?: { full_name?: string } }).guest?.full_name;
 
   // Already escalated to manual review — the portal UI doesn't show the
   // upload form in this state, so this only guards against a stale/duplicate
@@ -102,7 +106,7 @@ export async function POST(
   const canAutoAnalyze = frontFile.type !== "application/pdf" && backFile.type !== "application/pdf";
 
   const outcome = canAutoAnalyze
-    ? await analyzeIdDocument(await fileToBase64(frontFile), await fileToBase64(backFile))
+    ? await analyzeIdDocument(await fileToBase64(frontFile), await fileToBase64(backFile), guestName)
     : { ok: false as const, error: "Uploaded ID is a PDF; automated analysis only supports images." };
 
   const pathFields =

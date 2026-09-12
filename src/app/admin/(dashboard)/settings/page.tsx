@@ -8,8 +8,9 @@ import SiteStatusForm from "@/components/admin/SiteStatusForm";
 import StaffCredentialsForm from "@/components/admin/StaffCredentialsForm";
 import StaffMembersForm from "@/components/admin/StaffMembersForm";
 import PasskeysForm from "@/components/admin/PasskeysForm";
+import BlockedGuestNamesForm from "@/components/admin/BlockedGuestNamesForm";
 import { pageTitle } from "@/lib/site";
-import type { StaffMember } from "@/lib/supabase/types";
+import type { StaffMember, BlockedGuestName } from "@/lib/supabase/types";
 
 export const metadata: Metadata = {
   title: pageTitle("Settings"),
@@ -42,6 +43,12 @@ export default async function AdminSettingsPage() {
     .order("name", { ascending: true });
   const staffMembers = (staffMembersData ?? []) as StaffMember[];
 
+  const { data: blockedNamesData } = await supabase
+    .from("blocked_guest_names")
+    .select("id, full_name, full_name_normalized, reason, created_at")
+    .order("created_at", { ascending: false });
+  const blockedNames = (blockedNamesData ?? []) as BlockedGuestName[];
+
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="font-serif text-h2 text-ink">Settings</h1>
@@ -56,6 +63,7 @@ export default async function AdminSettingsPage() {
         <ChangePhoneForm />
         {staffUser && <StaffCredentialsForm currentEmail={staffUser.email} />}
         <StaffMembersForm initial={staffMembers} />
+        <BlockedGuestNamesForm initial={blockedNames} />
       </div>
     </div>
   );
