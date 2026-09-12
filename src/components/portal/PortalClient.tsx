@@ -119,7 +119,7 @@ export default function PortalClient({
             className="focus-ring flex items-center gap-1.5 text-xs font-semibold text-terracotta-600 hover:underline dark:text-terracotta-400"
           >
             <ReceiptIcon size={16} weight="bold" />
-            Download receipt (image)
+            Download receipt
           </a>
         )}
       </div>
