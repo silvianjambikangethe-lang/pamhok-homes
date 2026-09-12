@@ -21,15 +21,14 @@
 //          JENGA_MERCHANT_CODE=... JENGA_ACCOUNT_NUMBER=... JENGA_ENV=sandbox \
 //          JENGA_PRIVATE_KEY="$(cat private_pkcs8.pem)"
 //
-// ⚠️ CONFIRMED WORKING UP TO JENGA'S OWN PRODUCT AUTHORIZATION — tested
-// against Jenga's real sandbox (2026-08-27+): the token/auth call and the
-// RSA-SHA256 request signing below both genuinely work as written. The
-// STK/USSD-push call itself currently returns
-// `502 "Not Authorized to access the API"` from Jenga — external to this
-// code, not a bug here: Jenga/Equity hasn't authorized this merchant
-// account for that specific product yet. Follow up with Jenga/Equity
-// support to get the account authorized, then re-test end to end before
-// taking a real booking through this.
+// ⚠️ Jenga/Equity has now approved this merchant account for STK push
+// (2026-09-12) and live JENGA_* secrets + a fresh RSA key pair (new public
+// key uploaded to Jenga's dashboard) have been set. The token/auth call and
+// the RSA-SHA256 request signing below were already confirmed correct
+// against Jenga's sandbox (2026-08-27) — what's still unconfirmed is a real
+// end-to-end STK push now that authorization is no longer the blocker.
+// Test one real push (small real amount, JENGA_ENV=production) before
+// trusting this with an actual guest booking:
 //   - The token endpoint below needs merchantCode + consumerSecret + an
 //     Api-Key header. **Confirmed against the owner's actual Jenga
 //     dashboard (2026-08-26)**: Merchant Code is a real, distinct value
