@@ -78,8 +78,9 @@ export default async function AboutPage() {
                 key={url}
                 src={url}
                 controls
+                controlsList="nodownload"
                 preload="metadata"
-                className="aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
+                className="photo-frame aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
               />
             ))}
           </div>

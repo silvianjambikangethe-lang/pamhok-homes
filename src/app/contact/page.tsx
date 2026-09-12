@@ -96,8 +96,9 @@ export default async function ContactPage() {
               <video
                 src={content.directions_video_url}
                 controls
+                controlsList="nodownload"
                 preload="metadata"
-                className="mx-auto mt-3 aspect-[9/16] w-full max-w-[220px] rounded-xl bg-black"
+                className="photo-frame mx-auto mt-3 aspect-[9/16] w-full max-w-[220px] rounded-xl bg-black"
               />
             </div>
           )}

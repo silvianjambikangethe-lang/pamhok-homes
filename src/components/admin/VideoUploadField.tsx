@@ -92,6 +92,7 @@ export default function VideoUploadField({
           <video
             src={currentUrl}
             controls
+            controlsList="nodownload"
             className="h-44 w-24 rounded-lg border border-taupe/25 bg-black object-cover"
           />
         ) : (
