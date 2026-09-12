@@ -150,7 +150,7 @@ export default function ExtendStaySection({
         )}
         target="_blank"
         rel="noopener noreferrer"
-        className="focus-ring flex items-center gap-1.5 font-semibold text-success hover:opacity-80"
+        className="focus-ring flex items-center gap-1.5 font-semibold text-terracotta-600 hover:text-terracotta-700"
       >
         <WhatsappLogo size={16} weight="fill" />
         WhatsApp

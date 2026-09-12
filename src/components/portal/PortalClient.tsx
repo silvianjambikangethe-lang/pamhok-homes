@@ -130,7 +130,7 @@ export default function PortalClient({
           )}
           target="_blank"
           rel="noopener noreferrer"
-          className="focus-ring mt-4 flex items-center justify-center gap-2 rounded-full bg-success px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          className="focus-ring mt-4 flex items-center justify-center gap-2 rounded-full bg-mocha-500 px-5 py-2.5 text-sm font-semibold text-mousse transition-colors hover:bg-mocha-600 dark:bg-terracotta-500 dark:text-white dark:hover:bg-terracotta-600"
         >
           <WhatsappLogo size={18} weight="fill" />
           Contact Host on WhatsApp

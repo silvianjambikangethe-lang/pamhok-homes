@@ -74,7 +74,7 @@ export default async function Footer() {
               href={whatsappLink(adminPhone, `Hi ${SITE.name}! I have a question about a stay.`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="focus-ring mt-4 inline-flex items-center gap-2 rounded-full bg-success px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="focus-ring mt-4 inline-flex items-center gap-2 rounded-full bg-mocha-500 px-4 py-2.5 text-sm font-semibold text-mousse transition-colors hover:bg-mocha-600 dark:bg-terracotta-500 dark:text-white dark:hover:bg-terracotta-600"
             >
               <WhatsappLogo size={18} weight="fill" />
               WhatsApp us

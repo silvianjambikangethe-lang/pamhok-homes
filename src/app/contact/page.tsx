@@ -56,7 +56,7 @@ export default async function ContactPage() {
                 href={whatsappLink(adminPhone, `Hi ${SITE.name}! I have a question.`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="focus-ring mt-6 flex items-center justify-center gap-2 rounded-full bg-success px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                className="focus-ring mt-6 flex items-center justify-center gap-2 rounded-full bg-mocha-500 px-5 py-3 text-sm font-semibold text-mousse transition-colors hover:bg-mocha-600 dark:bg-terracotta-500 dark:text-white dark:hover:bg-terracotta-600"
               >
                 <WhatsappLogo size={20} weight="fill" />
                 Chat on WhatsApp
