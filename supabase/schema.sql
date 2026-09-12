@@ -355,6 +355,13 @@ create table if not exists staff_members (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   active boolean not null default true,
+  -- Checked when this worker's tile is tapped at /staff (see
+  -- src/app/api/staff/select-worker/route.ts) — the one shared staff
+  -- login only gates the device, this is what actually distinguishes one
+  -- worker from another. Nullable for rows added before this existed;
+  -- a null pin_hash rejects tap-in with a "no PIN set yet" error rather
+  -- than granting access.
+  pin_hash text,
   created_at timestamptz not null default now()
 );
 
