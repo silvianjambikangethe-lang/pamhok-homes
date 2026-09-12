@@ -36,6 +36,7 @@ export default function VideoListField({
               <video
                 src={url}
                 controls
+                controlsList="nodownload"
                 className="h-44 w-24 rounded-lg border border-taupe/25 bg-black object-cover"
               />
               <button
