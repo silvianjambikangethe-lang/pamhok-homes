@@ -69,6 +69,7 @@ export default function StaffCredentialsForm({ currentEmail }: { currentEmail: s
             id="staffEmail"
             type="email"
             required
+            maxLength={254}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
@@ -82,6 +83,7 @@ export default function StaffCredentialsForm({ currentEmail }: { currentEmail: s
             id="staffPassword"
             type="password"
             minLength={8}
+            maxLength={128}
             autoComplete="new-password"
             placeholder="Leave blank to keep the current password"
             value={password}
