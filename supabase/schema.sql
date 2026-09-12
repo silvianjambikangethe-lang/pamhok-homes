@@ -563,8 +563,14 @@ create policy "staff can read their own row" on staff_users
 
 -- --- staff_members: admins manage the full roster; staff can only see
 -- active names (for the tap screen) — a deactivated worker is genuinely
--- invisible to a staff session, not just hidden by the UI. No PII here,
--- so a normal row-level policy is enough, no view needed. ---
+-- invisible to a staff session, not just hidden by the UI. Row-level
+-- policy is enough for name/active/created_at, no view needed — but
+-- pin_hash is a credential, not just PII, and RLS only scopes rows, not
+-- columns: the policy below correctly lets any staff session see every
+-- active row, which would include pin_hash too without the explicit
+-- column-level lockdown after it (2026-09-12 fix — this was the gap that
+-- let one staff session read every worker's PIN hash straight off the
+-- public REST API and crack it offline). ---
 create policy "admins manage staff members" on staff_members
   for all
   to authenticated
@@ -578,6 +584,20 @@ create policy "staff can view active staff members" on staff_members
     active = true
     and (select auth.uid()) in (select id from staff_users)
   );
+
+-- pin_hash must never be SELECTable by anon/authenticated — only
+-- service-role (used server-side in /api/staff/select-worker) needs to
+-- read it. Postgres's default privileges grant every role broad table
+-- access on a new table regardless of RLS, and a column-specific revoke
+-- can't override an existing table-wide grant, so this has to revoke
+-- everything on the table first and re-grant only what each role
+-- legitimately needs — same pattern as the staff_* view lockdown above.
+revoke all on staff_members from authenticated;
+revoke all on staff_members from anon;
+
+grant select (id, name, active, created_at) on staff_members to authenticated;
+grant insert (name, pin_hash) on staff_members to authenticated;
+grant update (name, active, pin_hash) on staff_members to authenticated;
 
 -- --- shift_logs: admins get read access for reporting. Deliberately NO
 -- staff-facing policy on this base table at all — every staff clock

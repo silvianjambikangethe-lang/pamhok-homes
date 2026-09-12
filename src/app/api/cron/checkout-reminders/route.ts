@@ -35,7 +35,11 @@ async function sendReminder(booking: ReminderBooking, type: ReminderType) {
 }
 
 function isAuthorized(request: Request): boolean {
-  if (!process.env.CRON_SECRET) return true;
+  // Fail closed, not open: a missing CRON_SECRET must never mean "let
+  // anyone in" (an accidentally-unset/misconfigured env var used to make
+  // this route callable by the entire public internet with no auth at
+  // all — 2026-09-12 fix).
+  if (!process.env.CRON_SECRET) return false;
   const bearer = request.headers.get("authorization");
   if (bearer === `Bearer ${process.env.CRON_SECRET}`) return true;
   return request.headers.get("x-cron-secret") === process.env.CRON_SECRET;

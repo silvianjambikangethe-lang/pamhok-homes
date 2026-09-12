@@ -15,6 +15,35 @@ function validateFile(file: unknown, allowedTypes: string[]): file is File {
   );
 }
 
+// `file.type` is whatever Content-Type the browser/client declared — not
+// inspected, entirely attacker-controlled. A file labeled "image/jpeg"
+// could actually be anything (an HTML/SVG file, say) and still pass
+// validateFile() above. Real-world impact today is low (this bucket is
+// private, served only via short-lived signed URLs, and the only place
+// these are rendered is <img> tags, which don't execute embedded script
+// even for a mismatched SVG/HTML payload) — but checking the file's own
+// magic bytes against what it claims to be is a cheap, real hardening
+// step rather than relying entirely on how it happens to be rendered
+// today staying true forever (2026-09-12 fix).
+const FILE_SIGNATURES: Record<string, (bytes: Uint8Array) => boolean> = {
+  "image/jpeg": (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  "image/png": (b) =>
+    b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 &&
+    b[4] === 0x0d && b[5] === 0x0a && b[6] === 0x1a && b[7] === 0x0a,
+  "image/webp": (b) =>
+    b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+    b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50,
+  "application/pdf": (b) =>
+    b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46, // "%PDF"
+};
+
+async function matchesDeclaredType(file: File): Promise<boolean> {
+  const check = FILE_SIGNATURES[file.type];
+  if (!check) return false;
+  const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  return check(head);
+}
+
 async function fileToBase64(file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer());
   return buffer.toString("base64");
@@ -55,13 +84,13 @@ export async function POST(
   const frontFile = formData?.get("file");
   const backFile = formData?.get("back");
 
-  if (!validateFile(frontFile, ID_TYPES)) {
+  if (!validateFile(frontFile, ID_TYPES) || !(await matchesDeclaredType(frontFile))) {
     return NextResponse.json(
       { error: "Please upload a clear JPG, PNG, WebP, or PDF of the front of your ID (under 10MB)." },
       { status: 400 },
     );
   }
-  if (!validateFile(backFile, ID_TYPES)) {
+  if (!validateFile(backFile, ID_TYPES) || !(await matchesDeclaredType(backFile))) {
     return NextResponse.json(
       { error: "Please upload a clear JPG, PNG, WebP, or PDF of the back of your ID (under 10MB)." },
       { status: 400 },

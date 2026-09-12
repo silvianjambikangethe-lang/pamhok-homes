@@ -17,7 +17,8 @@ import { sendEmail } from "@/lib/email";
 // 401 and never really run, even with a real email step wired up.
 
 function isAuthorized(request: Request): boolean {
-  if (!process.env.CRON_SECRET) return true;
+  // Fail closed, not open — see checkout-reminders for why (2026-09-12).
+  if (!process.env.CRON_SECRET) return false;
   const bearer = request.headers.get("authorization");
   if (bearer === `Bearer ${process.env.CRON_SECRET}`) return true;
   return request.headers.get("x-cron-secret") === process.env.CRON_SECRET;

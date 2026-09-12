@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStaffApiSession, WORKER_COOKIE } from "@/lib/staff";
 import { verifyPin, isValidPinFormat } from "@/lib/staff-pin";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 // UUIDs are 36 chars — anything longer here is never a real staff_members
 // id, so reject before it ever reaches a query.
@@ -12,7 +13,6 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Not authorized." }, { status: 401 });
   }
-  const { supabase } = session;
 
   const body = await request.json().catch(() => null);
   const workerId = typeof body?.workerId === "string" ? body.workerId : "";
@@ -46,7 +46,16 @@ export async function POST(request: Request) {
   // Re-validated server-side against staff_members — never trust the
   // tapped id blindly, even though the tap screen only ever renders
   // active names to begin with.
-  const { data: worker } = await supabase
+  //
+  // Service-role client deliberately, not the RLS-bound session client:
+  // pin_hash's SELECT grant was revoked from authenticated/anon entirely
+  // (2026-09-12 fix — any staff session could otherwise read every
+  // worker's pin_hash straight through the public REST API and crack it
+  // offline, completely bypassing this route's rate limit). This is a
+  // server-only route and the hash never leaves this function, so
+  // reading it via service-role here is safe.
+  const adminClient = createAdminSupabaseClient();
+  const { data: worker } = await adminClient
     .from("staff_members")
     .select("id, pin_hash")
     .eq("id", workerId)
