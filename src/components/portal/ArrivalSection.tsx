@@ -1,12 +1,13 @@
 "use client";
 
-import { Confetti, MapPinLine, X } from "@phosphor-icons/react";
+import { Confetti, MapPinLine, PlayCircle, X } from "@phosphor-icons/react";
 import { SITE } from "@/lib/site";
 import GetDirectionsButton from "@/components/GetDirectionsButton";
 import PassDetails from "@/components/portal/PassDetails";
 
 export default function ArrivalSection({
   mapsUrl,
+  directionsVideoUrl,
   guestDisplayName,
   roomName,
   checkIn,
@@ -19,6 +20,7 @@ export default function ArrivalSection({
   onCloseArrival,
 }: {
   mapsUrl: string | null;
+  directionsVideoUrl: string | null;
   guestDisplayName: string;
   roomName: string;
   checkIn: string;
@@ -49,6 +51,17 @@ export default function ArrivalSection({
         >
           I&apos;ve Arrived
         </button>
+        {directionsVideoUrl && (
+          <a
+            href={directionsVideoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus-ring flex items-center justify-center gap-2 rounded-full border border-taupe/25 px-5 py-2.5 text-sm font-semibold text-ink/80 transition-colors hover:border-terracotta-300"
+          >
+            <PlayCircle size={18} weight="fill" className="text-terracotta-600" />
+            Watch directions video
+          </a>
+        )}
       </div>
 
       {showArrival && (

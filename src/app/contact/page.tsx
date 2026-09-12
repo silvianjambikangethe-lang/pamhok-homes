@@ -5,6 +5,7 @@ import { getAdminContactPhone, getContactContent } from "@/lib/data";
 import ContactForm from "@/components/ContactForm";
 import PageBanner from "@/components/PageBanner";
 import GetDirectionsButton from "@/components/GetDirectionsButton";
+import { buildDirectionsFromCurrentLocationUrl } from "@/lib/maps";
 
 export const metadata: Metadata = {
   title: pageTitle("Contact & Location"),
@@ -27,6 +28,14 @@ export const revalidate = 300;
 
 export default async function ContactPage() {
   const [content, adminPhone] = await Promise.all([getContactContent(), getAdminContactPhone()]);
+  // A plain place-share link (content.maps_url) only centers the map on
+  // the pin when opened — it doesn't start a route. A destination-only
+  // directions link does, using the visitor's current location as the
+  // origin automatically.
+  const directionsUrl =
+    content.maps_lat != null && content.maps_lng != null
+      ? buildDirectionsFromCurrentLocationUrl(content.maps_lat, content.maps_lng)
+      : content.maps_url;
 
   return (
     <div>
@@ -83,7 +92,7 @@ export default async function ContactPage() {
                 <p className="max-w-[220px] text-sm">
                   Open the pinned location in Google Maps for directions.
                 </p>
-                <GetDirectionsButton mapsUrl={content.maps_url} />
+                <GetDirectionsButton mapsUrl={directionsUrl} />
               </div>
             </div>
           )}

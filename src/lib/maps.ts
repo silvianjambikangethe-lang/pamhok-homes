@@ -65,3 +65,15 @@ export function buildDirectionsUrl(
   const destination = `${destLat},${destLng}`;
   return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
 }
+
+// Same Directions API URL scheme as buildDirectionsUrl, but with no
+// `origin` param at all — Google Maps' documented behavior for a
+// destination-only directions link is to use the opening device's
+// current location as the origin automatically. This is what "Get
+// Directions to Pamhok Homes" (contact page, guest portal) actually
+// needs: a plain place-share link (google.com/maps/place/...) only
+// centers the map on the pin, it doesn't start a from-here route the
+// way this does.
+export function buildDirectionsFromCurrentLocationUrl(destLat: number, destLng: number): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=driving`;
+}
