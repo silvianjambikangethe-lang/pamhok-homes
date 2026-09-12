@@ -11,7 +11,8 @@ import { releaseExpiredExtensionHold } from "@/lib/extension-hold";
 // pattern as the other cron routes — see checkout-reminders for details.
 
 function isAuthorized(request: Request): boolean {
-  if (!process.env.CRON_SECRET) return true;
+  // Fail closed, not open — see checkout-reminders for why (2026-09-12).
+  if (!process.env.CRON_SECRET) return false;
   const bearer = request.headers.get("authorization");
   if (bearer === `Bearer ${process.env.CRON_SECRET}`) return true;
   return request.headers.get("x-cron-secret") === process.env.CRON_SECRET;
