@@ -20,6 +20,13 @@ export type IdVerificationResult = {
   resultText: string | null;
   actions: Record<string, string> | null;
   checkedAt: string;
+  // Name OCR-extracted from the ID by Dojah, and whether it was compared
+  // against the booking name — both null for verifications run before
+  // this field existed, or when the document type had no readable name
+  // field at all (in which case nameMatch is null, not false: there was
+  // nothing to compare, not a failed comparison).
+  extractedName?: string | null;
+  nameMatch?: boolean | null;
 };
 export type GuestRequestType = "cleaning" | "assistance" | "other" | "laundry" | "extension";
 // 'cleaning' uses Open|In Progress|Resolved; 'assistance'/'other'/
@@ -344,6 +351,19 @@ export type BusinessExpense = {
   created_at: string;
 };
 
+// Admin-maintained "do not book" list, checked against the booking name at
+// booking time (src/app/api/bookings/route.ts). full_name_normalized is a
+// lowercased, whitespace-collapsed copy of full_name computed at write
+// time — booking-time lookups compare against this column instead of
+// normalizing every row on every check.
+export type BlockedGuestName = {
+  id: string;
+  full_name: string;
+  full_name_normalized: string;
+  reason: string | null;
+  created_at: string;
+};
+
 // @supabase/supabase-js resolves its Database generic structurally: every
 // table needs a `Relationships` array and the schema needs a `Functions`
 // key, or the whole schema silently collapses to `never` (every .from()
@@ -436,6 +456,12 @@ export interface Database {
         Row: BusinessExpense;
         Insert: Partial<BusinessExpense>;
         Update: Partial<BusinessExpense>;
+        Relationships: [];
+      };
+      blocked_guest_names: {
+        Row: BlockedGuestName;
+        Insert: Partial<BlockedGuestName>;
+        Update: Partial<BlockedGuestName>;
         Relationships: [];
       };
       login_attempts: {

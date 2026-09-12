@@ -295,6 +295,26 @@ create table if not exists business_expenses (
 );
 
 -- ------------------------------------------------------------
+-- Admin-maintained "do not book" list, checked against the booking name
+-- at booking time (public booking flow and the admin's manual/walk-in
+-- flow). full_name_normalized is precomputed (lowercased,
+-- whitespace-collapsed) at write time since the check runs on every
+-- booking attempt. Deliberately not named anything using bare "blocked"
+-- -- bookings.booking_status already has a distinct "Blocked" value used
+-- for calendar-date blocking, unrelated to this feature.
+-- ------------------------------------------------------------
+create table if not exists blocked_guest_names (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null,
+  full_name_normalized text not null,
+  reason text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_blocked_guest_names_normalized
+  on blocked_guest_names (full_name_normalized);
+
+-- ------------------------------------------------------------
 -- Admin-editable public site copy (homepage/about/amenities/contact).
 -- One row per page/section; `value` holds that section's fields as
 -- JSON, matching the admin dashboard's "one form per section" UX.
@@ -409,6 +429,7 @@ alter table reviews enable row level security;
 alter table site_content enable row level security;
 alter table social_links enable row level security;
 alter table business_expenses enable row level security;
+alter table blocked_guest_names enable row level security;
 alter table login_attempts enable row level security;
 alter table passkey_credentials enable row level security;
 alter table passkey_challenges enable row level security;
@@ -449,6 +470,13 @@ create policy "admins manage social links" on social_links
 -- --- business_expenses: admin-only, no public/guest access at all ---
 create policy "admins manage business expenses" on business_expenses
   for all
+  using ((select auth.uid()) in (select id from admin_users))
+  with check ((select auth.uid()) in (select id from admin_users));
+
+-- --- blocked_guest_names: admin-only, no public/guest access at all ---
+create policy "admins manage blocked guest names" on blocked_guest_names
+  for all
+  to authenticated
   using ((select auth.uid()) in (select id from admin_users))
   with check ((select auth.uid()) in (select id from admin_users));
 

@@ -4,6 +4,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/data";
 import { generateBookingReference, generatePassReference } from "@/lib/booking-reference";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { isNameBlocked } from "@/lib/guest-blocklist";
 
 interface BookingRequestBody {
   roomId: string;
@@ -71,6 +72,17 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminSupabaseClient();
+
+  // Blocklist gate — checked before any booking/guest rows exist for this
+  // request, so a blocked name never gets as far as a real reservation.
+  // Deliberately a generic error: nothing here should reveal that a
+  // blocklist exists or that this specific name is on it.
+  if (await isNameBlocked(supabase, body.guest.fullName)) {
+    return NextResponse.json(
+      { error: "We're unable to complete this booking. Please contact us directly to proceed." },
+      { status: 403 },
+    );
+  }
 
   const { data: room, error: roomError } = await supabase
     .from("rooms")

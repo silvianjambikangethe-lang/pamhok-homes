@@ -26,6 +26,9 @@ function resultCopy(result: IdVerificationResult) {
   if (result.resultCode === "provider_error") {
     return { label: "Automated check unavailable", tone: "neutral" as const };
   }
+  if (result.resultCode === "NAME_MISMATCH") {
+    return { label: "Name mismatch", tone: "fail" as const };
+  }
   return { label: result.success ? "Passed" : "Did not pass", tone: result.success ? "pass" as const : "fail" as const };
 }
 
@@ -39,6 +42,14 @@ function AttemptResult({ label, result }: { label: string; result: IdVerificatio
           {label}: {statusLabel}
         </p>
         {result.resultText && <p className="mt-0.5">{result.resultText}</p>}
+        {result.extractedName && (
+          <p className="mt-0.5 text-xs text-ink/60">
+            Name read from ID: {result.extractedName}
+            {result.nameMatch === false && (
+              <span className="ml-1 font-semibold text-danger">(does not match booking name)</span>
+            )}
+          </p>
+        )}
       </div>
     </div>
   );

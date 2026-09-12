@@ -23,6 +23,69 @@ type DojahDocumentStatus = {
   expiry?: string;
 };
 
+// text_data is Dojah's OCR-extracted field list — present on the same
+// response this integration already calls, just never read until now.
+// field_key varies by document type/country (11,000+ document types), so
+// name extraction below matches by pattern rather than a fixed key list.
+// status: 1 = read successfully, 0 = not present on this document type,
+// 2 = present but unreadable (damaged/blurry) — only 1 counts as usable.
+type DojahTextField = {
+  field_name?: string;
+  field_key?: string;
+  status?: number;
+  value?: string;
+};
+
+// Best-effort name assembly from whichever name-shaped fields this
+// document type actually exposes — a single "full_name"/"name" field if
+// present, otherwise given+middle+surname pieced together. Returns null
+// (not a failure) when no name field exists at all on this document
+// type, so the caller can skip the match rather than wrongly failing a
+// guest whose ID genuinely has no OCR-readable name field.
+function extractNameFromTextData(textData: DojahTextField[]): string | null {
+  const readable = (f: DojahTextField) => f.status === 1 && f.value?.trim();
+  const findByPattern = (pattern: RegExp) =>
+    textData.find(
+      (f) => readable(f) && (pattern.test(f.field_key ?? "") || pattern.test(f.field_name ?? "")),
+    )?.value?.trim();
+
+  const fullName = findByPattern(/^(full[_ ]?name|name)$/i);
+  if (fullName) return fullName;
+
+  const given = findByPattern(/given[_ ]?names?|first[_ ]?name/i);
+  const middle = findByPattern(/middle[_ ]?name/i);
+  const surname = findByPattern(/surname|last[_ ]?name|family[_ ]?name/i);
+  const parts = [given, middle, surname].filter((p): p is string => Boolean(p));
+
+  return parts.length > 0 ? parts.join(" ") : null;
+}
+
+function normalizeNameTokens(name: string): string[] {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 1); // drop stray initials/punctuation noise
+}
+
+// Deliberately lenient, order-independent token overlap rather than exact
+// string equality: ID field ordering ("Surname, Given Names") rarely
+// matches how a guest types their own name at booking, and this is a
+// fraud signal feeding into a retry-then-manual-review flow, not a
+// silent hard block -- a false mismatch just costs a retry attempt, so
+// erring conservative (fail on real mismatches, tolerate a missing
+// middle name or minor OCR spelling slip) is the safer failure mode.
+// Requiring only half the booking name's tokens keeps a single-token
+// OCR misread from failing an otherwise-genuine match.
+function namesLikelyMatch(bookingName: string, idName: string): boolean {
+  const bookingTokens = normalizeNameTokens(bookingName);
+  const idTokens = new Set(normalizeNameTokens(idName));
+  if (bookingTokens.length === 0 || idTokens.size === 0) return true;
+
+  const overlap = bookingTokens.filter((t) => idTokens.has(t)).length;
+  return overlap / bookingTokens.length >= 0.5;
+}
+
 export type DocumentAnalysisOutcome =
   | { ok: true; passed: boolean; result: IdVerificationResult }
   // A provider-side/config problem (bad credentials, unfunded sandbox
@@ -34,6 +97,10 @@ export type DocumentAnalysisOutcome =
 export async function analyzeIdDocument(
   frontBase64: string,
   backBase64: string,
+  // Name on the booking, to cross-check against the ID's OCR-extracted
+  // name. Optional so existing callers (and any future use of this
+  // function outside the booking-name-match flow) keep working unchanged.
+  guestName?: string,
 ): Promise<DocumentAnalysisOutcome> {
   const appId = process.env.DOJAH_APP_ID;
   const secretKey = isProduction
@@ -82,7 +149,7 @@ export async function analyzeIdDocument(
     return { ok: false, error: "Dojah returned an unexpected response shape." };
   }
 
-  const passed = Number(status.overall_status) === 1;
+  const documentValid = Number(status.overall_status) === 1;
   const checks: Record<string, string> = {
     document_type: status.document_type ?? "No",
     document_images: status.document_images ?? "No",
@@ -93,16 +160,38 @@ export async function analyzeIdDocument(
     .filter(([, value]) => value !== "Yes")
     .map(([key]) => key.replace(/_/g, " "));
 
+  const textData: DojahTextField[] | undefined = data?.entity?.text_data;
+  const extractedName = textData ? extractNameFromTextData(textData) : null;
+  // No name field on this document type at all (extractedName === null) is
+  // treated as a pass on the name check — nothing to compare against, and
+  // the document's own authenticity checks above already ran. Only an
+  // actual extracted name that fails to overlap with the booking name
+  // counts as a mismatch.
+  const nameMatches =
+    !guestName || !extractedName || namesLikelyMatch(guestName, extractedName);
+
+  const passed = documentValid && nameMatches;
+
+  let resultText: string;
+  if (passed) {
+    resultText = "Document analysis passed.";
+  } else if (!nameMatches) {
+    resultText = `Name on ID ("${extractedName}") does not match the booking name ("${guestName}").`;
+  } else {
+    resultText =
+      failedChecks.length > 0
+        ? `Could not confirm: ${failedChecks.join(", ")}.`
+        : "Document analysis did not pass.";
+  }
+
   const result: IdVerificationResult = {
     success: passed,
-    resultCode: status.reason ?? (passed ? "VALID" : "INVALID"),
-    resultText: passed
-      ? "Document analysis passed."
-      : failedChecks.length > 0
-        ? `Could not confirm: ${failedChecks.join(", ")}.`
-        : "Document analysis did not pass.",
+    resultCode: status.reason ?? (passed ? "VALID" : nameMatches ? "INVALID" : "NAME_MISMATCH"),
+    resultText,
     actions: checks,
     checkedAt: new Date().toISOString(),
+    extractedName,
+    nameMatch: extractedName ? nameMatches : null,
   };
 
   return { ok: true, passed, result };
