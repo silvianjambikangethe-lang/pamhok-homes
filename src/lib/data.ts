@@ -288,7 +288,7 @@ const DEFAULT_HOMEPAGE_CONTENT: HomepageContent = {
   living_room_image_url: null,
   bedroom_image_url: null,
   kitchen_image_url: null,
-  tour_video_url: null,
+  tour_videos: [],
 };
 
 const DEFAULT_ABOUT_CONTENT: AboutContent = {
@@ -296,7 +296,7 @@ const DEFAULT_ABOUT_CONTENT: AboutContent = {
   image_url: null,
   coffee_corner_image_url: null,
   reading_nook_image_url: null,
-  video_url: null,
+  videos: [],
 };
 
 const DEFAULT_AMENITIES_CONTENT: AmenityItem[] = [
@@ -409,7 +409,23 @@ async function getSiteContentValue<T>(key: SiteContent["key"], fallback: T): Pro
     .maybeSingle();
 
   if (error || !data) return fallback;
-  return data.value as T;
+
+  // Some callers here (getAmenitiesContent) pass an array fallback, not
+  // an object — spreading two arrays into `{...}` produces a broken
+  // array-LIKE object (numeric keys, no real array methods), not an
+  // actual array, so those must return the stored value as-is.
+  if (Array.isArray(fallback)) return data.value as T;
+
+  // Object fallbacks are shallow-merged against `fallback`, not a raw
+  // cast: a row saved before a new top-level field existed (e.g. adding
+  // `tour_videos` to an already-populated "homepage" row) has no key for
+  // it at all in the stored JSON, so a bare `data.value as T` would
+  // silently return `undefined` there at runtime despite the type
+  // claiming it's always present — exactly the bug that broke the build
+  // when `content.tour_videos.length` ran against a real, older DB row.
+  // Every one of these content types is a flat object (no nested objects
+  // needing a deep merge), so a shallow spread is sufficient.
+  return { ...fallback, ...(data.value as object) } as T;
 }
 
 export function getHomepageContent(): Promise<HomepageContent> {

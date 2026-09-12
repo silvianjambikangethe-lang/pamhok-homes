@@ -77,11 +77,15 @@ export default async function ContactPage() {
           )}
 
           {content.directions_video_url && (
-            <div className="mt-6 overflow-hidden rounded-2xl border border-taupe/20 shadow-card">
-              <p className="bg-surface px-5 pt-4 text-sm font-medium text-ink/80">
+            <div className="mt-6 rounded-2xl border border-taupe/20 bg-surface p-5 text-center shadow-card">
+              <p className="text-sm font-medium text-ink/80">
                 Watch: driving directions to {SITE.name}
               </p>
-              <video src={content.directions_video_url} controls className="w-full bg-black" />
+              <video
+                src={content.directions_video_url}
+                controls
+                className="mx-auto mt-3 aspect-[9/16] w-full max-w-[220px] rounded-xl bg-black"
+              />
             </div>
           )}
         </div>

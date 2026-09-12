@@ -112,17 +112,22 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {content.tour_video_url && (
+      {content.tour_videos.length > 0 && (
         <section className="container-page pb-16 sm:pb-20">
           <div className="flex flex-col gap-2 text-center">
             <Eyebrow>See it for yourself</Eyebrow>
             <h2 className="font-serif text-h2 text-ink">Take a video tour</h2>
           </div>
-          <video
-            src={content.tour_video_url}
-            controls
-            className="mx-auto mt-8 w-full max-w-3xl rounded-2xl shadow-card"
-          />
+          <div className="mt-8 flex flex-wrap justify-center gap-5">
+            {content.tour_videos.map((url) => (
+              <video
+                key={url}
+                src={url}
+                controls
+                className="aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
+              />
+            ))}
+          </div>
         </section>
       )}
 
