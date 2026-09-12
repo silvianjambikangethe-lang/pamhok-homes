@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format, isPast, parseISO, startOfDay } from "date-fns";
-import { Broom, CalendarBlank, ClockCountdown, Info, Phone, WhatsappLogo } from "@phosphor-icons/react";
+import { Broom, CalendarBlank, ClockCountdown, Info, Phone, Receipt as ReceiptIcon, WhatsappLogo } from "@phosphor-icons/react";
 import type { PortalBooking } from "@/lib/portal";
 import type { DisplayCurrency } from "@/lib/currency";
 import { SITE, whatsappLink } from "@/lib/site";
@@ -111,6 +111,16 @@ export default function PortalClient({
           <span className="w-full font-mono text-xs text-ink/65">
             Booking reference: {booking.booking_reference}
           </span>
+        )}
+        {booking.payment_status === "Paid" && (
+          <a
+            href={`/api/portal/${token}/receipt`}
+            download
+            className="focus-ring flex items-center gap-1.5 text-xs font-semibold text-terracotta-600 hover:underline dark:text-terracotta-400"
+          >
+            <ReceiptIcon size={16} weight="bold" />
+            Download receipt (image)
+          </a>
         )}
       </div>
 
