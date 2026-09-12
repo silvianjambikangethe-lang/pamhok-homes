@@ -61,6 +61,16 @@ const nextConfig: NextConfig = {
     // bindings involved) rather than skipped outright.
     ignoreBuildErrors: true,
   },
+  // /api/admin/compress-video spawns the ffmpeg-static binary directly
+  // (child_process, not a JS import) -- Next.js's automatic file tracing
+  // can miss binaries reached that way, since it isn't a require()/import
+  // Vercel's build can follow. Without this, the route would build fine
+  // and fail only at runtime on Vercel with an ENOENT for the ffmpeg
+  // binary, since it's a plain file path resolved from the ffmpeg-static
+  // package rather than code Next.js parses.
+  outputFileTracingIncludes: {
+    "/api/admin/compress-video": ["./node_modules/ffmpeg-static/ffmpeg"],
+  },
   async headers() {
     return [
       {

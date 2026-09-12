@@ -32,6 +32,7 @@ export default function VideoUploadField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -66,8 +67,21 @@ export default function VideoUploadField({
     }
 
     const { data } = supabase.storage.from("site-videos").getPublicUrl(objectPath);
+
+    // Best-effort — a compression failure shouldn't block the upload the
+    // guest-facing page already has a working (if larger) file either
+    // way. See /api/admin/compress-video's own comment for why this is a
+    // separate call rather than compressing during the upload itself.
+    setCompressing(true);
+    await fetch("/api/admin/compress-video", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ objectPath }),
+    }).catch(() => null);
+
     onUploaded(data.publicUrl);
     setUploading(false);
+    setCompressing(false);
   }
 
   return (
@@ -93,7 +107,13 @@ export default function VideoUploadField({
               disabled={uploading}
               className="focus-ring rounded-full border border-taupe/25 bg-page px-4 py-2 text-xs font-semibold text-ink/80 transition-colors hover:border-terracotta-300 disabled:opacity-60"
             >
-              {uploading ? "Uploading…" : currentUrl ? "Replace Video" : "Upload Video"}
+              {compressing
+                ? "Compressing…"
+                : uploading
+                  ? "Uploading…"
+                  : currentUrl
+                    ? "Replace Video"
+                    : "Upload Video"}
             </button>
             {onRemove && currentUrl && (
               <button

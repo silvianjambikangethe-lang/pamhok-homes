@@ -12,6 +12,20 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE.url}/rooms` },
 };
 
+// Explicit rather than relying on Next.js's undocumented default for a
+// route with no revalidate export and no dynamic API usage (getRooms/
+// getAllAvailability both use the plain non-cookie Supabase client, same
+// as the pages that turned out to cache indefinitely — see page.tsx and
+// contact/page.tsx). This is the actual room-browsing/availability page
+// real bookings get made from, so it gets a tighter window than the
+// 300s used for marketing content elsewhere — a guest attempting to
+// book dates that just became unavailable is still safely rejected by
+// /api/bookings' own fresh server-side re-check at submission time
+// regardless, so this is about a good display experience, not a
+// double-booking risk, but there's no reason to accept more staleness
+// here than necessary.
+export const revalidate = 60;
+
 export default async function RoomsPage() {
   const { rooms, isSample } = await getRooms();
   const availability = await getAllAvailability();
