@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle } from "@phosphor-icons/react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import VideoUploadField from "@/components/admin/VideoUploadField";
 import type { AboutContent } from "@/lib/supabase/types";
 
 export default function AboutContentForm({ initial }: { initial: AboutContent }) {
@@ -97,6 +98,19 @@ export default function AboutContentForm({ initial }: { initial: AboutContent })
             }}
           />
         </div>
+        <VideoUploadField
+          label="Video (optional — shown below the photos on the About page)"
+          currentUrl={value.video_url}
+          path="about/video"
+          onUploaded={(url) => {
+            setValue({ ...value, video_url: url });
+            setSaved(false);
+          }}
+          onRemove={() => {
+            setValue({ ...value, video_url: null });
+            setSaved(false);
+          }}
+        />
       </div>
 
       {error && <p className="mt-3 text-sm text-danger">{error}</p>}

@@ -736,6 +736,28 @@ create policy "admins manage site images" on storage.objects
   using (bucket_id = 'site-images' and auth.uid() in (select id from admin_users))
   with check (bucket_id = 'site-images' and auth.uid() in (select id from admin_users));
 
+-- Public bucket for short site videos (homepage tour, About Us, driving
+-- directions) — uploaded directly from the browser to Supabase Storage
+-- (see src/components/admin/VideoUploadField.tsx), NOT proxied through a
+-- Next.js API route: Vercel's serverless functions cap request bodies at
+-- ~4.5MB, far too small for video, so the browser's own Supabase client
+-- (already carrying the admin's session cookie) uploads straight to
+-- Storage and RLS below is what actually enforces "admin only" -- same
+-- pattern the existing browser-side admin sign-out/payment-polling calls
+-- already use. file_size_limit/allowed_mime_types are enforced by
+-- Supabase Storage itself, not just client-side validation.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('site-videos', 'site-videos', true, 104857600, array['video/mp4', 'video/webm', 'video/quicktime'])
+on conflict (id) do nothing;
+
+create policy "anyone can view site videos" on storage.objects
+  for select using (bucket_id = 'site-videos');
+
+create policy "admins manage site videos" on storage.objects
+  for all
+  using (bucket_id = 'site-videos' and auth.uid() in (select id from admin_users))
+  with check (bucket_id = 'site-videos' and auth.uid() in (select id from admin_users));
+
 -- ============================================================
 -- Sample rooms — replace name/price/description with the real thing,
 -- or manage rooms directly from the Supabase table editor (there is no

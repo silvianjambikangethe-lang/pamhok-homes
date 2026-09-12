@@ -75,6 +75,15 @@ export default async function ContactPage() {
               </div>
             </div>
           )}
+
+          {content.directions_video_url && (
+            <div className="mt-6 overflow-hidden rounded-2xl border border-taupe/20 shadow-card">
+              <p className="bg-surface px-5 pt-4 text-sm font-medium text-ink/80">
+                Watch: driving directions to {SITE.name}
+              </p>
+              <video src={content.directions_video_url} controls className="w-full bg-black" />
+            </div>
+          )}
         </div>
 
         <div className="lg:col-span-3">
