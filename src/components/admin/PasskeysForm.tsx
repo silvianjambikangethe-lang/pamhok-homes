@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle, Fingerprint, Trash, Warning } from "@phosphor-icons/react";
 import { browserSupportsWebAuthn, startRegistration } from "@simplewebauthn/browser";
 
@@ -28,7 +28,17 @@ export default function PasskeysForm({ initial }: { initial: Passkey[] }) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const supported = typeof window !== "undefined" && browserSupportsWebAuthn();
+  // Starts false on both the server render and the client's first render
+  // (matching, since SSR has no `window` to check at all) and only flips
+  // after mount via effect — evaluating browserSupportsWebAuthn() directly
+  // at render time gave the server and the client's first paint different
+  // answers (server always false, client usually true), which is a
+  // hydration mismatch on every load of this page.
+  const [supported, setSupported] = useState(false);
+
+  useEffect(() => {
+    setSupported(browserSupportsWebAuthn());
+  }, []);
 
   async function handleRegister() {
     setError(null);

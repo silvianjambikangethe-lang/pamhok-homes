@@ -102,6 +102,11 @@ export type StaffMember = {
   id: string;
   name: string;
   active: boolean;
+  // Checked at tap-in (src/lib/staff-pin.ts) — a hash, not a secret in
+  // the sensitive-plaintext sense, but still deliberately left out of
+  // the settings-page listing query; only routes that actually need it
+  // select it explicitly.
+  pin_hash: string | null;
   created_at: string;
 };
 

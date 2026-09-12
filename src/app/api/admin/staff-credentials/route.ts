@@ -64,7 +64,10 @@ export async function POST(request: Request) {
     updates,
   );
   if (updateError) {
-    return NextResponse.json({ error: "Could not update staff login." }, { status: 500 });
+    // Surface Supabase's actual reason (most commonly its password-strength
+    // policy — "must contain lowercase, uppercase, a number, and a symbol")
+    // instead of a generic message that gives the admin nothing to act on.
+    return NextResponse.json({ error: updateError.message }, { status: 422 });
   }
 
   if (email) {

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStaffApiSession, WORKER_COOKIE } from "@/lib/staff";
+import { verifyPin } from "@/lib/staff-pin";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const session = await getStaffApiSession();
@@ -10,9 +12,24 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null);
   const workerId = typeof body?.workerId === "string" ? body.workerId : "";
+  const pin = typeof body?.pin === "string" ? body.pin : "";
 
-  if (!workerId) {
-    return NextResponse.json({ error: "workerId is required." }, { status: 400 });
+  if (!workerId || !pin) {
+    return NextResponse.json({ error: "workerId and pin are required." }, { status: 400 });
+  }
+
+  // A 4-digit PIN is only 10,000 combinations — rate-limited per worker
+  // (not per IP: the whole point is this is a shared device) same as
+  // every other login-style check in this app.
+  const rateLimit = await checkRateLimit("staff-pin", workerId, {
+    maxAttempts: 5,
+    windowMinutes: 15,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: `Too many attempts. Try again in ${rateLimit.retryAfterMinutes} minute${rateLimit.retryAfterMinutes === 1 ? "" : "s"}.` },
+      { status: 429 },
+    );
   }
 
   // Re-validated server-side against staff_members — never trust the
@@ -20,13 +37,24 @@ export async function POST(request: Request) {
   // active names to begin with.
   const { data: worker } = await supabase
     .from("staff_members")
-    .select("id")
+    .select("id, pin_hash")
     .eq("id", workerId)
     .eq("active", true)
     .maybeSingle();
 
   if (!worker) {
     return NextResponse.json({ error: "That worker isn't available." }, { status: 404 });
+  }
+
+  if (!worker.pin_hash) {
+    return NextResponse.json(
+      { error: "No PIN set for this profile yet — ask the host to set one from Settings." },
+      { status: 409 },
+    );
+  }
+
+  if (!verifyPin(pin, worker.pin_hash)) {
+    return NextResponse.json({ error: "Incorrect PIN." }, { status: 401 });
   }
 
   const response = NextResponse.json({ ok: true });
