@@ -1,6 +1,6 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-09-10. Written for continuing this project in a
+Last updated: 2026-09-12. Written for continuing this project in a
 **new chat** — paste a link to this file (or its contents) so the new session
 has full context. Many small "Update handoff doc: X" commits have landed
 between the last full rewrite (2026-08-26) and now — check `git log
@@ -9,17 +9,31 @@ incrementally rather than fully rewritten each session.
 
 ## Branch status: everything merged, `master` is current
 
-The long branch-order warning that used to live here is gone — all six
-feature branches from 2026-09-02 through 2026-09-10
-(`consolidate-contact-email-and-lint-audit`, `finetune-and-templatize`,
-`maintenance-staff-login`, `dojah-document-verification`,
-`seo-technical-foundation`, `tighten-login-page-metadata`) are merged
-into `master` and deployed to production. **The site is live** — no
-longer in maintenance mode as of 2026-09-09/10 (see "Session update
-(2026-09-10)" below). Nothing is currently branched off `master`.
+All three feature branches from 2026-09-12
+(`guest-blocklist-and-id-name-match`, `staff-system-review`,
+`staff-login-hardening`) are merged into `master` (PRs #24, #25, #26)
+and deployed to production — confirmed `READY` via the Vercel MCP tools
+after each merge, not just assumed. Nothing is currently branched off
+`master`.
 
 ## Currently open / blocked
 
+- **Passkey (biometric) cross-device sync — fix deployed, not yet
+  confirmed end-to-end by the owner.** Root cause (from an earlier
+  session): `authenticatorSelection.authenticatorAttachment: "platform"`
+  in `src/app/api/admin/passkey/register/options/route.ts` was forcing
+  Chrome/Windows straight into device-bound Windows Hello instead of
+  showing its own picker with "Google Password Manager" (which actually
+  syncs across devices) as an option. That hint has been removed and
+  merged. **What's still outstanding**: any passkey registered *before*
+  that fix is permanently device-bound and won't retroactively start
+  syncing — the owner needs to delete their old passkey (from
+  `/admin/settings`'s Passkeys section) and register a fresh one,
+  explicitly picking "Google Password Manager" in the browser's own
+  save-dialog "Change" link when prompted, then confirm it actually
+  unlocks `/admin` from a second device (phone). This has not yet been
+  confirmed working across devices — treat it as open until the owner
+  says so.
 - **M-Pesa (Jenga) STK push**: `502 "Not Authorized to access the API"`
   on the actual STK/USSD-push endpoint. Auth and RSA request-signing are
   confirmed genuinely working against Jenga's real sandbox — this is
@@ -35,10 +49,132 @@ longer in maintenance mode as of 2026-09-09/10 (see "Session update
   push/merge** (2026-09-08/09) — happened twice, self-resolved both
   times with no root cause identified (checked: `vercel.json`, Ignored
   Build Step, production-branch config, the GitHub App's health — all
-  fine). If a merge doesn't produce a new deployment within a couple
-  minutes, check `list_deployments`/`get_deployment` via the Vercel MCP
-  tools directly rather than assuming it worked — an empty no-op commit
-  push to `master` was the working nudge both times.
+  fine). Not seen again in the 2026-09-12 session (three merges, three
+  clean auto-deploys). If a merge doesn't produce a new deployment
+  within a couple minutes, check `list_deployments`/`get_deployment` via
+  the Vercel MCP tools directly rather than assuming it worked — an
+  empty no-op commit push to `master` was the working nudge both times
+  it happened before.
+
+## Session update (2026-09-12) — guest blocklist, ID name-matching, staff PIN system
+
+Three merged PRs, in order:
+
+**PR #24 — ID name-matching + guest blocklist** (`guest-blocklist-and-id-name-match`).
+Owner asked for two things: (1) the name paying for a booking should be
+checked against the name on the uploaded ID, and (2) an admin-managed
+list of names that can never book at all, with a clear error page if
+blocked.
+
+- **ID name-matching**: `src/lib/dojah.ts`'s `analyzeIdDocument()` was
+  only ever reading `entity.status` from Dojah's document-analysis
+  response and discarding `entity.text_data` — the OCR-extracted field
+  list. Turned out the *same already-integrated* endpoint already
+  returns this, so no new Dojah product/cost was needed (corrected an
+  earlier wrong assumption made mid-session before actually checking
+  Dojah's docs). Now extracts a name from `text_data` (pattern-matching
+  across `full_name`/`given_names`/`surname`/etc., since `field_key`
+  naming varies across Dojah's 11,000+ supported document types) and
+  compares it against the booking's guest name via lenient, order-
+  independent token overlap (≥50% of the booking name's tokens must
+  appear in the ID name) — deliberately not exact-match, since this
+  feeds the *existing* 2-attempt-then-manual-review flow rather than a
+  hard silent block, so a false mismatch just costs a retry, not a
+  denied booking. `IdVerificationResult` gained `extractedName`/
+  `nameMatch` fields, surfaced to the admin on `/admin/verifications`
+  (`VerificationCard.tsx`).
+- **Guest blocklist**: new `blocked_guest_names` table (admin-only RLS,
+  no anon policy — same pattern as `business_expenses`), managed from a
+  new panel on `/admin/settings` (`BlockedGuestNamesForm.tsx`, CRUD via
+  `/api/admin/blocked-names`). Checked at booking time (exact,
+  normalized-case-insensitive match via `src/lib/guest-blocklist.ts`) on
+  **both** the public booking form (`/api/bookings`) and admin walk-in
+  bookings (`/api/admin/bookings/manual`) — a blocked name can't get a
+  confirmed booking through either path. A blocked attempt on the public
+  form redirects to a dedicated `/booking-blocked` page (added as a
+  follow-up once "error page" was clarified to mean a real page, not an
+  inline form message) — deliberately no WhatsApp "chat to book" CTA
+  there, unlike every other guest-facing page, since that would hand a
+  blocked guest an easy path straight back to a booking.
+
+**PR #25 — staff system review** (`staff-system-review`). Owner asked to
+"go through the staff system"; testing it surfaced a real architecture
+gap and two unrelated bugs.
+
+- **Two bugs fixed while testing `/admin/settings`**: (1)
+  `/api/admin/staff-credentials` was swallowing Supabase's real error
+  (most commonly its password-strength policy — "must contain
+  lowercase, uppercase, a number, and a symbol") behind a useless
+  generic "Could not update staff login." message; now returns the
+  actual reason. (2) `PasskeysForm.tsx` computed `supported` at render
+  time via `typeof window !== "undefined"` — always `false` during SSR,
+  usually `true` on the client's first paint — a genuine hydration
+  mismatch on every load of that page. Fixed with the standard
+  post-mount-`useEffect` pattern already used elsewhere in this app
+  (`ThemeToggle.tsx`'s `mounted` flag).
+- **The real gap**: tapping a name on `/staff`'s tap-in screen required
+  no secret at all — anyone signed into the one shared staff login
+  could become *any* active worker just by tapping their tile. This
+  meant "removing" a worker (deactivating them) never actually revoked
+  anything real: the removed worker, or anyone else who knew the shared
+  password, could still tap a *different*, still-active coworker's tile
+  and act as them. Went through a planning pass (`EnterPlanMode`) before
+  building, given the architectural weight; rejected replacing the
+  shared login with individual per-worker Supabase Auth accounts as
+  overkill (assumes every hourly/rotating worker has and checks an
+  email — not safe to assume). Instead:
+  - **Per-worker PIN** (new `pin_hash` column on `staff_members`, Node's
+    built-in `scrypt` via new `src/lib/staff-pin.ts` — no new
+    dependency), required at tile-tap time on top of the existing
+    shared login. A worker with no PIN set yet (rows that predate this
+    feature) is rejected with a clear "ask the host to set one" message
+    rather than silently granted access.
+  - **Remove** (deactivate, reversible via Reactivate) and **Delete
+    Permanently** (hard-deletes the row and its PIN; falls back to
+    deactivate + clear the PIN if `shift_logs`'s `on delete restrict`
+    FK blocks the hard delete — either way that specific PIN is
+    permanently dead, with zero effect on any other worker) both live in
+    `StaffMembersForm.tsx` / `/api/admin/staff-members/[id]`. **Reset
+    PIN** lets the admin rotate a worker's PIN without removing them.
+  - `select-worker` is rate-limited per worker (5 attempts/15min, via
+    the existing `checkRateLimit` helper) since a 4-digit PIN is only
+    10,000 combinations.
+  - **Verified live**: PIN hashing/verification logic unit-tested
+    directly; the admin-side reset/hard-delete/FK-fallback endpoints
+    exercised live against the real database via the already-open admin
+    session; the actual staff tap-in + PIN flow could **not** be tested
+    by Claude directly (requires the real shared staff password, which
+    Claude does not type into login fields under any circumstance,
+    including its own dev testing) — the owner ran that specific test
+    themselves afterward and confirmed Clock In/Out works correctly
+    end-to-end (verified against real `shift_logs` rows).
+
+**PR #26 — staff-login-hardening** (`staff-login-hardening`), two
+owner-requested follow-ups from testing the above:
+
+- **Removed "Switch worker" entirely** (button in `StaffNav.tsx` + its
+  `/api/staff/switch-worker` route, deleted outright as dead code once
+  unreferenced) — it let anyone on the shared login jump straight to a
+  different worker's tile with no re-entry of that worker's PIN,
+  directly undermining the point of adding PINs.
+- **Closed two character-input gaps** the original maxLength audit
+  (see the "consolidate-contact-email-and-lint-audit" era, before this
+  feature existed) couldn't have caught since they didn't exist yet:
+  `/staff/login`'s email/password inputs had no `maxLength` at all
+  (`/admin/login` already had 254/128 — an inconsistency), and
+  `select-worker` checked a submitted PIN was *present* but never its
+  *format* server-side before hashing it — an oversized or non-numeric
+  value would still reach `scryptSync`. Both now match the same
+  254/128/4-6-digit caps enforced everywhere else in this app.
+
+A recurring **local-dev-only gotcha** hit twice this session, worth
+knowing: deleting `.next` (or switching git branches rapidly with
+stash/checkout) while the local `next dev` server is still running
+confuses its file watcher/webpack cache, producing transient
+`ENOENT`/hydration/"Failed to fetch" errors in the browser that have
+nothing to do with the actual code — `preview_stop` + `rm -rf .next` +
+`preview_start` (full restart, not just cache deletion mid-run) clears
+it. Not a production issue; never seen against the deployed site.
 
 ## Session update (2026-09-10) — SEO foundation, login-page metadata fix, site went live
 
