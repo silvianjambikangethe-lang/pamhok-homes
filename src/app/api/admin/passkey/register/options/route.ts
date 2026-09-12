@@ -47,10 +47,16 @@ export async function POST(request: Request) {
       id: c.credential_id,
       transports: c.transports ?? undefined,
     })),
+    // Deliberately NOT setting authenticatorAttachment: "platform" here —
+    // on Windows, that hint can make Chrome jump straight into the native
+    // Windows Hello prompt (device-bound, never syncs anywhere) instead
+    // of showing its own chooser with "Google Password Manager" as an
+    // option (which does sync across every device signed into the same
+    // Google account). Leaving this unset lets the browser show its full
+    // picker so the user can choose a syncing option themselves.
     authenticatorSelection: {
       residentKey: "preferred",
       userVerification: "preferred",
-      authenticatorAttachment: "platform",
     },
   });
 
