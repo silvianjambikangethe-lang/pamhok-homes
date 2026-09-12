@@ -67,6 +67,7 @@ function LoginForm() {
               id="email"
               type="email"
               required
+              maxLength={254}
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -81,6 +82,7 @@ function LoginForm() {
               id="password"
               type="password"
               required
+              maxLength={128}
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getStaffApiSession, WORKER_COOKIE } from "@/lib/staff";
-import { verifyPin } from "@/lib/staff-pin";
+import { verifyPin, isValidPinFormat } from "@/lib/staff-pin";
 import { checkRateLimit } from "@/lib/rate-limit";
+
+// UUIDs are 36 chars — anything longer here is never a real staff_members
+// id, so reject before it ever reaches a query.
+const MAX_WORKER_ID_LENGTH = 36;
 
 export async function POST(request: Request) {
   const session = await getStaffApiSession();
@@ -14,8 +18,15 @@ export async function POST(request: Request) {
   const workerId = typeof body?.workerId === "string" ? body.workerId : "";
   const pin = typeof body?.pin === "string" ? body.pin : "";
 
-  if (!workerId || !pin) {
+  if (!workerId || workerId.length > MAX_WORKER_ID_LENGTH) {
     return NextResponse.json({ error: "workerId and pin are required." }, { status: 400 });
+  }
+  // Same format check the admin panel enforces when setting a PIN —
+  // rejects an oversized or non-numeric value before it ever reaches
+  // scryptSync (a bounded, cheap check either way, but no reason to spend
+  // a scrypt hash on input that could never match a real PIN).
+  if (!isValidPinFormat(pin)) {
+    return NextResponse.json({ error: "Incorrect PIN." }, { status: 401 });
   }
 
   // A 4-digit PIN is only 10,000 combinations — rate-limited per worker

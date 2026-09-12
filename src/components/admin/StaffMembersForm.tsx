@@ -233,6 +233,7 @@ export default function StaffMembersForm({ initial }: { initial: StaffMember[] }
         <input
           type="text"
           required
+          maxLength={100}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder="Worker's name"

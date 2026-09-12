@@ -9,7 +9,6 @@ import {
   House,
   SignOut,
   TShirt,
-  UserSwitch,
 } from "@phosphor-icons/react";
 import { SITE } from "@/lib/site";
 
@@ -30,12 +29,6 @@ export default function StaffNav({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-
-  async function handleSwitchWorker() {
-    await fetch("/api/staff/switch-worker", { method: "POST" });
-    router.push("/staff");
-    router.refresh();
-  }
 
   async function handleSignOut() {
     await fetch("/api/staff/logout", { method: "POST" });
@@ -78,14 +71,6 @@ export default function StaffNav({
         })}
       </nav>
       <div className="space-y-1 border-t border-forest-500/40 dark:border-white/10 p-4">
-        <button
-          type="button"
-          onClick={handleSwitchWorker}
-          className="focus-ring flex w-full items-center gap-3 rounded-lg px-3 py-3 text-base font-medium text-white/75 transition-colors hover:bg-forest-500/40 dark:hover:bg-white/10 hover:text-white"
-        >
-          <UserSwitch size={20} />
-          Switch worker
-        </button>
         <button
           type="button"
           onClick={handleSignOut}
