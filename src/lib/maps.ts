@@ -72,8 +72,17 @@ export function buildDirectionsUrl(
 // current location as the origin automatically. This is what "Get
 // Directions to Pamhok Homes" (contact page, guest portal) actually
 // needs: a plain place-share link (google.com/maps/place/...) only
-// centers the map on the pin, it doesn't start a from-here route the
-// way this does.
-export function buildDirectionsFromCurrentLocationUrl(destLat: number, destLng: number): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=driving`;
+// centers the map on the pin, it doesn't start a from-here route.
+//
+// Destination is the business NAME, not lat/lng — verified live
+// (2026-09-12) that "Pamhok Homes, Nairobi, Kenya" resolves to a real
+// Google listing at the exact same coordinates already stored as
+// maps_lat/maps_lng. Coordinates alone route correctly but display
+// whatever POI Google has indexed at that exact point as the
+// destination label — in this case "Gladstar Minimart", the ground-floor
+// tenant of the same building Pamhok Homes occupies on the 8th floor.
+// The caller still gates on maps_lat/maps_lng being set (a human having
+// actually confirmed the pin) before ever showing a directions link.
+export function buildDirectionsFromCurrentLocationUrl(destinationName: string): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationName)}&travelmode=driving`;
 }

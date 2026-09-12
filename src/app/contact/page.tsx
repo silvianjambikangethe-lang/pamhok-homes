@@ -34,7 +34,7 @@ export default async function ContactPage() {
   // origin automatically.
   const directionsUrl =
     content.maps_lat != null && content.maps_lng != null
-      ? buildDirectionsFromCurrentLocationUrl(content.maps_lat, content.maps_lng)
+      ? buildDirectionsFromCurrentLocationUrl(`${SITE.name}, ${SITE.city}`)
       : content.maps_url;
 
   return (

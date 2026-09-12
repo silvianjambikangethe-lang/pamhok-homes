@@ -5,7 +5,7 @@ import { getExchangeRates } from "@/lib/currency";
 import { generateQrDataUrl } from "@/lib/qrcode";
 import { getAdminContactPhone, getContactContent } from "@/lib/data";
 import PortalClient from "@/components/portal/PortalClient";
-import { pageTitle } from "@/lib/site";
+import { SITE, pageTitle } from "@/lib/site";
 import { buildDirectionsFromCurrentLocationUrl } from "@/lib/maps";
 
 export const metadata: Metadata = {
@@ -43,7 +43,7 @@ export default async function GuestPortalPage({
   // automatically (see buildDirectionsFromCurrentLocationUrl).
   const directionsUrl =
     contactContent.maps_lat != null && contactContent.maps_lng != null
-      ? buildDirectionsFromCurrentLocationUrl(contactContent.maps_lat, contactContent.maps_lng)
+      ? buildDirectionsFromCurrentLocationUrl(`${SITE.name}, ${SITE.city}`)
       : contactContent.maps_url;
 
   return (
