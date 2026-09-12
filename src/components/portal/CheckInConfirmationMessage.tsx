@@ -9,14 +9,15 @@ export default function CheckInConfirmationMessage({ checkIn }: { checkIn: strin
 
   return (
     <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
-      <h2 className="font-serif text-h3 text-ink">You&apos;re all set! 🎉</h2>
+      <h2 className="font-serif text-h3 text-ink">You&apos;re all set!</h2>
       <p className="mt-2 text-sm text-ink/80">
         Check-in starts at <strong className="text-ink">{CHECK_IN_TIME}</strong> on{" "}
         <strong className="text-ink">{formattedDate}</strong>. Your room is being freshly
         prepared for you — once inside, please make use of the provided slippers. During your
         stay, keep an eye on your <strong className="text-ink">My Booking</strong> page (and
         your email) for cleaning day notices and checkout reminders, so you&apos;re never
-        caught off guard.
+        caught off guard. Laundry is billed separately from your stay — you&apos;ll only be
+        asked to pay for it if you request the service.
       </p>
     </div>
   );
