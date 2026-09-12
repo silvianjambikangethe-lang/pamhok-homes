@@ -6,7 +6,7 @@ import type { GuestRequestStatus, GuestRequestType } from "@/lib/supabase/types"
 
 const ALLOWED_STATUS: Record<string, readonly GuestRequestStatus[]> = {
   cleaning: ["Open", "In Progress", "Resolved"],
-  laundry: ["Open", "Picked Up", "Cleaning", "Ready", "Returned", "Closed"],
+  laundry: ["Open", "Picked Up", "Cleaning", "Ready", "Awaiting Payment", "Returned", "Closed"],
 };
 
 // Same four stages that trigger a guest email on the admin side (see
@@ -37,6 +37,39 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     !ALLOWED_STATUS[requestType]?.includes(status as GuestRequestStatus)
   ) {
     return NextResponse.json({ error: "Invalid status." }, { status: 400 });
+  }
+
+  // Laundry has two transitions staff can never perform directly, even
+  // by calling this route by hand rather than tapping the (already
+  // hidden-in-that-case) button: "Awaiting Payment" is only ever set as
+  // a side effect of an admin pricing the item, and "Returned" requires
+  // that charge to actually be paid first. staff_task_updates has no
+  // laundry_payment_status column (staff never need to read pricing
+  // directly), so this check goes through the service-role client.
+  if (requestType === "laundry" && (status === "Awaiting Payment" || status === "Returned")) {
+    const adminClient = createAdminSupabaseClient();
+    const { data: current } = await adminClient
+      .from("guest_requests")
+      .select("status, laundry_payment_status")
+      .eq("id", id)
+      .eq("request_type", "laundry")
+      .maybeSingle();
+
+    if (!current) {
+      return NextResponse.json({ error: "Not authorized or not found." }, { status: 403 });
+    }
+    if (status === "Awaiting Payment") {
+      return NextResponse.json(
+        { error: "Only the host can set a price for laundry." },
+        { status: 403 },
+      );
+    }
+    if (status === "Returned" && current.laundry_payment_status !== "Paid") {
+      return NextResponse.json(
+        { error: "This laundry charge hasn't been paid yet." },
+        { status: 409 },
+      );
+    }
   }
 
   // Through staff_task_updates — a column-restricted view, so this can

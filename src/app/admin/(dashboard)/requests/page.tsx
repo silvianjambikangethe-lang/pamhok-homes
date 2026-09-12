@@ -7,7 +7,7 @@ export default async function AdminRequestsPage() {
   const { data } = await supabase
     .from("guest_requests")
     .select(
-      "id, request_type, message, status, created_at, booking:bookings(booking_reference, guest:guests(full_name), room:rooms(name))",
+      "id, request_type, message, status, created_at, laundry_amount, laundry_currency, laundry_payment_status, booking:bookings(booking_reference, guest:guests(full_name), room:rooms(name))",
     )
     .order("created_at", { ascending: false });
 
@@ -28,6 +28,9 @@ export default async function AdminRequestsPage() {
       guestName: booking?.guest?.full_name ?? null,
       roomName: booking?.room?.name ?? null,
       bookingReference: booking?.booking_reference ?? null,
+      laundryAmount: r.laundry_amount,
+      laundryCurrency: r.laundry_currency,
+      laundryPaymentStatus: r.laundry_payment_status,
     };
   });
 

@@ -8,6 +8,7 @@ const STAGES: readonly GuestRequestStatus[] = [
   "Picked Up",
   "Cleaning",
   "Ready",
+  "Awaiting Payment",
   "Returned",
   "Closed",
 ];
@@ -33,7 +34,38 @@ export async function POST(
     return NextResponse.json({ error: "Invalid stage." }, { status: 400 });
   }
 
+  // "Awaiting Payment" only ever gets set as one atomic step together
+  // with an actual amount — see /api/admin/requests/[id]/laundry-price —
+  // never through this generic stage picker, which would otherwise leave
+  // a guest looking at "payment due" with no amount and no way to pay.
+  // "Returned" requires that charge to have actually been paid first.
+  if (stage === "Awaiting Payment") {
+    return NextResponse.json(
+      { error: "Set a price to move this to Awaiting Payment." },
+      { status: 400 },
+    );
+  }
+
   const supabase = await createServerSupabaseClient();
+
+  if (stage === "Returned") {
+    const { data: current } = await supabase
+      .from("guest_requests")
+      .select("laundry_payment_status")
+      .eq("id", id)
+      .eq("request_type", "laundry")
+      .maybeSingle();
+
+    if (!current) {
+      return NextResponse.json({ error: "Not authorized or not found." }, { status: 403 });
+    }
+    if (current.laundry_payment_status !== "Paid") {
+      return NextResponse.json(
+        { error: "This laundry charge hasn't been paid yet." },
+        { status: 409 },
+      );
+    }
+  }
 
   const { data, error } = await supabase
     .from("guest_requests")

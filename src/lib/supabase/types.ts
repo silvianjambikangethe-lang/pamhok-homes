@@ -42,6 +42,7 @@ export type GuestRequestStatus =
   | "Picked Up"
   | "Cleaning"
   | "Ready"
+  | "Awaiting Payment"
   | "Returned"
   | "Closed";
 
@@ -157,6 +158,9 @@ export type Booking = {
   pending_extension_requested_at: string | null;
 };
 
+export type LaundryPaymentStatus = "Pending" | "Paid" | "Failed";
+export type LaundryPaymentMethod = "mpesa" | "paypal" | "manual";
+
 export type GuestRequest = {
   id: string;
   booking_id: string;
@@ -170,6 +174,13 @@ export type GuestRequest = {
   // see staff_checkout_schedule in supabase/schema.sql.
   is_turnover: boolean;
   created_at: string;
+  // Laundry-only — see the "guest_requests" comment in schema.sql.
+  laundry_amount: number | null;
+  laundry_currency: string | null;
+  laundry_payment_status: LaundryPaymentStatus | null;
+  laundry_payment_method: LaundryPaymentMethod | null;
+  laundry_payment_reference: string | null;
+  laundry_paid_at: string | null;
 };
 
 // Row shapes for the staff-facing views (supabase/schema.sql's
@@ -184,6 +195,9 @@ export type StaffCleaningLaundryFeedRow = {
   completed_by: string | null;
   room_id: string;
   room_name: string;
+  laundry_amount: number | null;
+  laundry_currency: string | null;
+  laundry_payment_status: LaundryPaymentStatus | null;
 };
 
 export type StaffCheckoutScheduleRow = {

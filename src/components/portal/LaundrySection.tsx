@@ -4,30 +4,45 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseISO, startOfDay } from "date-fns";
 import { TShirt, Warning } from "@phosphor-icons/react";
+import type { DisplayCurrency } from "@/lib/currency";
+import type { LaundryPaymentStatus } from "@/lib/supabase/types";
+import { formatMoney } from "@/lib/currency-format";
+import LaundryPaymentSection from "@/components/portal/LaundryPaymentSection";
 
 const GUEST_LABELS: Record<string, string> = {
   Open: "Pickup Requested",
   "Picked Up": "In Progress",
   Cleaning: "In Progress",
   Ready: "Ready for Return",
+  "Awaiting Payment": "Ready — payment due",
   Returned: "Returned",
 };
 
 // "Returned" and "Closed" both mean this request cycle is done — the
 // guest can start a fresh pickup request rather than being stuck looking
 // at a finished one for the rest of their stay.
-const ACTIVE_STAGES = new Set(["Open", "Picked Up", "Cleaning", "Ready"]);
+const ACTIVE_STAGES = new Set(["Open", "Picked Up", "Cleaning", "Ready", "Awaiting Payment"]);
 
 export default function LaundrySection({
   token,
   checkIn,
   checkOut,
   initialStatus,
+  requestId,
+  laundryAmount,
+  laundryCurrency,
+  laundryPaymentStatus,
+  rates,
 }: {
   token: string;
   checkIn: string;
   checkOut: string;
   initialStatus: string | null;
+  requestId: string | null;
+  laundryAmount: number | null;
+  laundryCurrency: string | null;
+  laundryPaymentStatus: LaundryPaymentStatus | null;
+  rates: Record<DisplayCurrency, number>;
 }) {
   const router = useRouter();
   const today = startOfDay(new Date());
@@ -83,9 +98,30 @@ export default function LaundrySection({
   return (
     <div className="rounded-xl border border-taupe/20 bg-page px-4 py-3">
       {hasActiveRequest ? (
-        <div className="flex items-center gap-3 text-sm text-ink">
-          <TShirt size={20} className="shrink-0 text-terracotta-600" />
-          <span className="font-medium">Laundry: {GUEST_LABELS[status!] ?? status}</span>
+        <div>
+          <div className="flex items-center gap-3 text-sm text-ink">
+            <TShirt size={20} className="shrink-0 text-terracotta-600" />
+            <span className="font-medium">
+              Laundry: {GUEST_LABELS[status!] ?? status}
+              {status === "Awaiting Payment" && laundryPaymentStatus !== "Paid" && laundryAmount != null && (
+                <> — {formatMoney(laundryAmount, laundryCurrency ?? "KES")}</>
+              )}
+            </span>
+          </div>
+          {status === "Awaiting Payment" && requestId && laundryAmount != null && (
+            laundryPaymentStatus === "Paid" ? (
+              <p className="mt-3 text-sm text-ink/80">
+                Payment received — your laundry will be returned shortly.
+              </p>
+            ) : (
+              <LaundryPaymentSection
+                token={token}
+                requestId={requestId}
+                amount={laundryAmount}
+                rates={rates}
+              />
+            )
+          )}
         </div>
       ) : showForm ? (
         <form onSubmit={handleSubmit} className="space-y-3">

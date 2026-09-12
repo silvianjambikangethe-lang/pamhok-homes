@@ -247,9 +247,25 @@ create table if not exists guest_requests (
   message text,
   -- 'cleaning': 'Open' | 'In Progress' | 'Resolved'
   -- 'assistance'/'other'/'extension': 'Open' | 'Resolved'
-  -- 'laundry': 'Open' | 'Picked Up' | 'Cleaning' | 'Ready' | 'Returned' | 'Closed'
+  -- 'laundry': 'Open' | 'Picked Up' | 'Cleaning' | 'Ready' | 'Awaiting Payment' | 'Returned' | 'Closed'
   status text not null default 'Open',
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  -- Laundry-only, added 2026-09-13: once "Ready", staff can no longer
+  -- self-advance to "Returned" — an admin sets a price here, the guest
+  -- pays, and only then can the item be marked Returned. Tracked
+  -- separately from bookings.payment_status/total_amount since a
+  -- booking's stay payment (or a pending extension payment) can be in
+  -- flight at the same time as a laundry charge and the two must never
+  -- collide.
+  laundry_amount numeric(10,2),
+  laundry_currency text,
+  -- null = no price set yet; 'Pending' = priced, awaiting payment;
+  -- 'Paid'; 'Failed' = an attempt (M-Pesa) came back unsuccessful, still
+  -- retriable.
+  laundry_payment_status text,
+  laundry_payment_method text, -- 'mpesa' | 'paypal' | 'manual'
+  laundry_payment_reference text,
+  laundry_paid_at timestamptz
 );
 
 -- ------------------------------------------------------------
@@ -693,7 +709,12 @@ select
   gr.created_at,
   gr.completed_by,
   b.room_id,
-  r.name as room_name
+  r.name as room_name,
+  -- Display-only for staff — pricing and marking paid happen admin-side,
+  -- against the base table directly, never through this view.
+  gr.laundry_amount,
+  gr.laundry_currency,
+  gr.laundry_payment_status
 from guest_requests gr
 join bookings b on b.id = gr.booking_id
 join rooms r on r.id = b.room_id

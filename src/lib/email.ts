@@ -245,16 +245,27 @@ export function laundryStatusEmail({
   guestName,
   stage,
   portalUrl,
+  amount,
+  currency,
 }: {
   guestName: string;
-  stage: "Picked Up" | "Cleaning" | "Ready" | "Returned";
+  stage: "Picked Up" | "Cleaning" | "Ready" | "Awaiting Payment" | "Returned";
   portalUrl: string;
+  // Only ever set for "Awaiting Payment" — the one stage whose message
+  // needs a number, not just a status word.
+  amount?: number;
+  currency?: string;
 }) {
+  const message =
+    stage === "Awaiting Payment" && amount != null
+      ? `Your laundry is ready. A charge of ${new Intl.NumberFormat("en-KE", { style: "currency", currency: currency ?? "KES", maximumFractionDigits: 0 }).format(amount)} is due before it's returned to your room — pay from your stay page.`
+      : LAUNDRY_MESSAGES[stage];
+
   return {
     subject: `Laundry update: ${stage}`,
     html: wrapper(`
       <p>Hi ${guestName},</p>
-      <p>${LAUNDRY_MESSAGES[stage]}</p>
+      <p>${message}</p>
       ${link(portalUrl)}
     `),
   };

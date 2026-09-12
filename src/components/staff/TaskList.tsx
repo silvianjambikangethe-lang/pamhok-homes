@@ -4,7 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { CheckCircle } from "@phosphor-icons/react";
-import type { GuestRequestStatus, GuestRequestType, StaffCleaningLaundryFeedRow } from "@/lib/supabase/types";
+import type {
+  GuestRequestStatus,
+  GuestRequestType,
+  LaundryPaymentStatus,
+  StaffCleaningLaundryFeedRow,
+} from "@/lib/supabase/types";
 
 // Forward-only next-step buttons rather than a <select> — large touch
 // targets for a phone browser, one tap advances to the next real stage.
@@ -14,6 +19,7 @@ const LAUNDRY_STEPS: readonly GuestRequestStatus[] = [
   "Picked Up",
   "Cleaning",
   "Ready",
+  "Awaiting Payment",
   "Returned",
   "Closed",
 ];
@@ -24,10 +30,27 @@ const CLEANING_LABELS: Record<string, string> = {
   Resolved: "Done",
 };
 
-function nextStep(requestType: GuestRequestType, current: GuestRequestStatus) {
-  const steps = requestType === "cleaning" ? CLEANING_STEPS : LAUNDRY_STEPS;
-  const index = steps.indexOf(current);
-  return index >= 0 && index < steps.length - 1 ? steps[index + 1] : null;
+// Laundry has two staff-blocking points a plain "next step" can't cross:
+// "Ready" can only become "Awaiting Payment" once an admin sets a price
+// (staff never price anything), and "Awaiting Payment" can only become
+// "Returned" once the guest has actually paid. Both are enforced again
+// server-side (see /api/staff/requests/[id]/status) — this only decides
+// whether to show the button at all.
+function nextStep(
+  requestType: GuestRequestType,
+  current: GuestRequestStatus,
+  laundryPaymentStatus: LaundryPaymentStatus | null,
+) {
+  if (requestType === "laundry") {
+    if (current === "Ready") return null;
+    if (current === "Awaiting Payment") {
+      return laundryPaymentStatus === "Paid" ? "Returned" : null;
+    }
+    const index = LAUNDRY_STEPS.indexOf(current);
+    return index >= 0 && index < LAUNDRY_STEPS.length - 1 ? LAUNDRY_STEPS[index + 1] : null;
+  }
+  const index = CLEANING_STEPS.indexOf(current);
+  return index >= 0 && index < CLEANING_STEPS.length - 1 ? CLEANING_STEPS[index + 1] : null;
 }
 
 function displayLabel(requestType: GuestRequestType, status: GuestRequestStatus) {
@@ -69,8 +92,13 @@ export default function TaskList({
   return (
     <div className="space-y-3">
       {requests.map((r) => {
-        const next = nextStep(requestType, r.status);
+        const next = nextStep(requestType, r.status, r.laundry_payment_status);
         const done = isDone(r.status);
+        const blockedOnPricing = requestType === "laundry" && r.status === "Ready";
+        const blockedOnPayment =
+          requestType === "laundry" &&
+          r.status === "Awaiting Payment" &&
+          r.laundry_payment_status !== "Paid";
         return (
           <div
             key={r.id}
@@ -90,6 +118,19 @@ export default function TaskList({
             <p className="mt-1 text-sm text-ink/55">
               {format(parseISO(r.created_at), "d MMM, h:mm a")}
             </p>
+
+            {blockedOnPricing && (
+              <p className="mt-3 text-sm font-medium text-ink/65">
+                Waiting on the host to set a price before this can be returned.
+              </p>
+            )}
+            {blockedOnPayment && (
+              <p className="mt-3 text-sm font-medium text-ink/65">
+                {r.laundry_amount != null
+                  ? `Waiting on guest payment (${r.laundry_currency ?? "KES"} ${r.laundry_amount}) before this can be returned.`
+                  : "Waiting on guest payment before this can be returned."}
+              </p>
+            )}
 
             {next && !done && (
               <button

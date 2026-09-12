@@ -1,12 +1,15 @@
 import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { releaseExpiredExtensionHold } from "@/lib/extension-hold";
-import type { Booking, Guest, Room } from "@/lib/supabase/types";
+import type { Booking, Guest, LaundryPaymentStatus, Room } from "@/lib/supabase/types";
 
 export interface LatestLaundryRequest {
   id: string;
   status: string;
   created_at: string;
+  laundry_amount: number | null;
+  laundry_currency: string | null;
+  laundry_payment_status: LaundryPaymentStatus | null;
 }
 
 export interface PortalBooking extends Booking {
@@ -49,7 +52,7 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("booking_id", data.id),
     supabase
       .from("guest_requests")
-      .select("id, status, created_at")
+      .select("id, status, created_at, laundry_amount, laundry_currency, laundry_payment_status")
       .eq("booking_id", data.id)
       .eq("request_type", "laundry")
       .order("created_at", { ascending: false })

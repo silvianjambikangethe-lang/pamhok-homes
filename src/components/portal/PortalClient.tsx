@@ -262,6 +262,11 @@ export default function PortalClient({
             checkIn={booking.check_in}
             checkOut={booking.check_out}
             initialStatus={booking.latestLaundryRequest?.status ?? null}
+            requestId={booking.latestLaundryRequest?.id ?? null}
+            laundryAmount={booking.latestLaundryRequest?.laundry_amount ?? null}
+            laundryCurrency={booking.latestLaundryRequest?.laundry_currency ?? null}
+            laundryPaymentStatus={booking.latestLaundryRequest?.laundry_payment_status ?? null}
+            rates={rates}
           />
         )}
 
