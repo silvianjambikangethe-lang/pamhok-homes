@@ -6,7 +6,10 @@ import { WhatsappLogo } from "@phosphor-icons/react";
 import { SITE, whatsappLink } from "@/lib/site";
 import { useWhatsappVisibility } from "@/components/WhatsappVisibilityContext";
 
-const GREETING = `Hello there. Welcome to ${SITE.name}. How may I help you?`;
+// Was phrased backwards -- this is the message a visitor sends TO the
+// host when they tap the button, not a greeting FROM the host. Matches
+// the phrasing already used by the Footer's WhatsApp link.
+const GREETING = `Hi ${SITE.name}! I have a question about a stay.`;
 
 export default function WhatsappFloatButton({ phone }: { phone: string | null }) {
   const pathname = usePathname();
