@@ -130,4 +130,14 @@ body {
     scrollbar-color: rgb(var(--color-border) / 0.55) rgb(var(--color-page));
     scrollbar-width: thin;
   }
+
+  /* Shrinks Chrome/Safari's large default center "tap to play" overlay
+   * on <video controls> — at these cards' narrow (~220px) portrait
+   * width, the browser's full-size default reads as oversized relative
+   * to the card itself. WebKit-only pseudo-element (no standardized CSS
+   * API exists for this control); Firefox's own default overlay is
+   * already noticeably smaller and is left untouched. */
+  video::-webkit-media-controls-overlay-play-button {
+    transform: scale(0.6);
+  }
 }
