@@ -288,6 +288,7 @@ const DEFAULT_HOMEPAGE_CONTENT: HomepageContent = {
   living_room_image_url: null,
   bedroom_image_url: null,
   kitchen_image_url: null,
+  tour_video_url: null,
 };
 
 const DEFAULT_ABOUT_CONTENT: AboutContent = {
@@ -295,6 +296,7 @@ const DEFAULT_ABOUT_CONTENT: AboutContent = {
   image_url: null,
   coffee_corner_image_url: null,
   reading_nook_image_url: null,
+  video_url: null,
 };
 
 const DEFAULT_AMENITIES_CONTENT: AmenityItem[] = [
@@ -384,6 +386,7 @@ const DEFAULT_CONTACT_CONTENT: ContactContent = {
   maps_url: null,
   maps_lat: null,
   maps_lng: null,
+  directions_video_url: null,
 };
 
 // Starts empty rather than pre-seeded with placeholder recommendations —

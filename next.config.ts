@@ -3,13 +3,15 @@ import type { NextConfig } from "next";
 // Everything the browser actually loads from, audited directly (not
 // guessed): same-origin scripts/styles/fonts (self-hosted via
 // next/font, no runtime Google Fonts CDN calls), Supabase Storage for
-// room/site photos, and a direct browser->Supabase connection for auth
-// (admin sign-out) and payment status polling — the only two places
-// using the browser Supabase client. PayPal is a full top-level
-// redirect (`window.location.href`), never an embedded script or
-// iframe, so it needs no CSP allowance at all. No third-party embeds,
-// no Google Maps JS SDK (directions open as plain links), no iframes
-// anywhere in the codebase.
+// room/site photos AND self-hosted admin-uploaded videos (homepage
+// tour, About Us, directions — see VideoUploadField.tsx, hence
+// media-src below), and a direct browser->Supabase connection for auth
+// (admin sign-out), payment status polling, and the video upload
+// itself — the only three places using the browser Supabase client.
+// PayPal is a full top-level redirect (`window.location.href`), never
+// an embedded script or iframe, so it needs no CSP allowance at all.
+// No third-party embeds, no Google Maps JS SDK (directions open as
+// plain links), no iframes anywhere in the codebase.
 //
 // Derived from NEXT_PUBLIC_SUPABASE_URL rather than hardcoded, so this
 // file works unchanged for any Supabase project (not just this one) —
@@ -30,6 +32,7 @@ const CSP = [
   `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' data: ${SUPABASE_ORIGIN}`,
+  `media-src 'self' ${SUPABASE_ORIGIN}`,
   `font-src 'self' data:`,
   `connect-src 'self' ${SUPABASE_ORIGIN}`,
   `frame-ancestors 'none'`,

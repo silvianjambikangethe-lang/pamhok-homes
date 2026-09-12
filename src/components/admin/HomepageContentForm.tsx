@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle } from "@phosphor-icons/react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import VideoUploadField from "@/components/admin/VideoUploadField";
 import type { HomepageContent } from "@/lib/supabase/types";
 
 export default function HomepageContentForm({ initial }: { initial: HomepageContent }) {
@@ -132,6 +133,19 @@ export default function HomepageContentForm({ initial }: { initial: HomepageCont
             }}
           />
         </div>
+        <VideoUploadField
+          label="Video tour (optional — shown in a new section below the photos)"
+          currentUrl={value.tour_video_url}
+          path="homepage/tour"
+          onUploaded={(url) => {
+            setValue({ ...value, tour_video_url: url });
+            setSaved(false);
+          }}
+          onRemove={() => {
+            setValue({ ...value, tour_video_url: null });
+            setSaved(false);
+          }}
+        />
       </div>
 
       {error && <p className="mt-3 text-sm text-danger">{error}</p>}

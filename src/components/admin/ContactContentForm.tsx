@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle } from "@phosphor-icons/react";
 import MapsLinkField from "@/components/admin/MapsLinkField";
+import VideoUploadField from "@/components/admin/VideoUploadField";
 import type { ContactContent } from "@/lib/supabase/types";
 import { SITE } from "@/lib/site";
 
@@ -95,6 +96,19 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
             className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
           />
         </div>
+        <VideoUploadField
+          label="Directions video (optional — shown next to the Get Directions button)"
+          currentUrl={value.directions_video_url}
+          path="contact/directions"
+          onUploaded={(url) => {
+            setValue({ ...value, directions_video_url: url });
+            setSaved(false);
+          }}
+          onRemove={() => {
+            setValue({ ...value, directions_video_url: null });
+            setSaved(false);
+          }}
+        />
       </div>
 
       {error && <p className="mt-3 text-sm text-danger">{error}</p>}

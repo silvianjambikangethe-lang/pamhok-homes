@@ -208,6 +208,7 @@ export type HomepageContent = {
   living_room_image_url: string | null;
   bedroom_image_url: string | null;
   kitchen_image_url: string | null;
+  tour_video_url: string | null;
 };
 
 export type AboutContent = {
@@ -215,6 +216,7 @@ export type AboutContent = {
   image_url: string | null;
   coffee_corner_image_url: string | null;
   reading_nook_image_url: string | null;
+  video_url: string | null;
 };
 
 export type AmenityItem = {
@@ -230,6 +232,7 @@ export type ContactContent = {
   maps_url: string | null;
   maps_lat: number | null;
   maps_lng: number | null;
+  directions_video_url: string | null;
 };
 
 export type NeighborhoodItem = {

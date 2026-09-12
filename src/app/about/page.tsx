@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PhotoCard from "@/components/PhotoCard";
 import PageBanner from "@/components/PageBanner";
+import Eyebrow from "@/components/Eyebrow";
 import { getAboutContent } from "@/lib/data";
 import { SITE, pageTitle } from "@/lib/site";
 
@@ -64,6 +65,20 @@ export default async function AboutPage() {
           </div>
         </div>
       </section>
+
+      {content.video_url && (
+        <section className="container-page py-16 sm:py-20">
+          <div className="flex flex-col gap-2 text-center">
+            <Eyebrow>Behind the scenes</Eyebrow>
+            <h2 className="font-serif text-h2 text-ink">Get to know Pamhok Homes</h2>
+          </div>
+          <video
+            src={content.video_url}
+            controls
+            className="mx-auto mt-8 w-full max-w-3xl rounded-2xl shadow-card"
+          />
+        </section>
+      )}
 
       <section className="py-16 sm:py-20">
         <div className="container-page grid gap-8 text-center sm:grid-cols-3">
