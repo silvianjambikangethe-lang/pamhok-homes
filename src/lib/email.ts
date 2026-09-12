@@ -312,11 +312,13 @@ export async function sendEmail({
   subject,
   html,
   replyTo = SITE.contactEmail,
+  attachments,
 }: {
   to: string;
   subject: string;
   html: string;
   replyTo?: string;
+  attachments?: { filename: string; content: Buffer; contentType?: string }[];
 }): Promise<boolean> {
   if (!isEmailConfigured()) return false;
 
@@ -327,6 +329,7 @@ export async function sendEmail({
       subject,
       html,
       replyTo,
+      attachments,
     });
     if (error) {
       console.error("Resend send failed:", error);

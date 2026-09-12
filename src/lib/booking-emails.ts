@@ -5,6 +5,7 @@ import {
   bookingConfirmationEmail,
   stayExtensionConfirmationEmail,
 } from "@/lib/email";
+import { generateReceiptPdf } from "@/lib/receipt";
 
 // Single call site for "payment_status just became Paid", used by every
 // path that can cause that transition: PayPal capture, the Jenga M-Pesa
@@ -27,7 +28,7 @@ export async function sendPaymentSucceededEmail(
   const { data: booking } = await supabase
     .from("bookings")
     .select(
-      "check_in, check_out, total_amount, currency, booking_reference, access_token, guest:guests(full_name, email), room:rooms(name)",
+      "check_in, check_out, total_amount, currency, booking_reference, access_token, payment_method, payment_reference, paid_at, guest:guests(full_name, email), room:rooms(name)",
     )
     .eq("id", bookingId)
     .maybeSingle();
@@ -39,6 +40,31 @@ export async function sendPaymentSucceededEmail(
   const portalUrl = `${siteUrl}/portal/${booking.access_token}`;
   const roomName = (booking.room as { name?: string } | null)?.name ?? "your room";
 
+  // Reflects the booking's current total/dates at send time, same as the
+  // portal's own on-demand /receipt route — not a separate per-transaction
+  // line-item history the schema doesn't track (see the extension email's
+  // own "total confirmed for your stay" wording below for the same
+  // reasoning).
+  const receiptPdf = await generateReceiptPdf({
+    guestName: guest.full_name,
+    roomName,
+    checkIn: booking.check_in,
+    checkOut: booking.check_out,
+    bookingReference: booking.booking_reference,
+    totalAmount: booking.total_amount,
+    currency: booking.currency,
+    paymentMethod: booking.payment_method,
+    paymentReference: booking.payment_reference,
+    paidAt: booking.paid_at,
+  });
+  const attachments = [
+    {
+      filename: `receipt-${booking.booking_reference ?? bookingId}.pdf`,
+      content: Buffer.from(receiptPdf),
+      contentType: "application/pdf",
+    },
+  ];
+
   if (wasAlreadyPaid) {
     const { subject, html } = stayExtensionConfirmationEmail({
       guestName: guest.full_name,
@@ -48,7 +74,7 @@ export async function sendPaymentSucceededEmail(
       currency: booking.currency,
       portalUrl,
     });
-    await sendEmail({ to: guest.email, subject, html });
+    await sendEmail({ to: guest.email, subject, html, attachments });
     return;
   }
 
@@ -62,5 +88,5 @@ export async function sendPaymentSucceededEmail(
     currency: booking.currency,
     portalUrl,
   });
-  await sendEmail({ to: guest.email, subject, html });
+  await sendEmail({ to: guest.email, subject, html, attachments });
 }
