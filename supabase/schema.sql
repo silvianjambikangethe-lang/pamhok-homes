@@ -83,6 +83,42 @@ create table if not exists login_attempts (
 );
 
 -- ------------------------------------------------------------
+-- Passkey (WebAuthn) login for /admin — a hand-rolled ceremony (see
+-- src/lib/webauthn.ts), not Supabase's built-in MFA system, since MFA
+-- requires password sign-in FIRST and webauthn as a second factor —
+-- the opposite of "try biometrics first, password only as fallback".
+-- No RLS policies on either table, same reasoning as login_attempts:
+-- both are service-role-only, written before any session exists.
+-- ------------------------------------------------------------
+create table if not exists passkey_credentials (
+  id uuid primary key default gen_random_uuid(),
+  admin_user_id uuid not null references admin_users(id) on delete cascade,
+  credential_id text not null unique,
+  public_key text not null,
+  -- Signature counter for basic cloned-authenticator detection — most
+  -- platform authenticators (Touch ID, Windows Hello) always report 0,
+  -- which verifyAuthenticationResponse handles correctly on its own.
+  counter bigint not null default 0,
+  device_name text,
+  transports text[],
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz
+);
+
+-- Short-lived challenge storage bridging a ceremony's two requests
+-- (options, then verify) — Vercel's serverless functions have no
+-- in-process memory to hold this between calls. Rows are deleted
+-- immediately after a successful verify; the "options" endpoints sweep
+-- anything older than 5 minutes before inserting a new one.
+create table if not exists passkey_challenges (
+  id uuid primary key default gen_random_uuid(),
+  admin_user_id uuid not null references admin_users(id) on delete cascade,
+  type text not null check (type in ('registration', 'authentication')),
+  challenge text not null,
+  created_at timestamptz not null default now()
+);
+
+-- ------------------------------------------------------------
 -- Basic fixed-window rate limiting for public forms (booking, contact,
 -- review) - same pattern as login_attempts, generalized to any
 -- (route, identifier) pair. Written exclusively via the service-role
@@ -374,6 +410,8 @@ alter table site_content enable row level security;
 alter table social_links enable row level security;
 alter table business_expenses enable row level security;
 alter table login_attempts enable row level security;
+alter table passkey_credentials enable row level security;
+alter table passkey_challenges enable row level security;
 alter table rate_limits enable row level security;
 alter table staff_users enable row level security;
 alter table staff_members enable row level security;
