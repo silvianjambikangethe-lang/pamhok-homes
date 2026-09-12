@@ -137,6 +137,7 @@ export default function UnlockedSection({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
+              maxLength={1000}
               placeholder="Tell us what you need…"
               className="focus-ring w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
             />

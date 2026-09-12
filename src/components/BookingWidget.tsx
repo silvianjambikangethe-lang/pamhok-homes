@@ -206,6 +206,7 @@ export default function BookingWidget({
             <input
               id="fullName"
               required
+              maxLength={100}
               value={guest.fullName}
               onChange={(e) => setGuest((g) => ({ ...g, fullName: e.target.value }))}
               className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
@@ -220,6 +221,7 @@ export default function BookingWidget({
               id="email"
               type="email"
               required
+              maxLength={254}
               value={guest.email}
               onChange={(e) => setGuest((g) => ({ ...g, email: e.target.value }))}
               className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
@@ -234,6 +236,7 @@ export default function BookingWidget({
               id="phone"
               type="tel"
               required
+              maxLength={20}
               value={guest.phone}
               onChange={(e) => setGuest((g) => ({ ...g, phone: e.target.value }))}
               className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"

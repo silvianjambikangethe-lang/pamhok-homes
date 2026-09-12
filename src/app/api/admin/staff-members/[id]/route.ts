@@ -15,6 +15,10 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json().catch(() => null);
 
+  if (typeof body?.name === "string" && body.name.trim().length > 100) {
+    return NextResponse.json({ error: "Name is too long (max 100 chars)." }, { status: 400 });
+  }
+
   const update: Partial<StaffMember> = {};
   if (typeof body?.name === "string") update.name = body.name.trim();
   if (typeof body?.active === "boolean") update.active = body.active;

@@ -98,6 +98,7 @@ export default function LaundrySection({
               value={itemCount}
               onChange={(e) => setItemCount(e.target.value)}
               placeholder="e.g. 1 bag"
+              maxLength={50}
               className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
             />
           </div>
@@ -110,6 +111,7 @@ export default function LaundrySection({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
+              maxLength={500}
               placeholder="e.g. delicates, please wash cold"
               className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
             />

@@ -11,6 +11,16 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json().catch(() => null);
 
+  if (typeof body?.name === "string" && body.name.trim().length > 200) {
+    return NextResponse.json({ error: "Name is too long (max 200 chars)." }, { status: 400 });
+  }
+  if (typeof body?.currency === "string" && body.currency.trim().length > 10) {
+    return NextResponse.json({ error: "Currency code is too long." }, { status: 400 });
+  }
+  if (typeof body?.notes === "string" && body.notes.length > 2000) {
+    return NextResponse.json({ error: "Notes are too long (max 2000 chars)." }, { status: 400 });
+  }
+
   const update: Partial<BusinessExpense> = {};
   if (typeof body?.name === "string") update.name = body.name.trim();
   if (typeof body?.amount === "number" && Number.isFinite(body.amount)) update.amount = body.amount;

@@ -16,6 +16,19 @@ export async function PATCH(
     return NextResponse.json({ error: "Missing update fields." }, { status: 400 });
   }
 
+  const MAX_LENGTHS: Record<string, number> = {
+    doorCode: 20,
+    wifiPassword: 100,
+    wifiNetworkName: 100,
+    name: 100,
+    description: 2000,
+  };
+  for (const [field, max] of Object.entries(MAX_LENGTHS)) {
+    if (typeof body[field] === "string" && body[field].length > max) {
+      return NextResponse.json({ error: `${field} is too long.` }, { status: 400 });
+    }
+  }
+
   const update: Partial<Room> = {};
 
   if (typeof body.doorCode === "string") update.door_code = body.doorCode.trim();

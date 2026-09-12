@@ -75,6 +75,7 @@ export default function ReviewForm({ token }: { token: string }) {
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         rows={4}
+        maxLength={2000}
         placeholder="Tell future guests about your stay…"
         className="focus-ring mt-4 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
       />

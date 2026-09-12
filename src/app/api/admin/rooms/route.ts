@@ -16,14 +16,26 @@ export async function POST(request: Request) {
     !body ||
     typeof body.name !== "string" ||
     !body.name.trim() ||
+    body.name.trim().length > 100 ||
     typeof body.pricePerNight !== "number" ||
     !Number.isFinite(body.pricePerNight) ||
     body.pricePerNight <= 0
   ) {
     return NextResponse.json(
-      { error: "Room name and a valid price per night are required." },
+      { error: "Room name (max 100 chars) and a valid price per night are required." },
       { status: 400 },
     );
+  }
+  if (
+    (typeof body.description === "string" && body.description.length > 2000) ||
+    (typeof body.bedConfig === "string" && body.bedConfig.length > 100) ||
+    (typeof body.doorCode === "string" && body.doorCode.length > 20) ||
+    (typeof body.wifiNetworkName === "string" && body.wifiNetworkName.length > 100) ||
+    (typeof body.wifiPassword === "string" && body.wifiPassword.length > 100) ||
+    (Array.isArray(body.amenities) &&
+      body.amenities.some((a: unknown) => typeof a === "string" && a.length > 100))
+  ) {
+    return NextResponse.json({ error: "One or more fields are too long." }, { status: 400 });
   }
 
   const name = body.name.trim();

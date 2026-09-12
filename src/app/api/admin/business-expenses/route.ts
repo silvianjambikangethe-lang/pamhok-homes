@@ -9,14 +9,21 @@ export async function POST(request: Request) {
   const nextDueDate = typeof body?.nextDueDate === "string" ? body.nextDueDate : "";
   const billingCycle = body?.billingCycle;
 
-  if (!name) {
-    return NextResponse.json({ error: "Name is required." }, { status: 400 });
+  if (!name || name.length > 200) {
+    return NextResponse.json({ error: "Name is required (max 200 chars)." }, { status: 400 });
   }
   if (!VALID_CYCLES.includes(billingCycle)) {
     return NextResponse.json({ error: "Invalid billing cycle." }, { status: 400 });
   }
   if (!nextDueDate || Number.isNaN(Date.parse(nextDueDate))) {
     return NextResponse.json({ error: "A valid next due date is required." }, { status: 400 });
+  }
+
+  if (typeof body?.currency === "string" && body.currency.trim().length > 10) {
+    return NextResponse.json({ error: "Currency code is too long." }, { status: 400 });
+  }
+  if (typeof body?.notes === "string" && body.notes.length > 2000) {
+    return NextResponse.json({ error: "Notes are too long (max 2000 chars)." }, { status: 400 });
   }
 
   const amount =

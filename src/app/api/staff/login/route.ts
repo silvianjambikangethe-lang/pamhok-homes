@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
-  if (!email || !password) {
+  if (!email || !password || email.length > 254 || password.length > 128) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
   }
 

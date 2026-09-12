@@ -12,8 +12,8 @@ export async function POST(request: Request) {
   if (!VALID_PLATFORMS.includes(platform)) {
     return NextResponse.json({ error: "Unknown platform." }, { status: 400 });
   }
-  if (typeof url !== "string" || !url.trim()) {
-    return NextResponse.json({ error: "URL is required." }, { status: 400 });
+  if (typeof url !== "string" || !url.trim() || url.trim().length > 500) {
+    return NextResponse.json({ error: "URL is required (max 500 chars)." }, { status: 400 });
   }
 
   const supabase = await createServerSupabaseClient();
