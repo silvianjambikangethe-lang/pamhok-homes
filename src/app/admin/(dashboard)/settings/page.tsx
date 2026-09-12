@@ -7,6 +7,7 @@ import ChangePhoneForm from "@/components/admin/ChangePhoneForm";
 import SiteStatusForm from "@/components/admin/SiteStatusForm";
 import StaffCredentialsForm from "@/components/admin/StaffCredentialsForm";
 import StaffMembersForm from "@/components/admin/StaffMembersForm";
+import PasskeysForm from "@/components/admin/PasskeysForm";
 import { pageTitle } from "@/lib/site";
 import type { StaffMember } from "@/lib/supabase/types";
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminSettingsPage() {
-  const { supabase } = await requireAdmin();
+  const { supabase, admin } = await requireAdmin();
   const siteStatus = await getSiteStatus();
 
   // staff_users has no admin-facing RLS policy at all (the host manages
@@ -26,6 +27,14 @@ export default async function AdminSettingsPage() {
   // client used everywhere else on this page.
   const adminClient = createAdminSupabaseClient();
   const { data: staffUser } = await adminClient.from("staff_users").select("email").maybeSingle();
+
+  // Same reasoning as staff_users above — passkey_credentials has no
+  // RLS policies at all (service-role-only, see the migration).
+  const { data: passkeysData } = await adminClient
+    .from("passkey_credentials")
+    .select("id, device_name, created_at, last_used_at")
+    .eq("admin_user_id", admin.id)
+    .order("created_at", { ascending: false });
 
   const { data: staffMembersData } = await supabase
     .from("staff_members")
@@ -43,6 +52,7 @@ export default async function AdminSettingsPage() {
       <div className="mt-6 space-y-6">
         <SiteStatusForm initial={siteStatus} />
         <ChangePasswordForm />
+        <PasskeysForm initial={passkeysData ?? []} />
         <ChangePhoneForm />
         {staffUser && <StaffCredentialsForm currentEmail={staffUser.email} />}
         <StaffMembersForm initial={staffMembers} />
