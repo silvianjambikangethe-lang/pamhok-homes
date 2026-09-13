@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { PaymentStatus } from "@/lib/supabase/types";
 import type { DisplayCurrency } from "@/lib/currency";
 import CurrencySelector from "@/components/CurrencySelector";
+import { PAYPAL_DISABLED } from "@/lib/payment-flags";
 
 type Method = "mpesa" | "paypal";
 
@@ -162,7 +163,7 @@ export default function PaymentSection({
         </span>
       </label>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className={`mt-4 grid gap-3 ${PAYPAL_DISABLED ? "" : "sm:grid-cols-2"}`}>
         <button
           type="button"
           onClick={() => setActiveMethod("mpesa")}
@@ -176,15 +177,20 @@ export default function PaymentSection({
           <DeviceMobile size={18} />
           M-Pesa
         </button>
-        <button
-          type="button"
-          onClick={handlePaypalPayment}
-          disabled={loading === "paypal" || !agreedToTerms}
-          className="focus-ring flex items-center justify-center gap-2 rounded-xl border border-taupe/25 bg-page px-4 py-3 text-sm font-semibold text-ink/80 transition-colors hover:border-forest-500 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <CreditCard size={18} weight="fill" />
-          {loading === "paypal" ? "Redirecting…" : "PayPal / Card"}
-        </button>
+        {/* PayPal temporarily removed as an option — see PAYPAL_DISABLED
+            in lib/payment-flags.ts (PayPal restricted the merchant
+            account, 2026-09-13). Flip that flag back once resolved. */}
+        {!PAYPAL_DISABLED && (
+          <button
+            type="button"
+            onClick={handlePaypalPayment}
+            disabled={loading === "paypal" || !agreedToTerms}
+            className="focus-ring flex items-center justify-center gap-2 rounded-xl border border-taupe/25 bg-page px-4 py-3 text-sm font-semibold text-ink/80 transition-colors hover:border-forest-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <CreditCard size={18} weight="fill" />
+            {loading === "paypal" ? "Redirecting…" : "PayPal / Card"}
+          </button>
+        )}
       </div>
 
       {error.paypal && (

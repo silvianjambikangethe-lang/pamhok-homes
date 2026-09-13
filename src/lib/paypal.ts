@@ -1,6 +1,8 @@
 import "server-only";
+import { PAYPAL_DISABLED } from "@/lib/payment-flags";
 
 export function isPaypalConfigured() {
+  if (PAYPAL_DISABLED) return false;
   return Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
 }
 

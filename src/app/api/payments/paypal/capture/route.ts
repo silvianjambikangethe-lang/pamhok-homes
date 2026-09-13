@@ -3,12 +3,17 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getPaypalAccessToken, paypalBaseUrl } from "@/lib/paypal";
 import { sendPaymentSucceededEmail } from "@/lib/booking-emails";
 import { resolvePendingExtensionAfterPayment } from "@/lib/extension-hold";
+import { PAYPAL_DISABLED } from "@/lib/payment-flags";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const bookingToken = searchParams.get("bookingToken");
   const orderId = searchParams.get("token"); // PayPal's own order id
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  if (PAYPAL_DISABLED) {
+    return NextResponse.redirect(`${siteUrl}/portal/${bookingToken}?paypal=failed`);
+  }
 
   if (!bookingToken || !orderId) {
     return NextResponse.redirect(`${siteUrl}/`);

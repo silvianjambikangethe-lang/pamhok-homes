@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getPaypalAccessToken, paypalBaseUrl } from "@/lib/paypal";
+import { PAYPAL_DISABLED } from "@/lib/payment-flags";
 
 // Mirrors /api/payments/paypal/capture for the booking's own payment,
 // scoped to one laundry request's guest_requests.laundry_* columns.
@@ -12,6 +13,10 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const orderId = searchParams.get("token"); // PayPal's own order id
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  if (PAYPAL_DISABLED) {
+    return NextResponse.redirect(`${siteUrl}/portal/${token}?laundryPaypal=failed`);
+  }
 
   if (!orderId) {
     return NextResponse.redirect(`${siteUrl}/portal/${token}`);
