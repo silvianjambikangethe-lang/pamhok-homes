@@ -38,6 +38,7 @@ export async function POST(
       laundry_payment_status: "Paid",
       laundry_payment_method: "manual",
       laundry_paid_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", id);
 

@@ -47,12 +47,13 @@ Deno.serve(async (req) => {
             ? String(payload.telcoReference)
             : reference,
           laundry_paid_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .eq("id", laundryRequest.id);
     } else {
       await supabase
         .from("guest_requests")
-        .update({ laundry_payment_status: "Failed" })
+        .update({ laundry_payment_status: "Failed", updated_at: new Date().toISOString() })
         .eq("id", laundryRequest.id);
     }
 

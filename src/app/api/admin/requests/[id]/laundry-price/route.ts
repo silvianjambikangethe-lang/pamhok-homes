@@ -57,6 +57,8 @@ export async function POST(
       laundry_currency: currency,
       laundry_payment_status: "Pending",
       status: "Awaiting Payment",
+      completed_by: null,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", id);
 

@@ -181,6 +181,10 @@ export type GuestRequest = {
   laundry_payment_method: LaundryPaymentMethod | null;
   laundry_payment_reference: string | null;
   laundry_paid_at: string | null;
+  // Who last advanced status/completed_by, and when — set explicitly by
+  // every route that touches either. Lets the admin see e.g. "Returned
+  // by <staff name> at <time>" by joining completed_by to staff_members.
+  updated_at: string;
 };
 
 // Row shapes for the staff-facing views (supabase/schema.sql's
@@ -198,6 +202,7 @@ export type StaffCleaningLaundryFeedRow = {
   laundry_amount: number | null;
   laundry_currency: string | null;
   laundry_payment_status: LaundryPaymentStatus | null;
+  updated_at: string;
 };
 
 export type StaffCheckoutScheduleRow = {
@@ -443,6 +448,13 @@ export interface Database {
             referencedRelation: "bookings";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "guest_requests_completed_by_fkey";
+            columns: ["completed_by"];
+            isOneToOne: false;
+            referencedRelation: "staff_members";
+            referencedColumns: ["id"];
+          },
         ];
       };
       reviews: {
@@ -548,8 +560,8 @@ export interface Database {
         Relationships: [];
       };
       staff_task_updates: {
-        Row: Pick<GuestRequest, "id" | "request_type" | "status" | "completed_by">;
-        Update: Partial<Pick<GuestRequest, "status" | "completed_by">>;
+        Row: Pick<GuestRequest, "id" | "request_type" | "status" | "completed_by" | "updated_at">;
+        Update: Partial<Pick<GuestRequest, "status" | "completed_by" | "updated_at">>;
         Relationships: [];
       };
       staff_clock_updates: {

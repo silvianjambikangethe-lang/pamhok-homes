@@ -67,9 +67,12 @@ export async function POST(
     }
   }
 
+  // completed_by cleared, not preserved: this is an admin action, not a
+  // staff one, so any leftover staff attribution from an earlier stage
+  // would misleadingly claim a staff member made THIS transition too.
   const { data, error } = await supabase
     .from("guest_requests")
-    .update({ status: stage })
+    .update({ status: stage, completed_by: null, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("request_type", "laundry")
     .select("id, booking_id");

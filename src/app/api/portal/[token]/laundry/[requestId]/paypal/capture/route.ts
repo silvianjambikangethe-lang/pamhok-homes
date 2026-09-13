@@ -68,6 +68,7 @@ export async function GET(
           laundry_payment_method: "paypal",
           laundry_payment_reference: captureId,
           laundry_paid_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .eq("id", requestId);
 

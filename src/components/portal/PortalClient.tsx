@@ -253,6 +253,7 @@ export default function PortalClient({
             wifiNetworkName={booking.room?.wifi_network_name ?? null}
             wifiPassword={booking.room?.wifi_password ?? null}
             blurred={showArrival}
+            adminPhone={adminPhone}
           />
         )}
 

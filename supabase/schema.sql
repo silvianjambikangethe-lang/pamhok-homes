@@ -265,7 +265,13 @@ create table if not exists guest_requests (
   laundry_payment_status text,
   laundry_payment_method text, -- 'mpesa' | 'paypal' | 'manual'
   laundry_payment_reference text,
-  laundry_paid_at timestamptz
+  laundry_paid_at timestamptz,
+  -- Who last advanced status/completed_by, and when — set explicitly by
+  -- every route that touches either (this project sets timestamps in
+  -- application code rather than a DB trigger, matching site_content's
+  -- own updated_at). Lets the admin see e.g. "Returned by <staff name>
+  -- at <time>" by joining completed_by to staff_members.
+  updated_at timestamptz not null default now()
 );
 
 -- ------------------------------------------------------------
@@ -714,7 +720,8 @@ select
   -- against the base table directly, never through this view.
   gr.laundry_amount,
   gr.laundry_currency,
-  gr.laundry_payment_status
+  gr.laundry_payment_status,
+  gr.updated_at
 from guest_requests gr
 join bookings b on b.id = gr.booking_id
 join rooms r on r.id = b.room_id
@@ -760,15 +767,15 @@ grant select on staff_checkout_schedule to authenticated;
 -- grants, so admin's ability to edit message/booking_id on the base
 -- table is untouched.
 create view staff_task_updates as
-select id, request_type, status, completed_by
+select id, request_type, status, completed_by, updated_at
 from guest_requests
 where request_type in ('cleaning', 'laundry')
   and (select auth.uid()) in (select id from staff_users);
 
 alter view staff_task_updates set (security_invoker = false);
 revoke all on staff_task_updates from authenticated;
-grant select (id, request_type, status, completed_by) on staff_task_updates to authenticated;
-grant update (status, completed_by) on staff_task_updates to authenticated;
+grant select (id, request_type, status, completed_by, updated_at) on staff_task_updates to authenticated;
+grant update (status, completed_by, updated_at) on staff_task_updates to authenticated;
 
 -- Narrow updatable view for clocking out. Only ever exposes currently-
 -- OPEN shifts, so it doubles as "am I clocked in" for the Clock In/Out

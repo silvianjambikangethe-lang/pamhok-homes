@@ -13,12 +13,19 @@ export interface RequestRow {
   message: string | null;
   status: string;
   created_at: string;
+  updated_at: string;
   roomName: string | null;
   guestName: string | null;
   bookingReference: string | null;
   laundryAmount: number | null;
   laundryCurrency: string | null;
   laundryPaymentStatus: LaundryPaymentStatus | null;
+  // Name of the staff_members row that made the CURRENT status what it
+  // is — null either because a staff member hasn't touched it yet, or
+  // because the current status was actually set by an admin (the
+  // laundry-stage/laundry-price routes explicitly clear this for that
+  // reason, so it's never stale/misattributed).
+  completedByStaffName: string | null;
 }
 
 // The server still rejects picking "Awaiting Payment" directly from this
@@ -142,6 +149,12 @@ export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
                 <p className="mt-1 text-xs text-ink/65">
                   {format(parseISO(r.created_at), "d MMM yyyy, h:mm a")}
                 </p>
+                {(r.status === "Returned" || r.status === "Resolved") && (
+                  <p className="mt-1 text-xs font-medium text-ink/65">
+                    {r.status} by {r.completedByStaffName ?? "admin"} at{" "}
+                    {format(parseISO(r.updated_at), "h:mm a")}
+                  </p>
+                )}
               </div>
 
               {isLaundry ? (

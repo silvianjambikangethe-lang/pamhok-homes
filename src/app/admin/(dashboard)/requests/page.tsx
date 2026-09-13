@@ -7,7 +7,7 @@ export default async function AdminRequestsPage() {
   const { data } = await supabase
     .from("guest_requests")
     .select(
-      "id, request_type, message, status, created_at, laundry_amount, laundry_currency, laundry_payment_status, booking:bookings(booking_reference, guest:guests(full_name), room:rooms(name))",
+      "id, request_type, message, status, created_at, updated_at, completed_by, laundry_amount, laundry_currency, laundry_payment_status, booking:bookings(booking_reference, guest:guests(full_name), room:rooms(name)), completedByStaff:staff_members(name)",
     )
     .order("created_at", { ascending: false });
 
@@ -19,18 +19,22 @@ export default async function AdminRequestsPage() {
         room?: { name?: string };
       };
     }).booking;
+    const completedByStaff = (r as unknown as { completedByStaff?: { name?: string } | null })
+      .completedByStaff;
     return {
       id: r.id,
       request_type: r.request_type,
       message: r.message,
       status: r.status,
       created_at: r.created_at,
+      updated_at: r.updated_at,
       guestName: booking?.guest?.full_name ?? null,
       roomName: booking?.room?.name ?? null,
       bookingReference: booking?.booking_reference ?? null,
       laundryAmount: r.laundry_amount,
       laundryCurrency: r.laundry_currency,
       laundryPaymentStatus: r.laundry_payment_status,
+      completedByStaffName: completedByStaff?.name ?? null,
     };
   });
 

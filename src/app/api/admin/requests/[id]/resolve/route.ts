@@ -10,7 +10,7 @@ export async function POST(
 
   const { data, error } = await supabase
     .from("guest_requests")
-    .update({ status: "Resolved" })
+    .update({ status: "Resolved", updated_at: new Date().toISOString() })
     .eq("id", id)
     .select("id");
 

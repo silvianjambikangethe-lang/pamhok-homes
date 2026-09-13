@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle, DoorOpen, HandWaving, WifiHigh } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
+import { CheckCircle, DoorOpen, HandWaving, Phone, WifiHigh } from "@phosphor-icons/react";
 
 export default function UnlockedSection({
   token,
@@ -9,20 +9,43 @@ export default function UnlockedSection({
   wifiNetworkName,
   wifiPassword,
   blurred = false,
+  adminPhone,
 }: {
   token: string;
   doorCode: string | null;
   wifiNetworkName: string | null;
   wifiPassword: string | null;
   blurred?: boolean;
+  adminPhone: string | null;
 }) {
   const [message, setMessage] = useState("");
   const [requestType, setRequestType] = useState<"cleaning" | "assistance" | "other">(
     "assistance",
   );
+  const SUBMIT_LABEL: Record<typeof requestType, string> = {
+    // Only ever shown when adminPhone isn't configured — otherwise
+    // "Assistance" renders a real tel: call link below instead of this
+    // form at all, since "Call for Assistance" should mean an actual
+    // phone call, not a text request someone has to notice and respond to.
+    assistance: "Call for Assistance",
+    cleaning: "Request Cleaning",
+    other: "Send Request",
+  };
   const [submitting, setSubmitting] = useState(false);
+  // Transient, not a permanent "used up" state — a guest may need
+  // Assistance/Cleaning/Other more than once across a multi-night stay,
+  // so this form has to stay usable the whole time, right up to
+  // checkout. Auto-clears itself a few seconds after each send rather
+  // than sitting there until the next submission overwrites it.
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (sentTimeoutRef.current) clearTimeout(sentTimeoutRef.current);
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,6 +67,8 @@ export default function UnlockedSection({
       setSent(true);
       setMessage("");
       setSubmitting(false);
+      if (sentTimeoutRef.current) clearTimeout(sentTimeoutRef.current);
+      sentTimeoutRef.current = setTimeout(() => setSent(false), 4000);
     } catch {
       setError("Could not send your request.");
       setSubmitting(false);
@@ -100,57 +125,68 @@ export default function UnlockedSection({
       </div>
 
       <div className="mt-6 border-t border-taupe/20 pt-5">
-        {sent ? (
-          <p className="flex items-center gap-2 text-sm font-medium text-ink">
-            <CheckCircle size={18} weight="fill" className="text-success" />
+        {sent && (
+          <p className="mb-3 flex items-center gap-2 text-sm font-medium text-success">
+            <CheckCircle size={18} weight="fill" />
             Request sent — we&apos;ll be in touch shortly.
           </p>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <p className="flex items-center gap-2 text-sm font-semibold text-ink/80">
-              <HandWaving size={18} />
-              Need something?
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  { value: "assistance", label: "Assistance" },
-                  { value: "cleaning", label: "Cleaning" },
-                  { value: "other", label: "Other" },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setRequestType(opt.value)}
-                  className={`focus-ring rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${
-                    requestType === opt.value
-                      ? "border-terracotta-500 bg-terracotta-500 text-white"
-                      : "border-taupe/25 bg-page text-ink/80"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={3}
-              maxLength={1000}
-              placeholder="Tell us what you need…"
-              className="focus-ring w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
-            />
-            {error && <p className="text-sm text-danger">{error}</p>}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
-            >
-              {submitting ? "Sending…" : "Call for Assistance"}
-            </button>
-          </form>
         )}
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <p className="flex items-center gap-2 text-sm font-semibold text-ink/80">
+            <HandWaving size={18} />
+            Need something?
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { value: "assistance", label: "Assistance" },
+                { value: "cleaning", label: "Cleaning" },
+                { value: "other", label: "Other" },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setRequestType(opt.value)}
+                className={`focus-ring rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${
+                  requestType === opt.value
+                    ? "border-terracotta-500 bg-terracotta-500 text-white"
+                    : "border-taupe/25 bg-page text-ink/80"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {requestType === "assistance" && adminPhone ? (
+            <a
+              href={`tel:${adminPhone}`}
+              className="focus-ring flex items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
+            >
+              <Phone size={18} weight="fill" />
+              Call {adminPhone}
+            </a>
+          ) : (
+            <>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={3}
+                maxLength={1000}
+                placeholder="Tell us what you need…"
+                className="focus-ring w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+              />
+              {error && <p className="text-sm text-danger">{error}</p>}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
+              >
+                {submitting ? "Sending…" : SUBMIT_LABEL[requestType]}
+              </button>
+            </>
+          )}
+        </form>
       </div>
     </div>
   );

@@ -73,10 +73,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   // Through staff_task_updates — a column-restricted view, so this can
-  // only ever touch status/completed_by, never message/booking_id.
+  // only ever touch status/completed_by/updated_at, never message/booking_id.
   const { data, error } = await supabase
     .from("staff_task_updates")
-    .update({ status: status as GuestRequestStatus, completed_by: workerId })
+    .update({
+      status: status as GuestRequestStatus,
+      completed_by: workerId,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .eq("request_type", requestType)
     .select("id");
