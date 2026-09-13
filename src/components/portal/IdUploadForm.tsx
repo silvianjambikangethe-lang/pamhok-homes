@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadSimple, Warning } from "@phosphor-icons/react";
+import { compressImageForUpload } from "@/lib/compress-image";
 
 export default function IdUploadForm({
   token,
@@ -33,9 +34,14 @@ export default function IdUploadForm({
     setSubmitting(true);
     setError(null);
 
+    const [compressedFront, compressedBack] = await Promise.all([
+      compressImageForUpload(frontFile),
+      compressImageForUpload(backFile),
+    ]);
+
     const formData = new FormData();
-    formData.append("file", frontFile);
-    formData.append("back", backFile);
+    formData.append("file", compressedFront);
+    formData.append("back", compressedBack);
 
     try {
       const res = await fetch(`/api/portal/${token}/upload-id`, {
