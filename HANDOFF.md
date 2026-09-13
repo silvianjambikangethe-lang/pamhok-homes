@@ -1,6 +1,7 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-09-13. Paste this file into a new chat to continue
+Last updated: 2026-09-13 (revised same day — passkeys replaced with
+Google sign-in). Paste this file into a new chat to continue
 with full context. This is a **condensed rewrite** — full session-by-
 session history before this date lives in git (`git log HANDOFF.md`,
 or `git show <commit>:HANDOFF.md` for any prior version) if you ever
@@ -36,33 +37,6 @@ this, it was a 32-branch cleanup job as of 2026-09-13).
   to reach PayPal's real API and produce a real checkout redirect, but
   the full approve → capture → "Paid" path has deliberately never been
   completed since that means spending real money.
-- **Google sign-in for /admin — code shipped 2026-09-13, needs Google
-  Cloud + Supabase dashboard setup to actually work.** Passkeys were
-  dropped entirely (kept fighting Windows' own native passkey broker,
-  which intercepts the WebAuthn ceremony before the site's code ever
-  gets a say — no code fix could route around it). Replaced with
-  "Sign in with Google" next to the existing password form
-  (`src/app/admin/login/page.tsx`), landing on
-  `src/app/api/admin/auth/callback/route.ts`, which exchanges the code
-  and applies the same `admin_users` allowlist check password login
-  already uses. This works because Supabase Auth auto-links a new
-  Google identity to an existing user when the email matches (confirmed
-  against Supabase's own docs, not assumed) — so signing in with the
-  owner's real Google account lands on the same `admin_users` row;
-  any other Google account is rejected the same way a wrong password is.
-  **Still needed, owner-side, before the button works at all:**
-  1. Google Cloud Console → create an OAuth 2.0 Client ID (Web
-     application). Authorized redirect URI:
-     `https://ajxijucojqkxszfkepqr.supabase.co/auth/v1/callback`.
-  2. Supabase Dashboard → Authentication → Providers → Google → enable,
-     paste in that Client ID + Secret.
-  3. Supabase Dashboard → Authentication → URL Configuration →
-     Redirect URLs → add `https://www.pamhokhomes.com/api/admin/auth/callback`
-     (and `http://localhost:3000/api/admin/auth/callback` for local
-     testing).
-  Until this is done, clicking "Sign in with Google" will fail —
-  password login is unaffected and still works normally in the
-  meantime.
 - **Two Supabase dashboard-only settings, likely already fine.** A
   fresh advisor scan (2026-09-13) no longer flags
   `auth_leaked_password_protection` (it flags this loudly when off, so
@@ -120,9 +94,18 @@ Calendar, Guest Requests (cleaning/laundry/assistance/other, laundry
 pricing lives here), Staff Shifts, Room Settings, Edit Content,
 Reviews, Expenses, WhatsApp Contact, Settings (password, staff login
 credentials, staff members + PINs, blocked guest names, terms content).
-Admin login: password (3-attempt lockout + email recovery) or
-"Sign in with Google" (see "Currently open / blocked" — needs Google
-Cloud + Supabase setup before it's usable).
+Admin login (`/admin/login`): two top-level choices, "Sign in with
+Google" or "Sign in with password" (picking password reveals the
+email/password fields, collapsed by default). Google sign-in fully
+set up and confirmed working end-to-end (2026-09-13) — replaced
+passkeys entirely, which kept getting intercepted by Windows' own
+native passkey broker before the site's code ever got a say, making
+cross-device sync unworkable in practice. Google sign-in works via
+Supabase Auth's automatic identity linking: signing in with the
+owner's real Google account (matching the existing admin email) lands
+on the same `admin_users` row password login already uses; any other
+Google account is rejected the same way a wrong password is. Google
+Cloud OAuth client + Supabase provider config are both done.
 
 **Staff dashboard** (`/staff`): one shared login (email/password) +
 per-worker PIN tap-in (added to stop one worker impersonating another
