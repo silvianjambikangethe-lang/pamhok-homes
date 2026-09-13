@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UploadSimple, Warning } from "@phosphor-icons/react";
+import { UploadSimple, Warning, X } from "@phosphor-icons/react";
 import { compressImageForUpload } from "@/lib/compress-image";
 
 export default function IdUploadForm({
@@ -84,33 +84,67 @@ export default function IdUploadForm({
       </p>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
-          <UploadSimple size={28} className="text-terracotta-600" />
-          <span className="text-sm font-medium text-ink/80">
-            {frontFileName ?? "Click to choose the front of your ID (JPG, PNG, or PDF)"}
-          </span>
-          <input
-            ref={frontInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,application/pdf"
-            className="sr-only"
-            onChange={(e) => setFrontFileName(e.target.files?.[0]?.name ?? null)}
-          />
-        </label>
+        <div className="relative">
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
+            <UploadSimple size={28} className="text-terracotta-600" />
+            <span className="text-sm font-medium text-ink/80">
+              {frontFileName ?? "Click to choose the front of your ID (JPG, PNG, or PDF)"}
+            </span>
+            <input
+              ref={frontInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              className="sr-only"
+              onChange={(e) => setFrontFileName(e.target.files?.[0]?.name ?? null)}
+            />
+          </label>
+          {frontFileName && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (frontInputRef.current) frontInputRef.current.value = "";
+                setFrontFileName(null);
+              }}
+              aria-label="Remove front ID photo"
+              className="focus-ring absolute right-2 top-2 rounded-full bg-espresso/70 p-1.5 text-ivory hover:bg-espresso/90"
+            >
+              <X size={14} weight="bold" />
+            </button>
+          )}
+        </div>
 
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
-          <UploadSimple size={28} className="text-terracotta-600" />
-          <span className="text-sm font-medium text-ink/80">
-            {backFileName ?? "Click to choose the back of your ID (JPG, PNG, or PDF)"}
-          </span>
-          <input
-            ref={backInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,application/pdf"
-            className="sr-only"
-            onChange={(e) => setBackFileName(e.target.files?.[0]?.name ?? null)}
-          />
-        </label>
+        <div className="relative">
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
+            <UploadSimple size={28} className="text-terracotta-600" />
+            <span className="text-sm font-medium text-ink/80">
+              {backFileName ?? "Click to choose the back of your ID (JPG, PNG, or PDF)"}
+            </span>
+            <input
+              ref={backInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              className="sr-only"
+              onChange={(e) => setBackFileName(e.target.files?.[0]?.name ?? null)}
+            />
+          </label>
+          {backFileName && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (backInputRef.current) backInputRef.current.value = "";
+                setBackFileName(null);
+              }}
+              aria-label="Remove back ID photo"
+              className="focus-ring absolute right-2 top-2 rounded-full bg-espresso/70 p-1.5 text-ivory hover:bg-espresso/90"
+            >
+              <X size={14} weight="bold" />
+            </button>
+          )}
+        </div>
 
         {error && (
           <p role="alert" className="flex items-center gap-2 text-sm text-danger">
