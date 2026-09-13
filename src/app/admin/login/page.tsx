@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Warning, GoogleLogo } from "@phosphor-icons/react";
+import { Warning, GoogleLogo, Lock } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { SITE } from "@/lib/site";
 
@@ -17,6 +17,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [passwordFormOpen, setPasswordFormOpen] = useState(false);
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
@@ -82,71 +83,86 @@ function LoginForm() {
           {googleLoading ? "Redirecting…" : "Sign in with Google"}
         </button>
 
-        <div className="mt-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-taupe/20" />
-          <span className="text-xs font-medium uppercase tracking-wide text-ink/50">or</span>
-          <div className="h-px flex-1 bg-taupe/20" />
-        </div>
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="email" className="text-sm font-medium text-ink/80">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              maxLength={254}
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="text-sm font-medium text-ink/80">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              maxLength={128}
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
-            />
-          </div>
-
-          {error && (
-            <p role="alert" className="text-sm text-danger">
-              {error}
-            </p>
-          )}
-
+        {!passwordFormOpen ? (
           <button
-            type="submit"
-            disabled={submitting}
-            className="focus-ring w-full rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
+            type="button"
+            onClick={() => setPasswordFormOpen(true)}
+            className="focus-ring mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-taupe/25 px-6 py-3 text-sm font-semibold text-ink/80 transition-colors hover:bg-taupe/10"
           >
-            {submitting ? "Signing in…" : "Sign In"}
+            <Lock size={18} />
+            Sign in with password
           </button>
-        </form>
+        ) : (
+          <>
+            <div className="mt-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-taupe/20" />
+              <span className="text-xs font-medium uppercase tracking-wide text-ink/50">
+                Password sign-in
+              </span>
+              <div className="h-px flex-1 bg-taupe/20" />
+            </div>
 
-        <p className="mt-5 text-center text-sm">
-          <a
-            href="/admin/recover"
-            className={`focus-ring rounded font-medium ${
-              locked
-                ? "text-danger underline"
-                : "text-ink/60 hover:text-ink/80"
-            }`}
-          >
-            {locked ? "Locked out? Reset your password via email" : "Forgot password?"}
-          </a>
-        </p>
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div>
+                <label htmlFor="email" className="text-sm font-medium text-ink/80">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  maxLength={254}
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="text-sm font-medium text-ink/80">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  maxLength={128}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+                />
+              </div>
+
+              {error && (
+                <p role="alert" className="text-sm text-danger">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="focus-ring w-full rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
+              >
+                {submitting ? "Signing in…" : "Sign In"}
+              </button>
+            </form>
+
+            <p className="mt-5 text-center text-sm">
+              <a
+                href="/admin/recover"
+                className={`focus-ring rounded font-medium ${
+                  locked
+                    ? "text-danger underline"
+                    : "text-ink/60 hover:text-ink/80"
+                }`}
+              >
+                {locked ? "Locked out? Reset your password via email" : "Forgot password?"}
+              </a>
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
