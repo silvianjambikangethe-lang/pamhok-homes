@@ -104,6 +104,7 @@ export async function POST(request: Request) {
     const order = await orderRes.json();
 
     if (!orderRes.ok) {
+      console.error("PayPal create-order failed", orderRes.status, JSON.stringify(order));
       return NextResponse.json({ error: "Could not start PayPal checkout." }, { status: 502 });
     }
 
