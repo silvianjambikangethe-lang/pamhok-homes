@@ -342,26 +342,6 @@ export type RateLimit = {
   window_started_at: string;
 };
 
-export type PasskeyCredential = {
-  id: string;
-  admin_user_id: string;
-  credential_id: string;
-  public_key: string;
-  counter: number;
-  device_name: string | null;
-  transports: string[] | null;
-  created_at: string;
-  last_used_at: string | null;
-};
-
-export type PasskeyChallenge = {
-  id: string;
-  admin_user_id: string;
-  type: "registration" | "authentication";
-  challenge: string;
-  created_at: string;
-};
-
 export type BillingCycle = "monthly" | "annual" | "one-time";
 
 export type BusinessExpense = {
@@ -505,18 +485,6 @@ export interface Database {
         Row: RateLimit;
         Insert: Partial<RateLimit>;
         Update: Partial<RateLimit>;
-        Relationships: [];
-      };
-      passkey_credentials: {
-        Row: PasskeyCredential;
-        Insert: Partial<PasskeyCredential>;
-        Update: Partial<PasskeyCredential>;
-        Relationships: [];
-      };
-      passkey_challenges: {
-        Row: PasskeyChallenge;
-        Insert: Partial<PasskeyChallenge>;
-        Update: Partial<PasskeyChallenge>;
         Relationships: [];
       };
       staff_users: {
