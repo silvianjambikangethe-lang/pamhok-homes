@@ -165,7 +165,11 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json", "Api-Key": consumerKey },
       body: JSON.stringify({ merchantCode, consumerSecret }),
     });
-    if (!authRes.ok) throw new Error("Could not authenticate with Jenga.");
+    if (!authRes.ok) {
+      const authBody = await authRes.text().catch(() => "");
+      console.error("Jenga auth failed", authRes.status, authBody);
+      throw new Error("Could not authenticate with Jenga.");
+    }
     const { accessToken } = await authRes.json();
 
     // Jenga's payment.ref is capped at 6 alphanumeric characters.
