@@ -793,20 +793,23 @@ explanation.
     calls before and after. Supabase advisor WARN count: ~40 → 0 (2
     harmless INFO-level "unused index" notices remain, expected for
     brand-new indexes with no traffic yet).
-13. **Rotate `SUPABASE_SERVICE_ROLE_KEY` — still pending.** A Claude
-    Code session passed the real value as a plaintext command-line
-    argument (cleaning up test-upload storage files) on 2026-09-08 —
-    contained to this session's own tool-call transcript, never printed
-    to a shared terminal, git, or any third party. The owner asked to
-    rotate; the attempt got partway through (a new secret key created in
-    Supabase's dashboard, an interim value briefly live on Vercel
-    Production) before being deliberately abandoned and fully reverted —
-    the original key was restored in Vercel and verified working via a
-    real request against `www.pamhokhomes.com`, not just assumed. Owner
-    decided to defer the actual rotation to "right before launch."
-    **The site went live 2026-09-09/10 without this happening** — no
-    longer tied to a pre-launch deadline, just a genuinely open item now.
-    Two things worth knowing for whoever does it:
+13. ~~Rotate `SUPABASE_SERVICE_ROLE_KEY`~~ — **owner decided 2026-09-13
+    not to rotate it.** A Claude Code session passed the real value as a
+    plaintext command-line argument (cleaning up test-upload storage
+    files) on 2026-09-08 — contained to this session's own tool-call
+    transcript, never printed to a shared terminal, git, or any third
+    party. The owner had asked to rotate at the time; the attempt got
+    partway through (a new secret key created in Supabase's dashboard, an
+    interim value briefly live on Vercel Production) before being
+    deliberately abandoned and fully reverted — the original key was
+    restored in Vercel and verified working via a real request against
+    `www.pamhokhomes.com`, not just assumed. Deferred to "right before
+    launch," then the site went live 2026-09-09/10 without it happening —
+    at that point it became a standing open item rather than a pre-launch
+    task. On 2026-09-13, asked directly, the owner confirmed they won't
+    be rotating it — closed, not forgotten. If this ever needs revisiting
+    (e.g. a future real exposure, not just an old session transcript),
+    two things worth knowing for whoever does it:
     * ~~A leftover unused secret key (`service_role_20260908`) may still
       exist~~ — **deleted, 2026-09-10**, confirmed by the owner directly
       in Supabase's dashboard, found during a full public-facing
