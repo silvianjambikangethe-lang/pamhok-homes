@@ -38,14 +38,23 @@ this, it was a 32-branch cleanup job as of 2026-09-13).
   secrets. Applies to both integrations (booking's `mpesa-initiate` and
   laundry's `mpesa-initiate-laundry`) since they share the same Jenga
   account/credentials.
-- **PayPal — booking flow fully live and real (confirmed via a real
-  completed guest payment). Laundry's `create-order` also confirmed
-  reaching PayPal's real API** (2026-09-13, produced genuine checkout
-  tokens), but the full approve → capture → "Paid" path for laundry has
-  deliberately never been completed since that means spending real
-  money. Two real approval links were generated and handed to the
-  owner to complete themselves if they want the full end-to-end proof;
-  outcome unconfirmed as of this writing.
+- **PayPal — merchant account itself is now restricted by PayPal,
+  blocking every order (both booking and laundry).** Confirmed live
+  2026-09-13: `create-order` started returning
+  `422 PAYEE_ACCOUNT_RESTRICTED — "The merchant account is
+  restricted."` (added logging to surface this — see
+  `src/app/api/payments/paypal/create-order/route.ts` and the laundry
+  equivalent). This is a real account-level restriction PayPal placed,
+  not a code/config issue — same category as the Jenga blocker below.
+  **Owner needs to log into paypal.com and check the Resolution
+  Center** for what PayPal needs (identity/business verification,
+  compliance review, etc.) to lift it. Until then, no PayPal payment —
+  booking or laundry — will work, even though the integration code
+  itself is correct (confirmed working earlier the same day before the
+  restriction appeared, and again via a real completed booking payment
+  before this session). Worth noting the account was working minutes
+  before this appeared — plausibly triggered by the unusual pattern of
+  several small real test orders created in quick succession.
 - **Two Supabase dashboard-only settings, likely already fine.** A
   fresh advisor scan (2026-09-13) no longer flags
   `auth_leaked_password_protection` (it flags this loudly when off, so
