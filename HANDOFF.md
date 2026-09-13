@@ -38,21 +38,26 @@ this, it was a 32-branch cleanup job as of 2026-09-13).
   secrets. Applies to both integrations (booking's `mpesa-initiate` and
   laundry's `mpesa-initiate-laundry`) since they share the same Jenga
   account/credentials.
-- **PayPal — merchant account itself is now restricted by PayPal,
-  blocking every order (both booking and laundry).** Confirmed live
-  2026-09-13: `create-order` started returning
-  `422 PAYEE_ACCOUNT_RESTRICTED — "The merchant account is
-  restricted."` (added logging to surface this — see
-  `src/app/api/payments/paypal/create-order/route.ts` and the laundry
-  equivalent). This is a real account-level restriction PayPal placed,
-  not a code/config issue — same category as the Jenga blocker below.
-  **Owner needs to log into paypal.com and check the Resolution
-  Center** for what PayPal needs (identity/business verification,
-  compliance review, etc.) to lift it. Until then, no PayPal payment —
-  booking or laundry — will work, even though the integration code
-  itself is correct (confirmed working earlier the same day before the
-  restriction appeared, and again via a real completed booking payment
-  before this session). Worth noting the account was working minutes
+- **PayPal — merchant account itself is restricted by PayPal, so it's
+  been deliberately switched OFF site-wide (2026-09-13), not just left
+  broken.** Confirmed live: `create-order` started returning `422
+  PAYEE_ACCOUNT_RESTRICTED — "The merchant account is restricted."`
+  — a real account-level restriction PayPal placed, not a code/config
+  issue, same category as the Jenga blocker below. Rather than leave
+  guests hitting a dead "PayPal / Card" button, added a single kill
+  switch: `PAYPAL_DISABLED` in `src/lib/payment-flags.ts` (currently
+  `true`). This makes `isPaypalConfigured()` return false everywhere
+  (blocking both create-order routes), both capture routes redirect as
+  failed immediately, and the PayPal button is hidden entirely from
+  both `PaymentSection.tsx` and `LaundryPaymentSection.tsx` — guests
+  currently only see M-Pesa as a payment option. Refunds
+  (`refundPaypalCapture`) are untouched and still work, since they're
+  unaffected by the restriction. **Owner needs to log into paypal.com,
+  check the Resolution Center** for what's needed to lift the
+  restriction (a $0 test transaction triggered an identity/proof-of-
+  service request there), then flip `PAYPAL_DISABLED` back to `false`
+  once resolved — that one line is the only change needed to bring it
+  back. Worth noting the account was working minutes
   before this appeared — plausibly triggered by the unusual pattern of
   several small real test orders created in quick succession.
 - **Two Supabase dashboard-only settings, likely already fine.** A
