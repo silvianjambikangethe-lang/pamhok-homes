@@ -20,23 +20,32 @@ this, it was a 32-branch cleanup job as of 2026-09-13).
 
 ## Currently open / blocked
 
-- **M-Pesa (Jenga) STK push — never completed end-to-end with a real
-  phone.** Jenga/Equity approved the merchant account for STK/USSD-push
-  on 2026-09-12 (previously blocked on `502 Not Authorized`). Auth +
-  RSA signing are confirmed correct against Jenga's sandbox, but no one
-  has actually triggered a real push and watched it land. Applies to
-  **two** integrations now: the original booking payment
-  (`supabase/functions/mpesa-initiate` / `mpesa-callback`) and the newer
-  laundry payment (`mpesa-initiate-laundry` / `mpesa-callback-laundry`,
-  added 2026-09-13). Needs the owner to request a real charge from a
-  real phone with `JENGA_ENV=sandbox` and confirm the prompt arrives and
-  the callback fires.
-- **PayPal — booking flow is live and real; laundry's capture path is
-  unconfirmed.** Live credentials work for bookings (confirmed via a
-  real completed guest payment). For laundry, `create-order` is proven
-  to reach PayPal's real API and produce a real checkout redirect, but
-  the full approve → capture → "Paid" path has deliberately never been
-  completed since that means spending real money.
+- **M-Pesa (Jenga) STK push — blocked on Jenga/Equity's side, not
+  ours.** Both the private key and the Consumer Key/Secret/Merchant
+  Code secrets were bad in Supabase (empty/corrupted key, then a
+  sandbox-vs-production credential mixup) — both fixed and confirmed
+  2026-09-13 via safe diagnostic calls that never touched a real phone
+  (see `mpesa-initiate/index.ts`'s auth-failure logging, added the same
+  day). With those fixed, the real, signed STK request now reaches
+  Jenga's live production API and gets back `"Not Authorized to access
+  the API"` — the STK/USSD Push product itself isn't enabled for the
+  regenerated API credentials, even though they authenticate fine.
+  Likely cause: Jenga treats a regenerated Consumer Key as a new API
+  client under the hood that doesn't inherit the STK approval Equity
+  granted the old one on 2026-09-12. **Owner needs to contact
+  Jenga/Equity** and ask them to confirm STK/USSD push is enabled for
+  the *current* API credentials — nothing left to fix in code or
+  secrets. Applies to both integrations (booking's `mpesa-initiate` and
+  laundry's `mpesa-initiate-laundry`) since they share the same Jenga
+  account/credentials.
+- **PayPal — booking flow fully live and real (confirmed via a real
+  completed guest payment). Laundry's `create-order` also confirmed
+  reaching PayPal's real API** (2026-09-13, produced genuine checkout
+  tokens), but the full approve → capture → "Paid" path for laundry has
+  deliberately never been completed since that means spending real
+  money. Two real approval links were generated and handed to the
+  owner to complete themselves if they want the full end-to-end proof;
+  outcome unconfirmed as of this writing.
 - **Two Supabase dashboard-only settings, likely already fine.** A
   fresh advisor scan (2026-09-13) no longer flags
   `auth_leaked_password_protection` (it flags this loudly when off, so
@@ -57,10 +66,28 @@ this, it was a 32-branch cleanup job as of 2026-09-13).
 ## What's built (current state, not a build log)
 
 **Guest flow**: browse rooms → book → pay (PayPal live; M-Pesa
-integrated but untested, see above) → upload ID (Dojah OCR + name-match,
-2 auto attempts then manual admin review) → guest portal
-(`/portal/[token]`, token-only auth, no login) unlocks door
+integrated but blocked on Jenga's side, see above) → upload ID (Dojah
+OCR + name-match, 2 auto attempts then manual admin review) → guest
+portal (`/portal/[token]`, token-only auth, no login) unlocks door
 code/WiFi/laundry/extend-stay/checkout → post-stay review.
+
+**Dojah ID verification — confirmed fully working end-to-end
+(2026-09-13), two real bugs fixed along the way.** (1) `DOJAH_APP_ID`/
+`DOJAH_ENV`/`DOJAH_SECRET_KEY_PRODUCTION` didn't exist in Vercel at all
+despite the owner believing they'd been added — every upload was
+silently falling through to manual review. Added correctly (scoped to
+Production), plus the Dojah wallet needed a top-up (billing is
+pre-paid per API call, ~$0.04-0.06/check per Dojah's own pricing page,
+no stated expiry on unused balance). (2) Real phone camera ID photos
+(front+back, often 5-10MB+ combined) were hitting Vercel's hard 4.5MB
+serverless request body limit and failing with a generic "Upload
+failed" before ever reaching Dojah or storage — small test images
+always worked, which is what made this easy to miss initially. Fixed
+in `src/lib/compress-image.ts`: downscales to 1800px max dimension and
+re-encodes as JPEG client-side before upload, falling back to the
+original file if compression fails or doesn't help. `IdUploadForm.tsx`
+also now has a remove ("×") button on each photo slot once one's
+picked, so a wrong photo can be cleared without a page reload.
 
 **Guest portal features**: arrival card with QR verification pass,
 directions (routes from guest's current location via a name-based
