@@ -58,6 +58,19 @@ export default function PortalClient({
   const isCheckoutDay = isPast(checkOutDate) || format(checkOutDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
   const checkoutNotices = getCheckoutNotices(booking.check_out);
   const cleaningNotices = getCleaningNotices(booking.check_in, booking.check_out);
+  // Only the rooms this guest booked together (this one first). Empty for a
+  // single-room booking, which hides the "which room" choice.
+  const requestRooms =
+    booking.siblingBookings.length > 0
+      ? [
+          { token, name: booking.room?.name ?? "This room", ready: true },
+          ...booking.siblingBookings.map((s) => ({
+            token: s.access_token,
+            name: s.room_name ?? "Room",
+            ready: s.ready,
+          })),
+        ]
+      : [];
   const isPassReady =
     booking.payment_status === "Paid" && booking.id_verification_status === "Verified";
   // Distinct from isPassReady: a guest who has already been ID-verified
@@ -282,6 +295,7 @@ export default function PortalClient({
             wifiPassword={booking.room?.wifi_password ?? null}
             blurred={showArrival}
             adminPhone={adminPhone}
+            rooms={requestRooms}
           />
         )}
 
@@ -296,6 +310,7 @@ export default function PortalClient({
             laundryCurrency={booking.latestLaundryRequest?.laundry_currency ?? null}
             laundryPaymentStatus={booking.latestLaundryRequest?.laundry_payment_status ?? null}
             rates={rates}
+            rooms={requestRooms}
           />
         )}
 

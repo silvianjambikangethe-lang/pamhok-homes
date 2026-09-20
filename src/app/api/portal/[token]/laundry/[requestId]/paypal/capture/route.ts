@@ -24,10 +24,22 @@ export async function GET(
 
   try {
     const supabase = createAdminSupabaseClient();
+
+    // The request must belong to the booking whose private link was used.
+    const { data: ownBooking } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("access_token", token)
+      .maybeSingle();
+    if (!ownBooking) {
+      return NextResponse.redirect(`${siteUrl}/portal/${token}`);
+    }
+
     const { data: laundryRequest } = await supabase
       .from("guest_requests")
       .select("id, laundry_payment_status, laundry_payment_reference")
       .eq("id", requestId)
+      .eq("booking_id", ownBooking.id)
       .eq("request_type", "laundry")
       .maybeSingle();
 

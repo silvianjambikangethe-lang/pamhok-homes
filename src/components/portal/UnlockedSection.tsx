@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle, DoorOpen, HandWaving, Phone, WifiHigh } from "@phosphor-icons/react";
+import RoomPicker, { type RequestRoom } from "@/components/portal/RoomPicker";
 
 export default function UnlockedSection({
   token,
@@ -10,6 +11,7 @@ export default function UnlockedSection({
   wifiPassword,
   blurred = false,
   adminPhone,
+  rooms = [],
 }: {
   token: string;
   doorCode: string | null;
@@ -17,8 +19,12 @@ export default function UnlockedSection({
   wifiPassword: string | null;
   blurred?: boolean;
   adminPhone: string | null;
+  // The rooms this guest booked together (empty for a single-room booking).
+  rooms?: RequestRoom[];
 }) {
   const [message, setMessage] = useState("");
+  const [targetToken, setTargetToken] = useState(token);
+  const [sentFor, setSentFor] = useState<string | null>(null);
   const [requestType, setRequestType] = useState<"cleaning" | "assistance" | "other">(
     "assistance",
   );
@@ -56,7 +62,7 @@ export default function UnlockedSection({
       const res = await fetch(`/api/portal/${token}/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestType, message }),
+        body: JSON.stringify({ requestType, message, targetToken }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -64,6 +70,7 @@ export default function UnlockedSection({
         setSubmitting(false);
         return;
       }
+      setSentFor(rooms.length > 1 ? (rooms.find((r) => r.token === targetToken)?.name ?? null) : null);
       setSent(true);
       setMessage("");
       setSubmitting(false);
@@ -128,7 +135,7 @@ export default function UnlockedSection({
         {sent && (
           <p className="mb-3 flex items-center gap-2 text-sm font-medium text-success">
             <CheckCircle size={18} weight="fill" />
-            Request sent — we&apos;ll be in touch shortly.
+            Request sent{sentFor ? ` for ${sentFor}` : ""}. We&apos;ll be in touch shortly.
           </p>
         )}
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -168,6 +175,7 @@ export default function UnlockedSection({
             </a>
           ) : (
             <>
+              <RoomPicker rooms={rooms} value={targetToken} onChange={setTargetToken} />
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}

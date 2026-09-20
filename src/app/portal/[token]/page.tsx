@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getBookingByToken } from "@/lib/portal";
 import { getExchangeRates } from "@/lib/currency";
 import { generateQrDataUrl } from "@/lib/qrcode";
+import { makeVerifyToken } from "@/lib/verify-token";
 import { getAdminContactPhone, getContactContent } from "@/lib/data";
 import PortalClient from "@/components/portal/PortalClient";
 import { SITE, pageTitle } from "@/lib/site";
@@ -30,7 +31,9 @@ export default async function GuestPortalPage({
     getExchangeRates(),
     isPassReady
       ? generateQrDataUrl(
-          `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/verify/${token}`,
+          // A signed code that identifies the pass, never the private portal
+          // link: the QR is shown to other people.
+          `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/verify/${makeVerifyToken(booking.id)}`,
         )
       : Promise.resolve(null),
     getAdminContactPhone(),

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { resolveRequestTarget } from "@/lib/portal-target";
 
 const VALID_TYPES = ["cleaning", "assistance", "other"] as const;
 
@@ -18,7 +19,7 @@ export async function POST(
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, id_verification_status")
+    .select("id, guest_id, check_in, check_out, id_verification_status")
     .eq("access_token", token)
     .maybeSingle();
 
@@ -33,8 +34,14 @@ export async function POST(
     );
   }
 
+  // A group booking's guest can file this for any of their other rooms.
+  const target = await resolveRequestTarget(supabase, booking, token, body.targetToken);
+  if (!target.ok) {
+    return NextResponse.json({ error: target.error }, { status: target.status });
+  }
+
   const { error: insertError } = await supabase.from("guest_requests").insert({
-    booking_id: booking.id,
+    booking_id: target.bookingId,
     request_type: body.requestType,
     message: typeof body.message === "string" ? body.message.slice(0, 1000) : null,
     status: "Open",

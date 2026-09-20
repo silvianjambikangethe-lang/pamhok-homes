@@ -189,14 +189,20 @@ export async function getRoomBySlug(
   return { room: data ? toPublicRoom(data) : null, isSample: false };
 }
 
+// Booked dates are read here on the server, not by the visitor's browser, so
+// the public never needs direct database access to bookings. Only the room,
+// the dates and whether the room is held are returned: no names, no contact
+// details and no payment information.
+const AVAILABILITY_COLUMNS = "room_id, check_in, check_out, booking_status";
+
 export async function getAvailability(roomId: string): Promise<AvailabilityRow[]> {
   if (!isSupabaseConfigured() || roomId.startsWith("sample-")) {
     return [];
   }
 
-  const { data, error } = await publicClient()
+  const { data, error } = await createAdminSupabaseClient()
     .from("availability_view")
-    .select("*")
+    .select(AVAILABILITY_COLUMNS)
     .eq("room_id", roomId);
 
   if (error || !data) return [];
@@ -210,11 +216,17 @@ export async function getAvailability(roomId: string): Promise<AvailabilityRow[]
 export async function getAllAvailability(): Promise<AvailabilityRow[]> {
   if (!isSupabaseConfigured()) return [];
 
-  const { data, error } = await publicClient().from("availability_view").select("*");
+  const { data, error } = await createAdminSupabaseClient()
+    .from("availability_view")
+    .select(AVAILABILITY_COLUMNS);
 
   if (error || !data) return [];
   return data;
 }
+
+// Public reviews show the guest's display name (first name and last initial)
+// and what they wrote. The link back to the booking is deliberately not read.
+const PUBLIC_REVIEW_COLUMNS = "id, rating, comment, guest_display_name, featured, created_at";
 
 const SAMPLE_REVIEWS: Review[] = [
   {
@@ -256,7 +268,7 @@ export async function getReviews(): Promise<{ reviews: Review[]; isSample: boole
 
   const { data, error } = await publicClient()
     .from("reviews")
-    .select("*")
+    .select(PUBLIC_REVIEW_COLUMNS)
     .order("created_at", { ascending: false })
     .limit(12);
 
@@ -264,7 +276,7 @@ export async function getReviews(): Promise<{ reviews: Review[]; isSample: boole
     return { reviews: SAMPLE_REVIEWS, isSample: true };
   }
 
-  return { reviews: data, isSample: false };
+  return { reviews: data as unknown as Review[], isSample: false };
 }
 
 // Homepage-facing subset: only reviews an admin has explicitly featured
@@ -281,7 +293,7 @@ export async function getFeaturedReviews(): Promise<{ reviews: Review[]; isSampl
 
   const { data, error } = await publicClient()
     .from("reviews")
-    .select("*")
+    .select(PUBLIC_REVIEW_COLUMNS)
     .eq("featured", true)
     .order("created_at", { ascending: false })
     .limit(6);
@@ -290,7 +302,7 @@ export async function getFeaturedReviews(): Promise<{ reviews: Review[]; isSampl
     return { reviews: SAMPLE_REVIEWS, isSample: true };
   }
 
-  return { reviews: data, isSample: false };
+  return { reviews: data as unknown as Review[], isSample: false };
 }
 
 // Admin-editable public site copy — falls back to these defaults (the
@@ -354,7 +366,7 @@ const DEFAULT_AMENITIES_CONTENT: AmenityItem[] = [
 // introduce a new inconsistency; if they're ever changed in code, this
 // section's wording would need a matching manual edit here too.
 const DEFAULT_TERMS_CONTENT: TermsContent = {
-  last_updated: "4 August 2026",
+  last_updated: "20 September 2026",
   sections: [
     {
       title: "1. Booking & Payment",
@@ -378,15 +390,15 @@ const DEFAULT_TERMS_CONTENT: TermsContent = {
     },
     {
       title: "6. Cancellations & Refunds",
-      body: "- To cancel a booking, contact the host directly by phone — cancellations are not self-service through the site. This applies whether or not a refund applies, so the reservation can be removed from the calendar and the room freed up for other guests.\n- Cancellations made at least 48 hours before check-in are eligible for a full refund.\n- Cancellations made less than 48 hours before check-in are not eligible for a refund through the site. In this case, please contact the host directly by phone as soon as possible — refund or credit at the host's discretion may still be possible depending on the circumstances.\n- Refunds are processed manually by the host (M-Pesa, bank transfer, or through PayPal, depending on how you paid) after the cancellation is confirmed — they are not issued automatically by the site.",
+      body: "- To cancel a booking, call the host on +254 704 393 189. Cancellations are handled by phone only and are not self-service through the site. This applies whether or not a refund is due, so the reservation can be removed from the calendar and the room freed up for other guests.\n- A cancellation takes effect once the host confirms it on the call. The time of the call is the time that counts.\n- Cancellations made at least 36 hours before check-in are eligible for a full refund.\n- Cancellations made less than 36 hours before check-in are not eligible for a refund through the site. Please still call the host as soon as possible: a refund or credit may be offered at the host's discretion, depending on the circumstances.\n- If you booked more than one room, call the host to cancel one room or all of them. The same 36-hour limit applies to each room.\n- Refunds are processed manually by the host (M-Pesa, bank transfer, or through PayPal, depending on how you paid) after the cancellation is confirmed. They are not issued automatically by the site.",
     },
     {
       title: "7. House Rules",
-      body: "- **Maximum occupancy: 2 people per booking.**\n- **No parties or events of any kind.**\n- **No pets allowed.**\n- **No smoking inside the property** — this includes, but is not limited to, tobacco and bangi (marijuana). Any smoking of any substance inside the property is strictly prohibited.\n- Guests found in violation of these house rules may have their booking cancelled without refund, at the host's discretion.",
+      body: "- **Maximum occupancy: 2 people per room.** A group of more than 2 can book more than one room.\n- **No parties or events of any kind.**\n- **No pets allowed.**\n- **No smoking inside the property** — this includes, but is not limited to, tobacco and bangi (marijuana). Any smoking of any substance inside the property is strictly prohibited.\n- Guests found in violation of these house rules may have their booking cancelled without refund, at the host's discretion.",
     },
     {
-      title: "8. Liability",
-      body: "- Pamhok Homes is not liable for loss, theft, or damage to personal belongings during a guest's stay, except where caused by proven negligence on the part of the host.\n- Guests are responsible for any damage caused to the property during their stay beyond normal wear and tear.",
+      title: "8. Damage, Loss & Liability",
+      body: "- The guest who booked the room is responsible for, and pays for, any damage caused to the property during their stay. This includes damage caused by anyone they allow into the room. If you booked more than one room, you are responsible for every room in that booking.\n- Normal wear and tear is not charged.\n- Please tell the host straight away, by phone or message, about any damage, breakage or missing item, and before you check out where possible.\n- After check-out the host inspects the room. If there is damage, a missing item, or cleaning needed beyond the normal (for example smoke or heavy stains), the host will call you within 7 days of check-out to explain what was found and the cost, and may send photos.\n- Compensation is settled directly with the host by phone call. The amount is the actual and reasonable cost of repair, replacement or extra cleaning, and it is paid to the host directly, as agreed on the call.\n- If you disagree with a charge, say so on that call. The host will go through the photos and costs with you.\n- Pamhok Homes is not liable for loss, theft, or damage to personal belongings during a guest's stay, except where caused by proven negligence on the part of the host.",
     },
     {
       title: "9. Changes to These Terms",

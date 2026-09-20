@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { startOfDay } from "date-fns";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { resolveRequestTarget } from "@/lib/portal-target";
 
 export async function POST(
   request: Request,
@@ -13,7 +14,7 @@ export async function POST(
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, check_in, check_out, booking_status, id_verification_status, checked_out_at")
+    .select("id, guest_id, check_in, check_out, booking_status, id_verification_status, checked_out_at")
     .eq("access_token", token)
     .maybeSingle();
 
@@ -47,8 +48,15 @@ export async function POST(
     .filter(Boolean)
     .join("\n") || null;
 
+  // A group booking's guest can file this for any of their other rooms (same
+  // dates, so the stay-window check above covers it).
+  const target = await resolveRequestTarget(supabase, booking, token, body?.targetToken);
+  if (!target.ok) {
+    return NextResponse.json({ error: target.error }, { status: target.status });
+  }
+
   const { error: insertError } = await supabase.from("guest_requests").insert({
-    booking_id: booking.id,
+    booking_id: target.bookingId,
     request_type: "laundry",
     message,
     status: "Open",
@@ -58,5 +66,5 @@ export async function POST(
     return NextResponse.json({ error: "Could not send laundry request." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, forOtherRoom: target.forOtherRoom });
 }

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { differenceInCalendarDays, format, isAfter, isBefore, parseISO } from "date-fns";
 import { CalendarBlank, UsersThree } from "@phosphor-icons/react";
 import RoomPhoto from "@/components/RoomPhoto";
-import BookingCalendar, { type DateSelection } from "@/components/BookingCalendar";
+import { getClosedRanges } from "@/lib/closed-dates";
+import BookingCalendar, { type DateRange, type DateSelection } from "@/components/BookingCalendar";
 import type { AvailabilityRow, Room } from "@/lib/supabase/types";
 
 function formatCurrency(amount: number, currency: string) {
@@ -44,6 +45,13 @@ export default function RoomsBrowser({
   });
   const datesSelected = Boolean(selection.checkIn && selection.checkOut);
 
+  // A night shows as closed (crossed out) only when EVERY room is taken that
+  // night. Nothing about who booked, or whether they have paid, is shown.
+  const closedRanges = useMemo<DateRange[]>(
+    () => getClosedRanges(rooms, availability),
+    [rooms, availability],
+  );
+
   const availableRooms = useMemo(() => {
     if (!selection.checkIn || !selection.checkOut) return [];
     return rooms.filter((room) =>
@@ -67,7 +75,7 @@ export default function RoomsBrowser({
           <CalendarBlank size={18} />
           Select your dates to see available rooms
         </p>
-        <BookingCalendar bookedRanges={[]} selection={selection} onChange={setSelection} />
+        <BookingCalendar bookedRanges={closedRanges} selection={selection} onChange={setSelection} />
       </div>
 
       {!datesSelected && (

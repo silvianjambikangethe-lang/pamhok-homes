@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { format, parseISO } from "date-fns";
 import { SealCheck, Warning } from "@phosphor-icons/react/dist/ssr";
 import PageBanner from "@/components/PageBanner";
-import { getBookingByToken } from "@/lib/portal";
+import { getVerificationSummary } from "@/lib/portal";
+import { parseVerifyToken } from "@/lib/verify-token";
 import { firstNameLastInitial } from "@/lib/guest-display-name";
 import { SITE, pageTitle } from "@/lib/site";
 
@@ -17,7 +18,10 @@ export default async function VerifyPassPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const booking = await getBookingByToken(token);
+  // The pass carries a signed code, never the private portal link. A code that
+  // isn't genuine (including an old-style link) is simply "not valid".
+  const bookingId = parseVerifyToken(token);
+  const booking = bookingId ? await getVerificationSummary(bookingId) : null;
 
   const isValid =
     !!booking &&

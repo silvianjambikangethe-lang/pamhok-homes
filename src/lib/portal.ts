@@ -23,6 +23,8 @@ export interface PortalBooking extends Booking {
     access_token: string;
     payment_status: string;
     room_name: string | null;
+    // Whether this room can take a cleaning or laundry request yet.
+    ready: boolean;
   }[];
 }
 
@@ -67,7 +69,7 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     data.guest_id
       ? supabase
           .from("bookings")
-          .select("access_token, payment_status, room:rooms(name)")
+          .select("access_token, payment_status, booking_status, id_verification_status, checked_out_at, room:rooms(name)")
           .eq("guest_id", data.guest_id)
           .eq("check_in", data.check_in)
           .eq("check_out", data.check_out)
@@ -80,12 +82,19 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     (siblingResult.data ?? []) as unknown as {
       access_token: string;
       payment_status: string;
+      booking_status: string;
+      id_verification_status: string;
+      checked_out_at: string | null;
       room: { name: string } | null;
     }[]
   ).map((s) => ({
     access_token: s.access_token,
     payment_status: s.payment_status,
     room_name: s.room?.name ?? null,
+    ready:
+      s.booking_status === "Confirmed" &&
+      s.id_verification_status === "Verified" &&
+      !s.checked_out_at,
   }));
 
   // Everything returned here is serialized into the guest's page (the
@@ -119,4 +128,29 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     latestLaundryRequest: laundryRows?.[0] ?? null,
     siblingBookings,
   } as unknown as PortalBooking;
+}
+
+// What the public "Verified Guest" page needs, and nothing more. Looked up by
+// booking id from a SIGNED pass code (see verify-token.ts), never by the
+// private portal link.
+export interface VerificationSummary {
+  payment_status: string;
+  id_verification_status: string;
+  check_in: string;
+  check_out: string;
+  booking_reference: string | null;
+  room: { name: string } | null;
+  guest: { full_name: string } | null;
+}
+
+export async function getVerificationSummary(bookingId: string): Promise<VerificationSummary | null> {
+  const supabase = createAdminSupabaseClient();
+  const { data } = await supabase
+    .from("bookings")
+    .select(
+      "payment_status, id_verification_status, check_in, check_out, booking_reference, room:rooms(name), guest:guests(full_name)",
+    )
+    .eq("id", bookingId)
+    .maybeSingle();
+  return (data as unknown as VerificationSummary | null) ?? null;
 }

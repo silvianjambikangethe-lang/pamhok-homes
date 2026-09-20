@@ -189,17 +189,9 @@ export default function BookingWidget({
         }),
       });
 
-      // 403 is used uniquely for a blocklisted guest name (see
-      // src/lib/guest-blocklist.ts) — every other failure here (validation,
-      // room not found, dates taken, rate limit) uses a different status
-      // and stays as an inline, fixable-looking error in the form. A
-      // blocked name instead goes to its own page: it isn't something the
-      // guest can fix by editing the form, so it shouldn't look like one.
-      if (res.status === 403) {
-        router.push("/booking-blocked");
-        return;
-      }
-
+      // Every failure, including a name on the host's blocked list, comes back
+      // as an ordinary message shown here in the form. There is deliberately no
+      // separate "blocked" page, so nobody is told they were singled out.
       const data = await res.json();
 
       if (!res.ok) {

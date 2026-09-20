@@ -8,6 +8,7 @@ import type { DisplayCurrency } from "@/lib/currency";
 import type { LaundryPaymentStatus } from "@/lib/supabase/types";
 import { formatMoney } from "@/lib/currency-format";
 import LaundryPaymentSection from "@/components/portal/LaundryPaymentSection";
+import RoomPicker, { type RequestRoom } from "@/components/portal/RoomPicker";
 
 const GUEST_LABELS: Record<string, string> = {
   Open: "Pickup Requested",
@@ -33,6 +34,7 @@ export default function LaundrySection({
   laundryCurrency,
   laundryPaymentStatus,
   rates,
+  rooms = [],
 }: {
   token: string;
   checkIn: string;
@@ -43,6 +45,8 @@ export default function LaundrySection({
   laundryCurrency: string | null;
   laundryPaymentStatus: LaundryPaymentStatus | null;
   rates: Record<DisplayCurrency, number>;
+  // The rooms this guest booked together (empty for a single-room booking).
+  rooms?: RequestRoom[];
 }) {
   const router = useRouter();
   const today = startOfDay(new Date());
@@ -52,6 +56,10 @@ export default function LaundrySection({
   const [showForm, setShowForm] = useState(false);
   const [itemCount, setItemCount] = useState("");
   const [notes, setNotes] = useState("");
+  const [targetToken, setTargetToken] = useState(token);
+  // Set after a pickup was requested for one of the guest's OTHER rooms: that
+  // room's page shows its status and takes its payment.
+  const [sentElsewhere, setSentElsewhere] = useState<{ name: string; token: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,7 +83,7 @@ export default function LaundrySection({
       const res = await fetch(`/api/portal/${token}/laundry`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemCount, notes }),
+        body: JSON.stringify({ itemCount, notes, targetToken }),
       });
       const data = await res.json();
 
@@ -85,6 +93,15 @@ export default function LaundrySection({
         return;
       }
 
+      if (data.forOtherRoom) {
+        const other = rooms.find((r) => r.token === targetToken);
+        setSentElsewhere(other ? { name: other.name, token: other.token } : null);
+        setShowForm(false);
+        setSubmitting(false);
+        return;
+      }
+
+      setSentElsewhere(null);
       setStatus("Open");
       setShowForm(false);
       setSubmitting(false);
@@ -125,6 +142,7 @@ export default function LaundrySection({
         </div>
       ) : showForm ? (
         <form onSubmit={handleSubmit} className="space-y-3">
+          <RoomPicker rooms={rooms} value={targetToken} onChange={setTargetToken} />
           <div>
             <label htmlFor="itemCount" className="text-sm font-medium text-ink/80">
               Roughly how many items or bags? (optional)
@@ -175,14 +193,29 @@ export default function LaundrySection({
           </div>
         </form>
       ) : (
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="focus-ring flex items-center gap-2 text-sm font-semibold text-terracotta-600 hover:text-terracotta-700"
-        >
-          <TShirt size={20} />
-          Request Laundry Pickup
-        </button>
+        <div>
+          {sentElsewhere && (
+            <p className="mb-2 text-sm text-ink/80">
+              Laundry pickup requested for {sentElsewhere.name}. Its status and any payment
+              appear on{" "}
+              <a
+                href={`/portal/${sentElsewhere.token}`}
+                className="focus-ring rounded font-medium text-terracotta-600 underline hover:text-terracotta-700"
+              >
+                that room&apos;s page
+              </a>
+              .
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="focus-ring flex items-center gap-2 text-sm font-semibold text-terracotta-600 hover:text-terracotta-700"
+          >
+            <TShirt size={20} />
+            Request Laundry Pickup
+          </button>
+        </div>
       )}
     </div>
   );

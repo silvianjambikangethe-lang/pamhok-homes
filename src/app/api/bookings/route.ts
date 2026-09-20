@@ -5,6 +5,21 @@ import { isSupabaseConfigured } from "@/lib/data";
 import { generateBookingReference, generatePassReference } from "@/lib/booking-reference";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { isNameBlocked } from "@/lib/guest-blocklist";
+import { SITE } from "@/lib/site";
+
+// One response for anything that stops a booking being created on our side,
+// including a name on the host's blocked list. A real hiccup and a blocked
+// name look exactly the same to the visitor (same words, same status), so the
+// list can't be discovered by trying names, and nobody is told they were
+// singled out. It points to a phone call so a genuine mix-up can be sorted out.
+function cannotCompleteOnline() {
+  return NextResponse.json(
+    {
+      error: `We couldn't complete this booking online right now. Please call us on ${SITE.phone} and we'll help you book.`,
+    },
+    { status: 503 },
+  );
+}
 
 interface BookingRequestBody {
   roomId: string;
@@ -91,17 +106,6 @@ export async function POST(request: Request) {
 
   const supabase = createAdminSupabaseClient();
 
-  // Blocklist gate — checked before any booking/guest rows exist for this
-  // request, so a blocked name never gets as far as a real reservation.
-  // Deliberately a generic error: nothing here should reveal that a
-  // blocklist exists or that this specific name is on it.
-  if (await isNameBlocked(supabase, body.guest.fullName)) {
-    return NextResponse.json(
-      { error: "We're unable to complete this booking. Please contact us directly to proceed." },
-      { status: 403 },
-    );
-  }
-
   const { data: room, error: roomError } = await supabase
     .from("rooms")
     .select("*")
@@ -170,6 +174,14 @@ export async function POST(request: Request) {
     extraRooms = extraRoomIds.map((id) => extras.find((r) => r.id === id)!);
   }
 
+  // Blocklist gate. Runs after every check the visitor could fix themselves
+  // (fields, dates, room, availability) and before any guest or booking row
+  // exists, so a blocked name never gets as far as a reservation. It answers
+  // exactly like any other server-side failure (see cannotCompleteOnline).
+  if (await isNameBlocked(supabase, body.guest.fullName)) {
+    return cannotCompleteOnline();
+  }
+
   const { data: guestRow, error: guestError } = await supabase
     .from("guests")
     .insert({
@@ -181,7 +193,7 @@ export async function POST(request: Request) {
     .single();
 
   if (guestError || !guestRow) {
-    return NextResponse.json({ error: "Could not save guest details." }, { status: 500 });
+    return cannotCompleteOnline();
   }
 
   const guestId = guestRow.id;
@@ -227,13 +239,13 @@ export async function POST(request: Request) {
         booking = data;
       } else if (bookingError?.code !== "23505") {
         await rollback();
-        return NextResponse.json({ error: "Could not create booking." }, { status: 500 });
+        return cannotCompleteOnline();
       }
     }
 
     if (!booking) {
       await rollback();
-      return NextResponse.json({ error: "Could not create booking." }, { status: 500 });
+      return cannotCompleteOnline();
     }
     created.push(booking);
   }
