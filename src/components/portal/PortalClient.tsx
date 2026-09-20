@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { format, isPast, parseISO, startOfDay } from "date-fns";
 import { Broom, CalendarBlank, ClockCountdown, Info, Phone, Receipt as ReceiptIcon, WhatsappLogo } from "@phosphor-icons/react";
 import type { PortalBooking } from "@/lib/portal";
@@ -125,6 +126,33 @@ export default function PortalClient({
           </a>
         )}
       </div>
+
+      {booking.siblingBookings.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-taupe/20 bg-pk-surface p-6 shadow-card dark:bg-surface">
+          <h2 className="font-serif text-h3 text-ink">Your other rooms</h2>
+          <p className="mt-1 text-sm text-ink/65">
+            These rooms were booked together for the same dates. Each room is
+            paid for and ID-verified on its own page.
+          </p>
+          <ul className="mt-4 space-y-2">
+            {booking.siblingBookings.map((s) => (
+              <li key={s.access_token}>
+                <Link
+                  href={`/portal/${s.access_token}`}
+                  className="focus-ring flex items-center justify-between gap-3 rounded-xl border border-taupe/25 bg-page px-4 py-3 text-sm font-semibold text-ink hover:border-terracotta-300"
+                >
+                  <span>{s.room_name ?? "Room"}</span>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[s.payment_status] ?? ""}`}
+                  >
+                    Payment: {s.payment_status}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {isPassReady && !booking.checked_out_at && (
         <div className="mt-6">

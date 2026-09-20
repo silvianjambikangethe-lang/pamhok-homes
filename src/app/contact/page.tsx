@@ -107,7 +107,7 @@ export default async function ContactPage() {
                 controls
                 controlsList="nodownload"
                 preload="metadata"
-                className="photo-frame mx-auto mt-3 aspect-[9/16] w-full max-w-[220px] rounded-xl bg-black"
+                className="photo-frame photo-frame-glow mx-auto mt-3 aspect-[9/16] w-full max-w-[220px] rounded-xl bg-black"
               />
             </div>
           )}

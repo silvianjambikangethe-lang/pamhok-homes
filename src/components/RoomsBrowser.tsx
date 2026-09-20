@@ -57,7 +57,7 @@ export default function RoomsBrowser({
 
   return (
     <>
-      <div className="mx-auto max-w-md rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
+      <div className="mx-auto max-w-md rounded-2xl border border-taupe/20 bg-pk-surface p-6 glow-gold dark:bg-surface">
         <p className="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-ink/80">
           <CalendarBlank size={18} />
           Select your dates to see available rooms

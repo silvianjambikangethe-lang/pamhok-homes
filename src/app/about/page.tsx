@@ -80,7 +80,7 @@ export default async function AboutPage() {
                 controls
                 controlsList="nodownload"
                 preload="metadata"
-                className="photo-frame aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
+                className="photo-frame photo-frame-glow aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
               />
             ))}
           </div>

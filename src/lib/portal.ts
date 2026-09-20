@@ -17,6 +17,13 @@ export interface PortalBooking extends Booking {
   guest: Pick<Guest, "full_name"> | null;
   hasReview: boolean;
   latestLaundryRequest: LatestLaundryRequest | null;
+  // Other rooms booked together with this one (same guest, same dates), so
+  // a group can reach each room's own page to pay and verify ID.
+  siblingBookings: {
+    access_token: string;
+    payment_status: string;
+    room_name: string | null;
+  }[];
 }
 
 // The guest portal has no login — the access_token in the URL *is* the
@@ -48,7 +55,7 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     if (error || !data) return null;
   }
 
-  const [{ count }, { data: laundryRows }] = await Promise.all([
+  const [{ count }, { data: laundryRows }, siblingResult] = await Promise.all([
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("booking_id", data.id),
     supabase
       .from("guest_requests")
@@ -57,7 +64,29 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
       .eq("request_type", "laundry")
       .order("created_at", { ascending: false })
       .limit(1),
+    data.guest_id
+      ? supabase
+          .from("bookings")
+          .select("access_token, payment_status, room:rooms(name)")
+          .eq("guest_id", data.guest_id)
+          .eq("check_in", data.check_in)
+          .eq("check_out", data.check_out)
+          .neq("id", data.id)
+          .neq("booking_status", "Cancelled")
+          .order("created_at", { ascending: true })
+      : Promise.resolve({ data: [] as never[] }),
   ]);
+  const siblingBookings = (
+    (siblingResult.data ?? []) as unknown as {
+      access_token: string;
+      payment_status: string;
+      room: { name: string } | null;
+    }[]
+  ).map((s) => ({
+    access_token: s.access_token,
+    payment_status: s.payment_status,
+    room_name: s.room?.name ?? null,
+  }));
 
   // Everything returned here is serialized into the guest's page (the
   // whole booking is handed to a client component), so the secrets must be
@@ -88,5 +117,6 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     refund_reference: null,
     hasReview: (count ?? 0) > 0,
     latestLaundryRequest: laundryRows?.[0] ?? null,
+    siblingBookings,
   } as unknown as PortalBooking;
 }

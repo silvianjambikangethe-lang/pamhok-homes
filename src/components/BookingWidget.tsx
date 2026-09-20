@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { differenceInCalendarDays, format, isAfter, isBefore, isValid, parseISO, startOfDay } from "date-fns";
-import { CalendarBlank, UsersThree, Warning } from "@phosphor-icons/react";
+import { CalendarBlank, Lock, UsersThree, Warning } from "@phosphor-icons/react";
 import BookingCalendar, {
   type DateRange,
   type DateSelection,
@@ -51,15 +51,35 @@ function resolveInitialSelection(
   return { selection: { checkIn, checkOut }, wasReset: false };
 }
 
+// The few fields of another room the picker needs (a group of more than 2
+// guests can add these rooms for the same dates).
+export interface OtherRoom {
+  id: string;
+  slug: string;
+  name: string;
+  price_per_night: number;
+  currency: string;
+  max_guests: number;
+  bed_config: string;
+}
+
 export default function BookingWidget({
   room,
   availability,
+  otherRooms,
+  otherAvailability,
+  initialExtraIds = [],
   rates,
   initialCheckIn,
   initialCheckOut,
 }: {
   room: Room;
   availability: AvailabilityRow[];
+  otherRooms: OtherRoom[];
+  otherAvailability: AvailabilityRow[];
+  // Units the guest already added to this booking on their own unit pages
+  // ("Add unit"), carried back in the URL.
+  initialExtraIds?: string[];
   rates: Record<DisplayCurrency, number>;
   initialCheckIn?: string;
   initialCheckOut?: string;
@@ -74,26 +94,73 @@ export default function BookingWidget({
     [availability],
   );
 
-  const [{ selection, wasReset: datesWereReset }, setSelectionState] = useState(() => {
-    const result = resolveInitialSelection(initialCheckIn, initialCheckOut, bookedRanges);
-    return result;
-  });
+  const [initialResult] = useState(() =>
+    resolveInitialSelection(initialCheckIn, initialCheckOut, bookedRanges),
+  );
+  const [{ selection, wasReset: datesWereReset }, setSelectionState] =
+    useState(initialResult);
+  // Dates carried over from the /rooms search are locked on this page: the
+  // guest sees them but can't edit them here. A visit with no valid dates
+  // (direct link, stale or just-booked dates) keeps the editable calendar,
+  // since there'd be no other way to pick dates.
+  const [datesLocked] = useState(
+    Boolean(initialResult.selection.checkIn && initialResult.selection.checkOut),
+  );
   function setSelection(next: DateSelection) {
     setSelectionState({ selection: next, wasReset: false });
   }
-  const [guestCount, setGuestCount] = useState<1 | 2 | "other" | null>(null);
+  const [guestCount, setGuestCount] = useState<1 | 2 | "other" | null>(
+    initialExtraIds.length > 0 ? "other" : null,
+  );
   const [guest, setGuest] = useState({ fullName: "", email: "", phone: "" });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [extraRoomIds, setExtraRoomIds] = useState<string[]>(initialExtraIds);
+
   const nights =
     selection.checkIn && selection.checkOut
       ? differenceInCalendarDays(selection.checkOut, selection.checkIn)
       : 0;
-  const total = nights * room.price_per_night;
   const datesSelected = Boolean(selection.checkIn && selection.checkOut);
-  const showGuestDetails = datesSelected && (guestCount === 1 || guestCount === 2);
+
+  // Other rooms that are free for the chosen dates (same overlap rule as the
+  // server check in /api/bookings, which stays the source of truth).
+  const openOtherRooms = useMemo(() => {
+    const { checkIn, checkOut } = selection;
+    if (!checkIn || !checkOut) return [];
+    return otherRooms.filter(
+      (r) =>
+        !otherAvailability.some(
+          (a) =>
+            a.room_id === r.id &&
+            isBefore(parseISO(a.check_in), checkOut) &&
+            isAfter(parseISO(a.check_out), checkIn),
+        ),
+    );
+  }, [otherRooms, otherAvailability, selection]);
+
+  // Extra rooms only count for a group ("Other"), and only while still free
+  // for the dates on screen.
+  const selectedExtras =
+    guestCount === "other"
+      ? openOtherRooms.filter((r) => extraRoomIds.includes(r.id))
+      : [];
+  const roomCount = 1 + selectedExtras.length;
+  const total =
+    nights *
+    (room.price_per_night + selectedExtras.reduce((sum, r) => sum + r.price_per_night, 0));
+
+  function toggleExtraRoom(id: string) {
+    setExtraRoomIds((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
+    );
+  }
+
+  const showGuestDetails =
+    datesSelected &&
+    (guestCount === 1 || guestCount === 2 || (guestCount === "other" && roomCount > 1));
   const canSubmit =
     showGuestDetails &&
     guest.fullName.trim() &&
@@ -115,6 +182,7 @@ export default function BookingWidget({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           roomId: room.id,
+          extraRoomIds: selectedExtras.map((r) => r.id),
           checkIn: format(selection.checkIn, "yyyy-MM-dd"),
           checkOut: format(selection.checkOut, "yyyy-MM-dd"),
           guest,
@@ -148,7 +216,10 @@ export default function BookingWidget({
   }
 
   return (
-    <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-warm sm:p-8">
+    <div
+      id="book"
+      className="scroll-mt-24 rounded-2xl border border-taupe/20 bg-pk-surface p-6 glow-gold sm:p-8 dark:bg-surface"
+    >
       <div className="flex items-baseline justify-between">
         <p className="font-serif text-price text-ink">
           {formatCurrency(room.price_per_night, room.currency)}
@@ -156,23 +227,64 @@ export default function BookingWidget({
         </p>
       </div>
 
-      <div className="mt-6">
-        <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink/80">
-          <CalendarBlank size={18} />
-          Select your dates
-        </p>
-        {datesWereReset && (
-          <p className="mb-3 flex items-center gap-2 text-sm text-danger">
-            <Warning size={16} className="shrink-0" />
-            Those dates were just booked — please pick new ones.
+      {datesLocked && selection.checkIn && selection.checkOut ? (
+        <div className="mt-6">
+          <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink/80">
+            <Lock size={18} />
+            Your dates
           </p>
-        )}
-        <BookingCalendar
-          bookedRanges={bookedRanges}
-          selection={selection}
-          onChange={setSelection}
-        />
-      </div>
+          <div
+            className="grid grid-cols-2 gap-3"
+            role="group"
+            aria-label="Your selected dates, locked"
+          >
+            <div className="rounded-xl border border-taupe/25 bg-page px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink/65">
+                Check-in
+              </p>
+              <p className="mt-1 text-sm font-semibold text-ink">
+                {format(selection.checkIn, "EEE, d MMM yyyy")}
+              </p>
+            </div>
+            <div className="rounded-xl border border-taupe/25 bg-page px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink/65">
+                Check-out
+              </p>
+              <p className="mt-1 text-sm font-semibold text-ink">
+                {format(selection.checkOut, "EEE, d MMM yyyy")}
+              </p>
+            </div>
+          </div>
+          <p className="mt-2 text-small text-ink/65">
+            {nights} night{nights > 1 ? "s" : ""} · Dates are set from your
+            search.{" "}
+            <Link
+              href="/rooms"
+              className="focus-ring rounded font-medium text-terracotta-600 underline hover:text-terracotta-700"
+            >
+              Start a new search
+            </Link>
+          </p>
+        </div>
+      ) : (
+        <div className="mt-6">
+          <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink/80">
+            <CalendarBlank size={18} />
+            Select your dates
+          </p>
+          {datesWereReset && (
+            <p className="mb-3 flex items-center gap-2 text-sm text-danger">
+              <Warning size={16} className="shrink-0" />
+              Those dates were just booked — please pick new ones.
+            </p>
+          )}
+          <BookingCalendar
+            bookedRanges={bookedRanges}
+            selection={selection}
+            onChange={setSelection}
+          />
+        </div>
+      )}
 
       {datesSelected && (
         <div className="mt-6 border-t border-taupe/20 pt-6">
@@ -188,7 +300,7 @@ export default function BookingWidget({
                 onClick={() => setGuestCount(option)}
                 className={`focus-ring rounded-full border px-5 py-2 text-sm font-semibold transition-colors ${
                   guestCount === option
-                    ? "border-terracotta-500 bg-terracotta-500 text-white"
+                    ? "border-pk-primary bg-pk-primary text-pk-on-dark dark:border-terracotta-500 dark:bg-terracotta-500 dark:text-white"
                     : "border-taupe/25 bg-page text-ink/80 hover:border-terracotta-300"
                 }`}
               >
@@ -198,11 +310,75 @@ export default function BookingWidget({
           </div>
 
           {guestCount === "other" && (
-            <p className="mt-3 flex items-start gap-2 text-sm text-danger">
-              <Warning size={16} className="mt-0.5 shrink-0" />
-              We only allow 2 guests per room — please consider booking
-              another room for your group.
-            </p>
+            <div className="mt-4">
+              <p className="text-sm text-ink/80">
+                Each room sleeps up to 2 guests. Add more rooms for the same
+                dates and book them all together under your name.
+              </p>
+
+              {openOtherRooms.length === 0 ? (
+                <p className="mt-3 flex items-start gap-2 text-sm text-danger">
+                  <Warning size={16} className="mt-0.5 shrink-0" />
+                  No other rooms are open for these dates. Try different
+                  dates, or message us on WhatsApp for a group booking.
+                </p>
+              ) : (
+                <fieldset className="mt-3">
+                  <legend className="sr-only">Add rooms for the same dates</legend>
+                  <ul className="space-y-2">
+                    {openOtherRooms.map((r) => {
+                      const checked = extraRoomIds.includes(r.id);
+                      return (
+                        <li key={r.id}>
+                          <label
+                            htmlFor={`extra-room-${r.id}`}
+                            className={`focus-within:ring-2 flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
+                              checked
+                                ? "border-pk-primary bg-pk-latte dark:border-terracotta-500 dark:bg-terracotta-700/25"
+                                : "border-taupe/25 bg-page hover:border-terracotta-300"
+                            }`}
+                          >
+                            <input
+                              id={`extra-room-${r.id}`}
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleExtraRoom(r.id)}
+                              className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 text-terracotta-500 focus:ring-terracotta-500"
+                            />
+                            <span className="flex-1">
+                              <span className="block font-semibold text-ink">{r.name}</span>
+                              <span className="block text-small text-ink/65">
+                                Up to {r.max_guests} guests · {r.bed_config}
+                              </span>
+                            </span>
+                            <span className="shrink-0 font-semibold text-ink">
+                              {formatCurrency(r.price_per_night, r.currency)}
+                              <span className="text-small font-normal text-ink/65">
+                                {" "}
+                                / night
+                              </span>
+                            </span>
+                          </label>
+                          <Link
+                            href={`/rooms/${r.slug}?checkIn=${format(selection.checkIn!, "yyyy-MM-dd")}&checkOut=${format(selection.checkOut!, "yyyy-MM-dd")}&addTo=${room.slug}${
+                              extraRoomIds.length ? `&extras=${extraRoomIds.join(",")}` : ""
+                            }`}
+                            className="focus-ring mt-1 inline-block rounded px-1 text-small font-semibold text-terracotta-600 underline hover:text-terracotta-700"
+                          >
+                            See room →
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {roomCount === 1 && (
+                    <p className="mt-3 text-small text-ink/65">
+                      Tick at least one more room to continue.
+                    </p>
+                  )}
+                </fieldset>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -258,12 +434,15 @@ export default function BookingWidget({
 
         {nights > 0 && (
           <div className="rounded-xl bg-page px-4 py-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-ink/80">
-                {formatCurrency(room.price_per_night, room.currency)} ×{" "}
-                {nights} night{nights > 1 ? "s" : ""}
-              </span>
-            </div>
+            {[room, ...selectedExtras].map((r) => (
+              <div key={r.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-ink/80">
+                  {roomCount > 1 && <span className="font-semibold">{r.name}: </span>}
+                  {formatCurrency(r.price_per_night, r.currency)} × {nights} night
+                  {nights > 1 ? "s" : ""}
+                </span>
+              </div>
+            ))}
             <CurrencySelector amountKes={total} rates={rates} className="mt-1" />
           </div>
         )}
@@ -302,10 +481,16 @@ export default function BookingWidget({
           disabled={!canSubmit}
           className="focus-ring w-full rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3.5 text-btn text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submitting ? "Reserving…" : "Reserve — Continue to Payment"}
+          {submitting
+            ? "Reserving…"
+            : roomCount > 1
+              ? `Reserve ${roomCount} rooms — Continue to Payment`
+              : "Reserve — Continue to Payment"}
         </button>
         <p className="text-center text-small text-ink/65">
           You won&apos;t be charged yet. Choose your payment method next.
+          {roomCount > 1 &&
+            " Each room is paid for on its own booking page, linked from the first."}
         </p>
       </form>
       )}

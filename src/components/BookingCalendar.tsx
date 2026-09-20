@@ -189,11 +189,11 @@ function MonthGrid({
                   ? "cursor-not-allowed text-ink/30 line-through"
                   : "",
                 !disabled && inMonth && !isCheckIn && !isCheckOut && !inRange
-                  ? "text-ink/80 hover:bg-surface"
+                  ? "text-ink/80 hover:bg-pk-sunken dark:hover:bg-surface"
                   : "",
-                inRange ? "bg-terracotta-100 text-terracotta-700 dark:bg-terracotta-700/25 dark:text-terracotta-300" : "",
+                inRange ? "bg-pk-latte text-pk-text dark:bg-terracotta-700/25 dark:text-terracotta-300" : "",
                 isCheckIn || isCheckOut
-                  ? "bg-terracotta-500 font-semibold text-white"
+                  ? "bg-pk-primary font-semibold text-pk-on-dark dark:bg-terracotta-500 dark:text-white"
                   : "",
               ].join(" ")}
             >

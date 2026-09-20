@@ -40,6 +40,10 @@
   --c-mousse: 255 251 245; /* Milk (text on Roast buttons) */
   --c-danger: 154 47 34; /* Error */
 
+  /* Native checkboxes/radios/range use Roast instead of the browser's blue.
+   * (Dark mode resets this to the browser default below.) */
+  accent-color: var(--pk-primary);
+
   /* Brown light theme tokens. Colour and shadow only; light mode. */
   --pk-bg: #F6EFE4;
   --pk-surface: #FFFBF5;
@@ -80,6 +84,8 @@
   --color-surface: 46 36 29; /* #2E241D */
   --color-ink: 240 233 221; /* Warm Ivory (dark-mode text) #F0E9DD */
   --color-border: 176 141 87; /* gold-500 #B08D57 — unchanged from before */
+
+  accent-color: auto;
 
   /* Original values of the brand scales (see :root). */
   --c-terracotta-50: 251 238 227;
@@ -175,6 +181,36 @@ body {
   }
 
   .photo-frame:hover {
+    border-color: #c4713c;
+    box-shadow: 0 0 16px rgba(196, 113, 60, 0.35);
+  }
+
+  /* Soft gold glow around the date-picking cards. Light mode: a wide
+   * caramel glow. Dark mode: a thin gold outline with a faint glow, subtle
+   * but still visible on the dark surface. */
+  .glow-gold {
+    box-shadow:
+      0 0 24px rgba(184, 129, 79, 0.35),
+      0 2px 12px -2px rgba(58, 36, 24, 0.1);
+  }
+
+  .dark .glow-gold {
+    border-color: rgba(176, 141, 87, 0.55);
+    box-shadow:
+      0 0 12px rgba(176, 141, 87, 0.22),
+      0 2px 12px -2px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Videos keep the frame's glow at all times, not just on hover. Light
+   * mode uses the theme's Caramel; dark mode keeps the original orange.
+   * Doubled selector so it beats the shadow-card utility on the same
+   * element. */
+  .photo-frame.photo-frame-glow {
+    border-color: var(--pk-caramel);
+    box-shadow: 0 0 16px rgba(184, 129, 79, 0.4);
+  }
+
+  .dark .photo-frame.photo-frame-glow {
     border-color: #c4713c;
     box-shadow: 0 0 16px rgba(196, 113, 60, 0.35);
   }

@@ -102,12 +102,14 @@ export default async function HomePage() {
               className="aspect-square rounded-2xl shadow-card"
             />
           </div>
-          <div>
-            <Eyebrow>Welcome</Eyebrow>
-            <h2 className="mt-3 font-serif text-h2 text-ink">
+          <div className="rounded-2xl border border-pk-footer bg-pk-footer p-6 shadow-card sm:p-8 dark:border-taupe/25 dark:bg-surface">
+            <Eyebrow className="font-bold text-pk-latte dark:text-terracotta-600">
+              Welcome
+            </Eyebrow>
+            <h2 className="mt-3 font-serif text-h2 text-pk-on-dark dark:text-ink">
               More than a place to sleep
             </h2>
-            <p className="mt-5 text-body text-ink/80">
+            <p className="mt-5 text-body text-pk-on-dark-muted dark:text-ink/80">
               {SITE.name} started with a simple idea: guests should feel
               genuinely cared for, not just checked in. Every room is
               thoughtfully furnished, every stay is guided personally, and
@@ -116,7 +118,7 @@ export default async function HomePage() {
             </p>
             <Link
               href="/about"
-              className="focus-ring mt-6 inline-flex items-center gap-2 text-btn text-terracotta-600 hover:text-terracotta-700"
+              className="focus-ring mt-6 inline-flex items-center gap-2 text-btn text-pk-latte hover:text-pk-on-dark dark:text-terracotta-600 dark:hover:text-terracotta-700"
             >
               Read our story →
             </Link>
@@ -127,7 +129,7 @@ export default async function HomePage() {
       {content.tour_videos.length > 0 && (
         <section className="container-page pb-16 sm:pb-20">
           <div className="flex flex-col gap-2 text-center">
-            <Eyebrow>See it for yourself</Eyebrow>
+            <Eyebrow className="font-bold text-terracotta-600">See it for yourself</Eyebrow>
             <h2 className="font-serif text-h2 text-ink">Take a video tour</h2>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-5">
@@ -138,7 +140,7 @@ export default async function HomePage() {
                 controls
                 controlsList="nodownload"
                 preload="metadata"
-                className="photo-frame aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
+                className="photo-frame photo-frame-glow aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
               />
             ))}
           </div>

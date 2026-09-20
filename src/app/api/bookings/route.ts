@@ -8,10 +8,16 @@ import { isNameBlocked } from "@/lib/guest-blocklist";
 
 interface BookingRequestBody {
   roomId: string;
+  // A group of more than 2 books several rooms for the same dates under one
+  // guest record. Each extra room becomes its own booking (own portal, own
+  // payment), all sharing the guest and the dates.
+  extraRoomIds?: string[];
   checkIn: string;
   checkOut: string;
   guest: { fullName: string; email: string; phone: string };
 }
+
+const MAX_EXTRA_ROOMS = 9;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[0-9+()\-\s]{7,20}$/;
@@ -21,6 +27,18 @@ function isValidBody(body: unknown): body is BookingRequestBody {
   const b = body as Record<string, unknown>;
   if (typeof b.roomId !== "string" || typeof b.checkIn !== "string" || typeof b.checkOut !== "string") {
     return false;
+  }
+  if (typeof b.extraRoomIds !== "undefined") {
+    const extras = b.extraRoomIds;
+    if (
+      !Array.isArray(extras) ||
+      extras.length > MAX_EXTRA_ROOMS ||
+      !extras.every((id) => typeof id === "string" && id.length > 0 && id.length <= 64) ||
+      new Set(extras).size !== extras.length ||
+      extras.includes(b.roomId)
+    ) {
+      return false;
+    }
   }
   const guest = b.guest as Record<string, unknown> | undefined;
   return (
@@ -113,6 +131,45 @@ export async function POST(request: Request) {
     );
   }
 
+  // Extra rooms (group booking): every one must exist, be active and be free
+  // for the same dates — checked before any guest/booking row is written.
+  const extraRoomIds = body.extraRoomIds ?? [];
+  let extraRooms: (typeof room)[] = [];
+  if (extraRoomIds.length > 0) {
+    const { data: extras, error: extrasError } = await supabase
+      .from("rooms")
+      .select("*")
+      .in("id", extraRoomIds)
+      .eq("is_active", true);
+
+    if (extrasError || !extras || extras.length !== extraRoomIds.length) {
+      return NextResponse.json(
+        { error: "One of the rooms you picked is no longer available." },
+        { status: 404 },
+      );
+    }
+
+    const { data: extrasTaken, error: extrasAvailabilityError } = await supabase
+      .from("availability_view")
+      .select("room_id")
+      .in("room_id", extraRoomIds)
+      .lt("check_in", body.checkOut)
+      .gt("check_out", body.checkIn);
+
+    if (extrasAvailabilityError) {
+      return NextResponse.json({ error: "Could not verify availability." }, { status: 500 });
+    }
+    if (extrasTaken && extrasTaken.length > 0) {
+      return NextResponse.json(
+        { error: "One of those rooms was just booked. Please pick again." },
+        { status: 409 },
+      );
+    }
+
+    // Keep the order the guest picked them in.
+    extraRooms = extraRoomIds.map((id) => extras.find((r) => r.id === id)!);
+  }
+
   const { data: guestRow, error: guestError } = await supabase
     .from("guests")
     .insert({
@@ -127,39 +184,61 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not save guest details." }, { status: 500 });
   }
 
-  const totalAmount = nights * room.price_per_night;
+  const guestId = guestRow.id;
+  const created: { id: string; access_token: string; booking_reference: string | null }[] = [];
 
-  // booking_reference has a unique constraint — retry a few times on the
-  // astronomically rare collision rather than failing the whole booking.
-  let booking: { access_token: string; booking_reference: string | null } | null = null;
-  for (let attempt = 0; attempt < 5 && !booking; attempt++) {
-    const { data, error: bookingError } = await supabase
-      .from("bookings")
-      .insert({
-        room_id: room.id,
-        guest_id: guestRow.id,
-        check_in: body.checkIn,
-        check_out: body.checkOut,
-        total_amount: totalAmount,
-        currency: room.currency,
-        payment_status: "Pending",
-        booking_status: "Confirmed",
-        booking_reference: generateBookingReference(),
-        pass_reference: generatePassReference(body.checkIn, room.display_order),
-      })
-      .select("access_token, booking_reference")
-      .single();
+  // A group booking is all-or-nothing: if any room fails, remove whatever
+  // was already created for this request so no half-booked group is left.
+  async function rollback() {
+    if (created.length > 0) {
+      await supabase.from("bookings").delete().in("id", created.map((b) => b.id));
+    }
+    await supabase.from("guests").delete().eq("id", guestId);
+  }
 
-    if (data) {
-      booking = data;
-    } else if (bookingError?.code !== "23505") {
+  // The requested room first, so its portal is where the guest lands; the
+  // portal then links to the others (same guest, same dates).
+  for (const bookedRoom of [room, ...extraRooms]) {
+    const totalAmount = nights * bookedRoom.price_per_night;
+
+    // booking_reference has a unique constraint — retry a few times on the
+    // astronomically rare collision rather than failing the whole booking.
+    let booking: { id: string; access_token: string; booking_reference: string | null } | null =
+      null;
+    for (let attempt = 0; attempt < 5 && !booking; attempt++) {
+      const { data, error: bookingError } = await supabase
+        .from("bookings")
+        .insert({
+          room_id: bookedRoom.id,
+          guest_id: guestId,
+          check_in: body.checkIn,
+          check_out: body.checkOut,
+          total_amount: totalAmount,
+          currency: bookedRoom.currency,
+          payment_status: "Pending",
+          booking_status: "Confirmed",
+          booking_reference: generateBookingReference(),
+          pass_reference: generatePassReference(body.checkIn, bookedRoom.display_order),
+        })
+        .select("id, access_token, booking_reference")
+        .single();
+
+      if (data) {
+        booking = data;
+      } else if (bookingError?.code !== "23505") {
+        await rollback();
+        return NextResponse.json({ error: "Could not create booking." }, { status: 500 });
+      }
+    }
+
+    if (!booking) {
+      await rollback();
       return NextResponse.json({ error: "Could not create booking." }, { status: 500 });
     }
+    created.push(booking);
   }
 
-  if (!booking) {
-    return NextResponse.json({ error: "Could not create booking." }, { status: 500 });
-  }
+  const booking = created[0];
 
   // No confirmation email here on purpose — "Booking Confirmation" is sent
   // when payment_status actually becomes 'Paid' (see
@@ -168,5 +247,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     accessToken: booking.access_token,
     bookingReference: booking.booking_reference,
+    roomCount: created.length,
   });
 }
