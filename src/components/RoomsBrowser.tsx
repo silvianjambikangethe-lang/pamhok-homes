@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { format, isAfter, isBefore, parseISO } from "date-fns";
+import { differenceInCalendarDays, format, isAfter, isBefore, parseISO } from "date-fns";
 import { CalendarBlank, UsersThree } from "@phosphor-icons/react";
 import RoomPhoto from "@/components/RoomPhoto";
 import BookingCalendar, { type DateSelection } from "@/components/BookingCalendar";
@@ -51,6 +51,11 @@ export default function RoomsBrowser({
     );
   }, [rooms, availability, selection]);
 
+  const nights =
+    selection.checkIn && selection.checkOut
+      ? differenceInCalendarDays(selection.checkOut, selection.checkIn)
+      : 0;
+
   const dateQuery = datesSelected
     ? `?checkIn=${format(selection.checkIn!, "yyyy-MM-dd")}&checkOut=${format(selection.checkOut!, "yyyy-MM-dd")}`
     : "";
@@ -89,13 +94,24 @@ export default function RoomsBrowser({
       )}
 
       {datesSelected && availableRooms.length > 0 && (
-        <div className="section-texture mt-12 rounded-2xl bg-surface p-6 sm:p-8">
+        <div className="mt-12">
+          <div className="mb-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 className="font-serif text-h2 text-ink">
+              {availableRooms.length} room{availableRooms.length > 1 ? "s" : ""} open
+            </h2>
+            <p className="text-body-sm text-ink/80">
+              {format(selection.checkIn!, "EEE d MMM")} to{" "}
+              {format(selection.checkOut!, "EEE d MMM yyyy")} · {nights} night
+              {nights > 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-pk-sunken p-6 sm:p-8 dark:bg-transparent dark:p-0 dark:sm:p-0">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {availableRooms.map((room) => (
             <Link
               key={room.id}
               href={`/rooms/${room.slug}${dateQuery}`}
-              className="focus-ring group flex cursor-default flex-col overflow-hidden rounded-2xl border border-taupe/20 bg-page shadow-depth transition-all duration-300 active:-translate-y-0.5 active:shadow-depth-hover md:cursor-pointer md:hover:-translate-y-0.5 md:hover:shadow-depth-hover"
+              className="focus-ring group flex cursor-default flex-col overflow-hidden rounded-2xl border card-pop bg-pk-surface dark:bg-surface transition-all duration-300 active:-translate-y-0.5 md:cursor-pointer md:hover:-translate-y-1"
             >
               <RoomPhoto
                 url={room.photo_urls?.[0]}
@@ -107,28 +123,35 @@ export default function RoomsBrowser({
                 <h2 className="font-serif text-h3 text-ink group-active:text-terracotta-600 md:group-hover:text-terracotta-600">
                   {room.name}
                 </h2>
-                <p className="mt-2 line-clamp-2 text-body-sm text-ink/65">
+                <p className="mt-2 line-clamp-2 text-body-sm text-ink/80">
                   {room.description}
                 </p>
-                <div className="mt-3 flex items-center gap-1.5 text-small text-ink/65">
+                <div className="mt-3 flex items-center gap-1.5 text-small text-ink/80">
                   <UsersThree size={16} />
                   Up to {room.max_guests} guests · {room.bed_config}
                 </div>
-                <div className="mt-4 flex items-baseline justify-between border-t border-taupe/20 pt-4">
-                  <span className="font-serif text-price text-terracotta-600">
+                <div className="mt-4 border-t border-taupe/20 pt-4">
+                  <span className="font-serif text-price text-terracotta-600 dark:text-terracotta-600">
                     {formatCurrency(room.price_per_night, room.currency)}
-                    <span className="text-small font-normal text-ink/65">
+                    <span className="whitespace-nowrap text-small font-normal text-ink/65">
                       {" "}
                       / night
                     </span>
                   </span>
-                  <span className="text-btn text-terracotta-600">
-                    View →
-                  </span>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="text-small text-ink/80">
+                      {formatCurrency(room.price_per_night * nights, room.currency)} for{" "}
+                      {nights} night{nights > 1 ? "s" : ""}
+                    </p>
+                    <span className="shrink-0 rounded-full bg-mocha-500 px-4 py-2 text-btn text-mousse transition-colors group-hover:bg-mocha-600 dark:bg-terracotta-500 dark:text-white">
+                      View room
+                    </span>
+                  </div>
                 </div>
               </div>
             </Link>
           ))}
+          </div>
           </div>
         </div>
       )}

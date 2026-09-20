@@ -54,25 +54,26 @@ function NeighborhoodGrid({
         return (
           <div
             key={`${item.name}-${index}`}
-            className="rounded-2xl border border-taupe/20 bg-page p-5 shadow-depth transition-all duration-300 hover:-translate-y-0.5 hover:shadow-depth-hover"
+            className="rounded-2xl border border-taupe/20 bg-pk-surface dark:bg-page p-5 shadow-depth transition-all duration-300 hover:-translate-y-0.5 hover:border-pk-caramel dark:hover:border-taupe/20 hover:shadow-depth-hover"
           >
             <div className="flex gap-4">
               <RoomPhoto
                 url={item.photo_url ?? undefined}
                 label={item.name}
                 seed={item.name}
-                className="photo-frame h-20 w-20 shrink-0 rounded-xl"
+                className="photo-frame h-24 w-24 shrink-0 rounded-xl"
               />
               <div>
                 <p className="font-serif text-h3 text-ink">{item.name}</p>
-                <p className="mt-1 text-body-sm text-ink/65">{item.detail}</p>
+                <p className="mt-1 text-body-sm text-ink/80">{item.detail}</p>
               </div>
             </div>
             {directionsUrl && (
               <div className="mt-4">
                 <GetDirectionsButton
                   mapsUrl={directionsUrl}
-                  label={`Get Directions from ${SITE.name}`}
+                  label={`Directions from ${SITE.name}`}
+                  className="w-full"
                   needsLocationPrompt={false}
                 />
               </div>

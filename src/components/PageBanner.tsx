@@ -13,10 +13,10 @@ import Eyebrow from "@/components/Eyebrow";
 // poorly) text for both eyebrow and heading instead.
 const BANNER_STYLES = {
   terracotta: {
-    bg: "bg-pk-tan dark:bg-terracotta-500",
-    eyebrow: "text-pk-text dark:text-ivory-dark",
+    bg: "bg-pk-tan dark:bg-[#130C08]",
+    eyebrow: "text-pk-text dark:text-gold-500",
     heading: "text-pk-text dark:text-ivory-dark",
-    icon: "text-pk-text opacity-40 dark:text-espresso/40 dark:opacity-100",
+    icon: "text-pk-text opacity-40 dark:text-white/30 dark:opacity-100",
   },
   // Unchanged — not part of the light-mode banner revision (Privacy,
   // Terms, and any other page not in the master-color-scheme.md table).
@@ -29,7 +29,7 @@ const BANNER_STYLES = {
   // Neighborhood. bg/eyebrow already matched the revised palette exactly
   // (Deep Forest #3B4A3A, Muted Gold) — only heading text moves to mousse.
   forest: {
-    bg: "bg-pk-primary dark:bg-forest-500",
+    bg: "bg-pk-primary dark:bg-[#130C08]",
     eyebrow: "text-pk-on-dark-muted dark:text-gold-500",
     heading: "text-pk-on-dark dark:text-ivory-dark",
     icon: "text-white/30",
@@ -37,18 +37,18 @@ const BANNER_STYLES = {
   // Rooms & Availability. bg already matched (Muted Gold) — text moves to
   // cocoa, dark preserved as the espresso it already was.
   gold: {
-    bg: "bg-pk-tan dark:bg-gold-500",
-    eyebrow: "text-pk-text dark:text-espresso",
-    heading: "text-pk-text dark:text-espresso",
-    icon: "text-pk-text opacity-40 dark:text-espresso/40 dark:opacity-100",
+    bg: "bg-pk-tan dark:bg-[#130C08]",
+    eyebrow: "text-pk-text dark:text-gold-500",
+    heading: "text-pk-text dark:text-ivory-dark",
+    icon: "text-pk-text opacity-40 dark:text-white/30 dark:opacity-100",
   },
   // Unchanged — verify/[token] only, not part of the light-mode banner
   // revision (Guest Portal moved to taupePortal below instead).
   sage: {
-    bg: "bg-pk-tan dark:bg-sage-500",
-    eyebrow: "text-pk-text dark:text-espresso",
-    heading: "text-pk-text dark:text-espresso",
-    icon: "text-pk-text opacity-40 dark:text-espresso/40 dark:opacity-100",
+    bg: "bg-pk-tan dark:bg-[#34251A]",
+    eyebrow: "text-pk-text dark:text-gold-500",
+    heading: "text-pk-text dark:text-ivory-dark",
+    icon: "text-pk-text opacity-40 dark:text-white/30 dark:opacity-100",
   },
   // About Us, Contact & Location. Same dark treatment as the old espresso
   // variant these replace (#1A1108 bg, gold eyebrow, ivory heading) — only
@@ -70,10 +70,10 @@ const BANNER_STYLES = {
   // Guest Portal. Same dark treatment as the old sage variant this
   // replaces (sage bg, espresso text, unchanged between modes already).
   taupePortal: {
-    bg: "bg-pk-tan dark:bg-sage-500",
-    eyebrow: "text-pk-text dark:text-espresso",
-    heading: "text-pk-text dark:text-espresso",
-    icon: "text-pk-text opacity-40 dark:text-espresso/40 dark:opacity-100",
+    bg: "bg-pk-tan dark:bg-[#34251A]",
+    eyebrow: "text-pk-text dark:text-gold-500",
+    heading: "text-pk-text dark:text-ivory-dark",
+    icon: "text-pk-text opacity-40 dark:text-white/30 dark:opacity-100",
   },
 } as const;
 

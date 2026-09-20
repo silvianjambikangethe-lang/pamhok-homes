@@ -45,7 +45,7 @@ export default async function HomePage() {
           #3B4A3A used on Neighborhood, unchanged between light/dark per
           master-color-scheme.md (already dark enough for both). */}
       <section
-        className="relative overflow-hidden bg-pk-footer dark:bg-[#2A3428] bg-cover bg-center"
+        className="relative overflow-hidden bg-pk-footer dark:bg-[#2A1D14] bg-cover bg-center"
         style={
           content.hero_image_url
             ? {
@@ -164,7 +164,7 @@ export default async function HomePage() {
               return (
                 <div
                   key={title}
-                  className="flex flex-col items-center gap-3 rounded-2xl border border-taupe/20 bg-page px-4 py-8 text-center shadow-card"
+                  className="flex flex-col items-center gap-3 rounded-2xl border border-taupe/20 bg-pk-surface dark:bg-page px-4 py-8 text-center shadow-card"
                 >
                   <Icon size={28} weight="light" className="text-terracotta-600" />
                   <span className="text-body-sm font-medium text-ink/80">

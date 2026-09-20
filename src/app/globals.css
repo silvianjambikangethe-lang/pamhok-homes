@@ -197,10 +197,46 @@ body {
   }
 
   .dark .glow-gold {
-    border-color: rgba(176, 141, 87, 0.55);
+    border-color: rgba(224, 168, 112, 0.5);
     box-shadow:
-      0 0 12px rgba(176, 141, 87, 0.22),
+      0 0 12px rgba(224, 168, 112, 0.2),
       0 2px 12px -2px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Cards that should stand out from the page (room results). Light mode:
+   * a caramel edge, a warm glow and a deep soft shadow. Dark mode: a lighter
+   * Roast Cocoa fill (set on the element) with a caramel edge and glow. The
+   * hover state lifts the glow. */
+  .card-pop {
+    border-color: rgba(184, 129, 79, 0.5);
+    box-shadow:
+      0 0 0 1px rgba(184, 129, 79, 0.18),
+      0 14px 32px -12px rgba(58, 36, 24, 0.38),
+      0 0 26px rgba(184, 129, 79, 0.3);
+  }
+
+  .card-pop:hover {
+    border-color: rgba(184, 129, 79, 0.85);
+    box-shadow:
+      0 0 0 1px rgba(184, 129, 79, 0.4),
+      0 20px 40px -12px rgba(58, 36, 24, 0.42),
+      0 0 36px rgba(184, 129, 79, 0.5);
+  }
+
+  .dark .card-pop {
+    border-color: rgba(224, 168, 112, 0.4);
+    box-shadow:
+      0 0 0 1px rgba(224, 168, 112, 0.1),
+      0 14px 32px -12px rgba(0, 0, 0, 0.7),
+      0 0 24px rgba(224, 168, 112, 0.16);
+  }
+
+  .dark .card-pop:hover {
+    border-color: rgba(224, 168, 112, 0.75);
+    box-shadow:
+      0 0 0 1px rgba(224, 168, 112, 0.25),
+      0 20px 40px -12px rgba(0, 0, 0, 0.75),
+      0 0 34px rgba(224, 168, 112, 0.32);
   }
 
   /* Videos keep the frame's glow at all times, not just on hover. Light
@@ -213,8 +249,8 @@ body {
   }
 
   .dark .photo-frame.photo-frame-glow {
-    border-color: #c4713c;
-    box-shadow: 0 0 16px rgba(196, 113, 60, 0.35);
+    border-color: #d08a4e;
+    box-shadow: 0 0 16px rgba(208, 138, 78, 0.4);
   }
 
   /* photo-frame-and-card-depth.md §2 Layer 3 — very low-opacity grain
@@ -319,3 +355,57 @@ html.dark .dark\:bg-terracotta-700\/10 { background-color: rgba(232,140,126,0.06
 html.dark .dark\:border-terracotta-700\/40 { border-color: rgba(232,140,126,0.35); }
 html.dark .dark\:bg-terracotta-700\/30 { background-color: rgba(224,168,112,0.14); }
 html.dark .dark\:bg-terracotta-700\/25 { background-color: rgba(224,168,112,0.20); }
+
+/* ============================================================
+   PAMHOK DARK MODE, REMAINING FIXES
+   Every rule starts with "html.dark" so light mode cannot change.
+   To undo these fixes, delete this whole block.
+   ============================================================ */
+
+/* Footer and other text on dark: Warm Oat instead of translucent white */
+html.dark .dark\:text-white\/80 { color: rgba(243,232,216,0.8); }
+html.dark .dark\:text-white\/70 { color: rgba(243,232,216,0.72); }
+html.dark .dark\:text-white\/50 { color: rgba(243,232,216,0.72); }
+html.dark .dark\:hover\:text-white:hover { color: #F3E8D8; }
+html.dark .dark\:hover\:text-white\/80:hover { color: #F3E8D8; }
+
+/* Host and staff sidebar hovers and dividers */
+html.dark .dark\:hover\:bg-white\/10:hover { background-color: #34251A; }
+html.dark .dark\:border-white\/10 { border-color: #3A2A1F; }
+
+/* Orange accents become Caramel */
+html.dark .dark\:border-terracotta-500 { border-color: #D08A4E; }
+html.dark .dark\:text-terracotta-400,
+html.dark .dark\:text-terracotta-500,
+html.dark .dark\:text-terracotta-600 { color: #E0A870; }
+html.dark .dark\:hover\:text-terracotta-600:hover { color: #E0A870; }
+html.dark .dark\:hover\:text-terracotta-700:hover { color: #F3E8D8; }
+html.dark .focus-ring:focus-visible { --tw-ring-color: #E0A870; }
+
+/* Small outlined action buttons: sage fill on hover with dark text */
+html.dark .dark\:hover\:text-espresso:hover { color: #0E1A11; }
+html.dark .dark\:hover\:bg-sage-300:hover { background-color: #7FBB8E; }
+
+/* Green and gold washes become the Caramel notice card */
+html.dark .dark\:bg-gold-500\/20,
+html.dark .dark\:bg-gold-700\/15,
+html.dark .dark\:bg-forest-500\/20,
+html.dark .bg-forest-500\/10 { background-color: rgba(224,168,112,0.12); }
+html.dark .dark\:border-forest-500\/40,
+html.dark .border-forest-500\/40,
+html.dark .border-forest-500\/30 { border-color: rgba(224,168,112,0.40); }
+
+/* Ghost button on the home hero photo */
+html.dark a.border-white\/40 {
+  border-color: rgba(243,232,216,0.45);
+  color: #F3E8D8;
+  background-color: rgba(243,232,216,0.10);
+}
+html.dark a.border-white\/40:hover { background-color: rgba(243,232,216,0.20); }
+
+/* Photo frames and video outlines: Caramel Fill instead of orange */
+html.dark .photo-frame:hover {
+  border-color: #D08A4E;
+  box-shadow: 0 0 16px rgba(208,138,78,0.35);
+}
+html.dark .photo-frame.photo-frame-glow:not(:hover) { border-color: #D08A4E; }
