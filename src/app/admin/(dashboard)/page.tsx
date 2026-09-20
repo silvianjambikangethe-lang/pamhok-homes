@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { addDays, endOfMonth, format, startOfMonth } from "date-fns";
+import {
+  addDays,
+  differenceInCalendarDays,
+  endOfMonth,
+  format,
+  parseISO,
+  startOfMonth,
+} from "date-fns";
 import {
   Bell,
   CalendarCheck,
@@ -8,8 +15,20 @@ import {
   Warning,
   ArrowCounterClockwise,
   Receipt,
+  SignOut,
 } from "@phosphor-icons/react/dist/ssr";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import MarkCheckedOutButton from "@/components/admin/MarkCheckedOutButton";
+
+type CheckoutDueRow = {
+  id: string;
+  booking_reference: string | null;
+  check_out: string;
+  guest: { full_name: string; email: string | null; phone: string | null } | null;
+  room: { name: string } | null;
+};
+
+const CHECKOUTS_SHOWN = 8;
 
 function formatExpenseAmount(amount: number | null, currency: string) {
   if (amount === null) return null;
@@ -37,6 +56,7 @@ export default async function AdminOverviewPage() {
 
   const monthStart = format(startOfMonth(new Date()), "yyyy-MM-dd");
   const monthEnd = format(endOfMonth(new Date()), "yyyy-MM-dd");
+  const today = format(new Date(), "yyyy-MM-dd");
 
   const [
     { data: monthBookings },
@@ -44,6 +64,7 @@ export default async function AdminOverviewPage() {
     { data: openRequests },
     { data: refundsNeeded },
     { data: renewalsDueSoon },
+    { data: checkoutsDueData },
   ] = await Promise.all([
     supabase
       .from("bookings")
@@ -79,7 +100,26 @@ export default async function AdminOverviewPage() {
       .lte("next_due_date", format(addDays(new Date(), 3), "yyyy-MM-dd"))
       .order("next_due_date", { ascending: true })
       .limit(5),
+    // Paid stays only — an unpaid booking never got door access, so it
+    // isn't a guest sitting in a room. Same Confirmed + not-yet-checked-out
+    // filter the Room Status grid and checkout-reminder cron use.
+    supabase
+      .from("bookings")
+      .select(
+        "id, booking_reference, check_out, guest:guests(full_name, email, phone), room:rooms(name)",
+      )
+      .eq("booking_status", "Confirmed")
+      .eq("payment_status", "Paid")
+      .is("checked_out_at", null)
+      .lte("check_out", today)
+      .order("check_out", { ascending: true }),
   ]);
+
+  const checkoutsDue = ((checkoutsDueData ?? []) as unknown as CheckoutDueRow[]).map((b) => ({
+    ...b,
+    daysOver: differenceInCalendarDays(parseISO(today), parseISO(b.check_out)),
+  }));
+  const checkoutsOverdueCount = checkoutsDue.filter((b) => b.daysOver > 0).length;
 
   const bookingsThisMonth = (monthBookings ?? []).filter(
     (b) => b.booking_status !== "Blocked",
@@ -134,7 +174,104 @@ export default async function AdminOverviewPage() {
         ))}
       </div>
 
-      <div className="mt-10 grid gap-6 lg:grid-cols-3">
+      <div
+        className={`mt-10 rounded-2xl border p-6 shadow-card ${
+          checkoutsOverdueCount > 0 ? "border-danger/30 bg-danger/5" : "border-taupe/20 bg-surface"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-serif text-lg font-semibold text-ink">
+            <SignOut size={20} className="text-danger" />
+            Due for check-out
+          </h2>
+          {checkoutsDue.length > 0 && (
+            <span className="rounded-full bg-danger px-2.5 py-0.5 text-xs font-semibold text-white">
+              {checkoutsDue.length}
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-ink/65">
+          Paid stays whose check-out date is today or earlier and the guest hasn&apos;t checked
+          out yet.
+        </p>
+
+        {checkoutsDue.length === 0 ? (
+          <p className="mt-4 text-sm text-ink/65">No rooms waiting on a check-out.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-taupe/20">
+            {checkoutsDue.slice(0, CHECKOUTS_SHOWN).map((b) => (
+              <li
+                key={b.id}
+                className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-3 text-sm first:pt-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-ink/80">
+                    {b.guest?.full_name ?? "Guest"} · {b.room?.name ?? "Room"}
+                  </p>
+                  <p className="text-xs text-ink/65">
+                    {b.booking_reference ?? "—"} · Check-out{" "}
+                    {format(parseISO(b.check_out), "EEE d MMM")}
+                  </p>
+                </div>
+
+                <div className="min-w-0 space-y-0.5 sm:text-right">
+                  {b.guest?.phone ? (
+                    <a
+                      href={`tel:${b.guest.phone}`}
+                      className="focus-ring block rounded font-medium text-terracotta-600 hover:text-terracotta-700"
+                    >
+                      {b.guest.phone}
+                    </a>
+                  ) : (
+                    <p className="text-ink/50">No phone on file</p>
+                  )}
+                  {b.guest?.email ? (
+                    <a
+                      href={`mailto:${b.guest.email}`}
+                      className="focus-ring block break-all rounded text-ink/80 hover:text-ink"
+                    >
+                      {b.guest.email}
+                    </a>
+                  ) : (
+                    <p className="text-ink/50">No email on file</p>
+                  )}
+                </div>
+
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white ${
+                    b.daysOver > 0 ? "bg-danger" : "bg-terracotta-500"
+                  }`}
+                >
+                  {b.daysOver === 0
+                    ? "Due today"
+                    : `${b.daysOver} day${b.daysOver === 1 ? "" : "s"} overdue`}
+                </span>
+
+                <div className="basis-full">
+                  <MarkCheckedOutButton
+                    bookingId={b.id}
+                    guestName={b.guest?.full_name ?? "this guest"}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {checkoutsDue.length > CHECKOUTS_SHOWN && (
+          <p className="mt-3 text-xs text-ink/65">
+            +{checkoutsDue.length - CHECKOUTS_SHOWN} more not shown here.
+          </p>
+        )}
+        <Link
+          href="/admin/bookings"
+          className="focus-ring mt-4 inline-block text-sm font-semibold text-terracotta-600 hover:text-terracotta-700"
+        >
+          Go to Bookings →
+        </Link>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div
           className={`rounded-2xl border p-6 shadow-card ${
             pendingVerifications && pendingVerifications.length > 0
