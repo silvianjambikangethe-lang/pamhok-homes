@@ -11,7 +11,7 @@ export default async function Footer() {
     // Dark mode: no section gets its own accent-color background — the
     // footer drops to the same near-black as the page (a touch darker, to
     // recede) instead of a full Forest fill.
-    <footer className="border-t border-taupe/20 bg-pk-footer text-pk-on-dark-muted dark:bg-[#191410] dark:text-white/80">
+    <footer className="border-t border-taupe/20 bg-pk-footer text-pk-on-dark-muted dark:bg-[#130C08] dark:text-white/80">
       <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Link href="/" className="focus-ring inline-block rounded-md">

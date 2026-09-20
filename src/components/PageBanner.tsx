@@ -21,7 +21,7 @@ const BANNER_STYLES = {
   // Unchanged — not part of the light-mode banner revision (Privacy,
   // Terms, and any other page not in the master-color-scheme.md table).
   espresso: {
-    bg: "bg-pk-footer dark:bg-[#1A1108]",
+    bg: "bg-pk-footer dark:bg-[#130C08]",
     eyebrow: "text-pk-on-dark-muted dark:text-gold-500",
     heading: "text-pk-on-dark dark:text-ivory-dark",
     icon: "text-white/30",
@@ -54,7 +54,7 @@ const BANNER_STYLES = {
   // variant these replace (#1A1108 bg, gold eyebrow, ivory heading) — only
   // the light-mode bg/text move to Rich Cocoa / Creamy Mousse.
   cocoa: {
-    bg: "bg-pk-footer dark:bg-[#1A1108]",
+    bg: "bg-pk-footer dark:bg-[#130C08]",
     eyebrow: "text-pk-on-dark-muted dark:text-gold-500",
     heading: "text-pk-on-dark dark:text-ivory-dark",
     icon: "text-white/30",
@@ -62,7 +62,7 @@ const BANNER_STYLES = {
   // Amenities. Espresso bg with Ivory/Creamy Mousse text for both eyebrow
   // and heading (not the gold-eyebrow espresso pairing used elsewhere).
   espressoAmenities: {
-    bg: "bg-pk-footer dark:bg-[#1A1108]",
+    bg: "bg-pk-footer dark:bg-[#130C08]",
     eyebrow: "text-pk-on-dark dark:text-gold-500",
     heading: "text-pk-on-dark dark:text-ivory-dark",
     icon: "text-white/30",
