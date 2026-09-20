@@ -141,8 +141,16 @@ a stay payment and a laundry charge can be in flight simultaneously.
 **Admin dashboard** (`/admin`): Overview, Bookings, ID Verifications,
 Calendar, Guest Requests (cleaning/laundry/assistance/other, laundry
 pricing lives here), Staff Shifts, Room Settings, Edit Content,
-Reviews, Expenses, WhatsApp Contact, Settings (password, staff login
-credentials, staff members + PINs, blocked guest names, terms content).
+Reviews, Expenses, WhatsApp Contact, Settings (site status, access
+website, password, staff login credentials, staff members + PINs,
+blocked guest names, terms content). **Site status / Access Website:**
+"Shut Down Website" makes `proxy.ts` rewrite the marketing pages to
+`/maintenance`; while closed, a visitor with an admin session (checked
+against `admin_users`, not just "has a session") still sees the real
+site, via Settings → Access Website (a plain link, no token). Everyone
+else, including staff and any random Google sign-in, gets the closed
+page. "Close a room" = Bookings page → "Block dates (maintenance /
+personal use)"; note blocked dates have no Unblock button yet.
 Admin login (`/admin/login`): two top-level choices, "Sign in with
 Google" or "Sign in with password" (picking password reveals the
 email/password fields, collapsed by default). Google sign-in fully
