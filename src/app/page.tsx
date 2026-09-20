@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SlideIn from "@/components/SlideIn";
 import Link from "next/link";
 import { Star } from "@phosphor-icons/react/dist/ssr";
 import PhotoCard from "@/components/PhotoCard";
@@ -133,15 +134,16 @@ export default async function HomePage() {
             <h2 className="font-serif text-h2 text-ink">Take a video tour</h2>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-5">
-            {content.tour_videos.map((url) => (
-              <video
-                key={url}
-                src={url}
-                controls
-                controlsList="nodownload"
-                preload="metadata"
-                className="photo-frame photo-frame-glow aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
-              />
+            {content.tour_videos.map((url, i) => (
+              <SlideIn key={url} className="w-full max-w-[220px]" delayMs={i * 120}>
+                <video
+                  src={url}
+                  controls
+                  controlsList="nodownload"
+                  preload="metadata"
+                  className="photo-frame photo-frame-glow aspect-[9/16] w-full rounded-2xl bg-black shadow-card"
+                />
+              </SlideIn>
             ))}
           </div>
         </section>
@@ -220,15 +222,15 @@ export default async function HomePage() {
           drops to the page background instead of a full Forest fill. */}
       <section className="bg-forest-700 py-16 text-center dark:bg-page sm:py-20">
         <div className="container-page">
-          <h2 className="font-serif text-h2 text-white">
+          <h2 className="font-serif text-h2 text-pk-on-dark dark:text-white">
             Ready to feel at home?
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-body text-white/80">
+          <p className="mx-auto mt-3 max-w-xl text-body text-pk-on-dark-muted dark:text-white/80">
             Check live availability and book your stay in minutes.
           </p>
           <Link
             href="/rooms"
-            className="focus-ring mt-7 inline-flex items-center justify-center rounded-full bg-mocha-500 dark:bg-terracotta-500 px-8 py-3.5 text-btn text-mousse dark:text-white shadow-warm transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
+            className="focus-ring mt-7 inline-flex items-center justify-center rounded-full bg-pk-latte px-8 py-3.5 text-btn font-semibold text-pk-text shadow-warm transition-colors hover:bg-pk-tan dark:bg-terracotta-500 dark:text-white dark:hover:bg-terracotta-600"
           >
             Book Now
           </Link>

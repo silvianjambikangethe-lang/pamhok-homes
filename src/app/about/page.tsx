@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SlideIn from "@/components/SlideIn";
 import Link from "next/link";
 import PhotoCard from "@/components/PhotoCard";
 import PageBanner from "@/components/PageBanner";
@@ -73,15 +74,16 @@ export default async function AboutPage() {
             <h2 className="font-serif text-h2 text-ink">Get to know Pamhok Homes</h2>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-5">
-            {content.videos.map((url) => (
-              <video
-                key={url}
-                src={url}
-                controls
-                controlsList="nodownload"
-                preload="metadata"
-                className="photo-frame photo-frame-glow aspect-[9/16] w-full max-w-[220px] rounded-2xl bg-black shadow-card"
-              />
+            {content.videos.map((url, i) => (
+              <SlideIn key={url} className="w-full max-w-[220px]" delayMs={i * 120}>
+                <video
+                  src={url}
+                  controls
+                  controlsList="nodownload"
+                  preload="metadata"
+                  className="photo-frame photo-frame-glow aspect-[9/16] w-full rounded-2xl bg-black shadow-card"
+                />
+              </SlideIn>
             ))}
           </div>
         </section>

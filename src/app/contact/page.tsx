@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SlideIn from "@/components/SlideIn";
 import { EnvelopeSimple, MapPin, Phone, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
 import { SITE, pageTitle, whatsappLink } from "@/lib/site";
 import { getAdminContactPhone, getContactContent } from "@/lib/data";
@@ -102,13 +103,15 @@ export default async function ContactPage() {
               <p className="text-sm font-medium text-ink/80">
                 Watch: driving directions to {SITE.name}
               </p>
-              <video
-                src={content.directions_video_url}
-                controls
-                controlsList="nodownload"
-                preload="metadata"
-                className="photo-frame photo-frame-glow mx-auto mt-3 aspect-[9/16] w-full max-w-[220px] rounded-xl bg-black"
-              />
+              <SlideIn className="mx-auto mt-3 w-full max-w-[220px]">
+                <video
+                  src={content.directions_video_url}
+                  controls
+                  controlsList="nodownload"
+                  preload="metadata"
+                  className="photo-frame photo-frame-glow aspect-[9/16] w-full rounded-xl bg-black"
+                />
+              </SlideIn>
             </div>
           )}
         </div>

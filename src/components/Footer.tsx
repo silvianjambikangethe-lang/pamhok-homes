@@ -18,14 +18,14 @@ export default async function Footer() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={SITE.logoIconUrl} alt={SITE.name} className="h-8 w-8 rounded-md" />
           </Link>
-          <p className="mt-3 text-sm leading-relaxed text-white/70">
+          <p className="mt-3 text-sm leading-relaxed text-pk-on-dark-muted dark:text-white/70">
             {SITE.tagline}. Come stay with us — it&apos;ll feel like home
             before you&apos;ve even unpacked.
           </p>
         </div>
 
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-pk-on-dark dark:text-gold-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-pk-latte dark:text-gold-300">
             Explore
           </p>
           <ul className="mt-4 space-y-2">
@@ -33,7 +33,7 @@ export default async function Footer() {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="focus-ring rounded text-sm text-white/70 hover:text-white"
+                  className="focus-ring rounded text-sm text-pk-on-dark-muted hover:text-pk-on-dark dark:text-white/70 dark:hover:text-white"
                 >
                   {link.label}
                 </Link>
@@ -43,10 +43,10 @@ export default async function Footer() {
         </div>
 
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-pk-on-dark dark:text-gold-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-pk-latte dark:text-gold-300">
             Get in touch
           </p>
-          <ul className="mt-4 space-y-3 text-sm text-white/70">
+          <ul className="mt-4 space-y-3 text-sm text-pk-on-dark-muted dark:text-white/70">
             <li className="flex items-start gap-2">
               <MapPin size={18} className="mt-0.5 shrink-0" />
               <span>{SITE.address}</span>
@@ -64,17 +64,17 @@ export default async function Footer() {
 
         {adminPhone && (
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-pk-on-dark dark:text-gold-300">
+            <p className="text-sm font-semibold uppercase tracking-wide text-pk-latte dark:text-gold-300">
               Chat with us
             </p>
-            <p className="mt-4 text-sm text-white/70">
+            <p className="mt-4 text-sm text-pk-on-dark-muted dark:text-white/70">
               Quick question about your stay? Message us directly.
             </p>
             <a
               href={whatsappLink(adminPhone, `Hi ${SITE.name}! I have a question about a stay.`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="focus-ring mt-4 inline-flex items-center gap-2 rounded-full bg-mocha-500 px-4 py-2.5 text-sm font-semibold text-mousse transition-colors hover:bg-mocha-600 dark:bg-terracotta-500 dark:text-white dark:hover:bg-terracotta-600"
+              className="focus-ring mt-4 inline-flex items-center gap-2 rounded-full bg-pk-latte px-4 py-2.5 text-sm font-semibold text-pk-text transition-colors hover:bg-pk-tan dark:bg-terracotta-500 dark:text-white dark:hover:bg-terracotta-600"
             >
               <WhatsappLogo size={18} weight="fill" />
               WhatsApp us
@@ -84,13 +84,13 @@ export default async function Footer() {
       </div>
 
       <div className="border-t border-taupe/20">
-        <div className="container-page flex flex-col items-center justify-between gap-3 py-5 text-xs text-white/50 sm:flex-row">
+        <div className="container-page flex flex-col items-center justify-between gap-3 py-5 text-xs text-pk-on-dark-muted dark:text-white/50 sm:flex-row">
           <p>© {new Date().getFullYear()} {SITE.name}. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <Link href="/terms" className="focus-ring rounded hover:text-white/80">
+            <Link href="/terms" className="focus-ring rounded hover:text-pk-on-dark dark:hover:text-white/80">
               Terms &amp; Conditions
             </Link>
-            <Link href="/privacy" className="focus-ring rounded hover:text-white/80">
+            <Link href="/privacy" className="focus-ring rounded hover:text-pk-on-dark dark:hover:text-white/80">
               Privacy Policy
             </Link>
           </div>
@@ -107,7 +107,7 @@ export default async function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={meta.label}
-                    className="focus-ring rounded text-white/50 transition-colors hover:text-white"
+                    className="focus-ring rounded text-pk-on-dark-muted transition-colors hover:text-pk-on-dark dark:text-white/50 dark:hover:text-white"
                   >
                     <Icon size={16} />
                   </a>
