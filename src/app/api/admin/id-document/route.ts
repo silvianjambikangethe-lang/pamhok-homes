@@ -14,9 +14,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing bookingId." }, { status: 400 });
   }
 
-  // Confirm the caller is a real admin via their session + RLS before
-  // using the service role to reach into private storage.
+  // Confirm the caller is a real admin before using the service role to
+  // reach into private storage. Checked explicitly rather than relying only
+  // on the bookings RLS policy below: if that policy were ever loosened,
+  // this route would otherwise start signing ID-photo links for any
+  // logged-in account.
   const sessionClient = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await sessionClient.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Not authorized." }, { status: 401 });
+
+  const { data: adminRow } = await sessionClient
+    .from("admin_users")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!adminRow) return NextResponse.json({ error: "Not authorized." }, { status: 403 });
+
   const { data: booking, error } = await sessionClient
     .from("bookings")
     .select("id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2")

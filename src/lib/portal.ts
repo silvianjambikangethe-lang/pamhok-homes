@@ -59,8 +59,33 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
       .limit(1),
   ]);
 
+  // Everything returned here is serialized into the guest's page (the
+  // whole booking is handed to a client component), so the secrets must be
+  // withheld HERE — hiding them in the UI alone left the door code and WiFi
+  // password readable in View Source before a guest had paid or been
+  // verified. Server-side mirror of the portal UI's own "unlocked" rule:
+  // ID-verified, paid at least once, and not yet checked out.
+  const unlocked =
+    data.id_verification_status === "Verified" && !!data.paid_at && !data.checked_out_at;
+  const room = data.room as unknown as PortalBooking["room"];
+
   return {
     ...data,
+    room: room && !unlocked
+      ? { ...room, door_code: null, wifi_password: null, wifi_network_name: null }
+      : room,
+    // Data minimisation: the portal never displays these, so don't send a
+    // guest's own ID-photo storage paths, the OCR'd contents of their ID, or
+    // the internal refund reference to the browser. (payment_reference is
+    // deliberately kept: it's printed on the guest's own receipt.)
+    id_document_path: null,
+    id_document_back_path: null,
+    id_document_path_2: null,
+    id_document_back_path_2: null,
+    id_document_url: null,
+    id_verification_result: null,
+    id_verification_result_2: null,
+    refund_reference: null,
     hasReview: (count ?? 0) > 0,
     latestLaundryRequest: laundryRows?.[0] ?? null,
   } as unknown as PortalBooking;

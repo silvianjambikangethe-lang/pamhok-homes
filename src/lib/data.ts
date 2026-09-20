@@ -34,6 +34,23 @@ function publicClient() {
   );
 }
 
+// Every rooms column that is safe to show any visitor. door_code,
+// wifi_password and wifi_network_name are deliberately NOT here: they used
+// to be fetched with select("*") and were shipped inside the public /rooms
+// pages' data, readable by anyone via View Source (2026-09-20). They only
+// ever reach a guest through the portal, once verified and paid.
+const PUBLIC_ROOM_COLUMNS =
+  "id, slug, name, description, price_per_night, currency, max_guests, is_active, display_order, created_at, photo_urls, amenities, bed_config, photo_labels";
+
+type PublicRoomRow = Omit<Room, "door_code" | "wifi_password" | "wifi_network_name">;
+
+// Room is the shared type, so keep its shape but force the secrets to null:
+// even if a database grant were ever loosened again, they can't leak out of
+// a public page from here.
+function toPublicRoom(row: PublicRoomRow): Room {
+  return { ...row, door_code: null, wifi_password: null, wifi_network_name: null };
+}
+
 // Sample rooms shown until the real Supabase project is connected and
 // `supabase/schema.sql` has been run + seeded. Once NEXT_PUBLIC_SUPABASE_URL
 // and NEXT_PUBLIC_SUPABASE_ANON_KEY are set, real `rooms` table rows take over.
@@ -124,7 +141,7 @@ export async function getRooms(): Promise<{ rooms: Room[]; isSample: boolean }> 
 
   const { data, error } = await publicClient()
     .from("rooms")
-    .select("*")
+    .select(PUBLIC_ROOM_COLUMNS)
     .eq("is_active", true)
     .order("display_order", { ascending: true })
     .order("name", { ascending: true });
@@ -137,7 +154,7 @@ export async function getRooms(): Promise<{ rooms: Room[]; isSample: boolean }> 
     return { rooms: SAMPLE_ROOMS, isSample: true };
   }
 
-  return { rooms: data ?? [], isSample: false };
+  return { rooms: (data ?? []).map(toPublicRoom), isSample: false };
 }
 
 export async function getRoomBySlug(
@@ -152,7 +169,7 @@ export async function getRoomBySlug(
 
   const { data, error } = await publicClient()
     .from("rooms")
-    .select("*")
+    .select(PUBLIC_ROOM_COLUMNS)
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
@@ -169,7 +186,7 @@ export async function getRoomBySlug(
     };
   }
 
-  return { room: data, isSample: false };
+  return { room: data ? toPublicRoom(data) : null, isSample: false };
 }
 
 export async function getAvailability(roomId: string): Promise<AvailabilityRow[]> {
