@@ -85,6 +85,6 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/staff/:path*",
-    "/((?!api(?:/|$)|portal(?:/|$)|verify(?:/|$)|maintenance(?:/|$)|terms(?:/|$)|privacy(?:/|$)|contact(?:/|$)|_next/static|_next/image|favicon\\.ico).*)",
+    "/((?!api(?:/|$)|portal(?:/|$)|verify(?:/|$)|maintenance(?:/|$)|terms(?:/|$)|privacy(?:/|$)|contact(?:/|$)|_next/static|_next/image|favicon\\.ico|icon\\.svg|apple-icon\\.png).*)",
   ],
 };
