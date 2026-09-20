@@ -5,6 +5,7 @@ import { getSiteStatus } from "@/lib/data";
 import ChangePasswordForm from "@/components/admin/ChangePasswordForm";
 import ChangePhoneForm from "@/components/admin/ChangePhoneForm";
 import SiteStatusForm from "@/components/admin/SiteStatusForm";
+import WebsiteAccessCard from "@/components/admin/WebsiteAccessCard";
 import StaffCredentialsForm from "@/components/admin/StaffCredentialsForm";
 import StaffMembersForm from "@/components/admin/StaffMembersForm";
 import BlockedGuestNamesForm from "@/components/admin/BlockedGuestNamesForm";
@@ -49,6 +50,7 @@ export default async function AdminSettingsPage() {
 
       <div className="mt-6 space-y-6">
         <SiteStatusForm initial={siteStatus} />
+        <WebsiteAccessCard isOpen={siteStatus.is_open} />
         <ChangePasswordForm />
         <ChangePhoneForm />
         {staffUser && <StaffCredentialsForm currentEmail={staffUser.email} />}

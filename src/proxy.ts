@@ -43,7 +43,9 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (
     request.nextUrl.pathname.startsWith("/admin") ||
@@ -60,6 +62,19 @@ export async function proxy(request: NextRequest) {
   const isOpen = (data?.value as { is_open?: boolean } | null)?.is_open ?? true;
 
   if (!isOpen) {
+    // A signed-in admin still sees the real site while it's closed to
+    // everyone else (Settings → "Access Website"). Checked against
+    // admin_users, not just "has a session": any Google account can sign in
+    // to this project and staff share the same cookie jar, so a session
+    // alone proves nothing. Fails closed if the lookup errors.
+    if (user) {
+      const { data: adminRow } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (adminRow) return response;
+    }
     return NextResponse.rewrite(new URL("/maintenance", request.url));
   }
 
