@@ -20,6 +20,14 @@ this, it was a 32-branch cleanup job as of 2026-09-13).
 
 ## Currently open / blocked
 
+- **OWNER ACTION, urgent: change every room's door code and WiFi
+  password.** Until 2026-09-20 they were readable by anyone on the
+  internet (public API + View Source on `/rooms`), for an unknown period
+  since launch — treat them as compromised. Edit them in
+  `/admin/rooms`, and change the physical lock/router to match; the
+  database fix stops future exposure but can't un-expose old values. API
+  logs (kept ~1 week) show no anonymous writes or direct secret reads
+  from 2026-09-14 onward; older than that is unknowable.
 - **M-Pesa (Jenga) STK push — blocked on Jenga/Equity's side, not
   ours.** Both the private key and the Consumer Key/Secret/Merchant
   Code secrets were bad in Supabase (empty/corrupted key, then a
@@ -156,15 +164,35 @@ In/Out, Schedule (checkout-driven, computed live). Staff and admin are
 — signing into one on the same device signs the other out. Staff never
 touches pricing/payment actions by design.
 
-**Security posture** (audited 2026-09-13, all fixes shipped): RLS
-everywhere with no anon write paths found; `staff_members.pin_hash` is
-correctly column-locked (was a real critical hole before the audit —
-see git history if you need the story); cron routes fail closed on a
-missing secret; ID uploads check magic bytes not just declared MIME
-type; `npm audit` clean; real security headers (CSP/HSTS/etc.) on the
-live site; no secrets in git history. `SUPABASE_SERVICE_ROLE_KEY` will
-**not** be rotated — the owner made that call explicitly on 2026-09-13
-after an old, already-contained exposure; don't re-raise it as a task.
+**Security posture** (two audits: 2026-09-13 and 2026-09-20). The
+09-13 audit's "no anon write paths" claim was WRONG — a 09-20 test using
+only the public API key proved an anonymous visitor could: read every
+room's door code + WiFi password; insert a booking with
+`payment_status='Paid'`, `id_verification_status='Verified'` and their own
+`access_token` (free portal access); insert guests; and insert
+`guest_requests` through the owner-privileged `staff_task_updates` view.
+Cause: Supabase's default privileges grant every new table/view to
+`anon`, and earlier lockdowns only narrowed `authenticated`. Fixed
+2026-09-20 (migrations `20260920100000_lock_down_anon_access.sql` and
+`...100100_stop_default_anon_grants.sql`; commit `447d331`): `anon` now
+has SELECT on only `rooms` (public columns, no door/WiFi), `reviews`,
+`site_content`, `social_links`, `availability_view`, plus the
+column-level `bookings` SELECT that view needs, and NO write privilege
+anywhere; the two anon INSERT policies are dropped; new objects no longer
+auto-grant to `anon`. Every attack was re-run afterwards and is denied.
+**Rules that keep it closed:** (1) never `select("*")` on `rooms` from
+public/anon code — use `PUBLIC_ROOM_COLUMNS` in `lib/data.ts` (public
+pages once shipped door codes in their page data); (2) any new table
+needs an explicit `grant` to `anon` only if the public site truly reads
+it, and every write goes through a server route with the service-role
+client; (3) `getBookingByToken` withholds door/WiFi until verified + paid
++ not checked out (this is enforced server-side; hiding in UI isn't
+enough); (4) an owner-privileged (`security_invoker=false`) view is
+writable past RLS by any role holding INSERT/UPDATE on it. Other
+standing items: `staff_members.pin_hash` column-locked; cron routes fail
+closed; ID uploads check magic bytes; no secrets in git history.
+`SUPABASE_SERVICE_ROLE_KEY` will **not** be rotated — the owner made that
+call explicitly on 2026-09-13; don't re-raise it as a task.
 
 **Receipts**: `src/lib/receipt-image.tsx`, rendered via `next/og`'s
 `ImageResponse` (Satori — bundled with Next.js, no extra dependency),
