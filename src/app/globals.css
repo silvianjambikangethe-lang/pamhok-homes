@@ -4,14 +4,75 @@
 
 :root {
   /* Light mode — RGB triplets so Tailwind's `/opacity` modifiers work. */
-  --color-page: 232 221 208; /* Creamy Mousse #E8DDD0 */
-  --color-surface: 203 184 162; /* Soft Beige #CBB8A2 */
-  --color-ink: 62 42 32; /* Rich Cocoa #3E2A20 */
+  --color-page: 246 239 228; /* Oat #F6EFE4 (--pk-bg) */
+  --color-surface: 237 225 207; /* Foam #EDE1CF (--pk-sunken) */
+  --color-ink: 46 28 18; /* Espresso #2E1C12 (--pk-text) */
 
-  /* Card/panel/input border — Warm Taupe in light. Dark keeps today's
+  /* Card/panel/input border — Sand in light. Dark keeps today's
    * value (gold-500 #B08D57) exactly, so every border-gold-500/* site
    * renamed to border-taupe/* renders byte-identical in dark mode. */
-  --color-border: 167 134 106; /* Warm Taupe #A7866A */
+  --color-border: 156 129 104; /* Field #9C8168 (--pk-field). Most uses are
+   * border-taupe/10-40, and Field at ~25% over Oat lands on Sand #DCCBB3;
+   * solid uses (inputs, photo frames) get the intended Field border. */
+
+  /* Brand colour scales as RGB triplets. Light mode maps them onto the
+   * brown theme; the .dark block below restores each scale's original
+   * values, so dark mode is unchanged. */
+  --c-terracotta-50: 237 225 207; /* Foam */
+  --c-terracotta-100: 227 201 166; /* Latte */
+  --c-terracotta-300: 207 174 138; /* Tan */
+  --c-terracotta-500: 140 90 46; /* Caramel Deep */
+  --c-terracotta-600: 90 56 37; /* Roast */
+  --c-terracotta-700: 71 42 27; /* Roast Deep */
+  --c-forest-50: 237 225 207; /* Foam */
+  --c-forest-100: 227 201 166; /* Latte */
+  --c-forest-300: 207 174 138; /* Tan */
+  --c-forest-500: 90 56 37; /* Roast */
+  --c-forest-700: 90 56 37; /* Roast */
+  --c-forest-900: 58 36 24; /* Cocoa */
+  --c-gold-50: 246 239 228; /* Oat */
+  --c-gold-100: 227 201 166; /* Latte */
+  --c-gold-300: 207 174 138; /* Tan */
+  --c-gold-500: 140 90 46; /* Caramel Deep */
+  --c-gold-700: 90 56 37; /* Roast */
+  --c-mocha-500: 90 56 37; /* Roast */
+  --c-mocha-600: 71 42 27; /* Roast Deep */
+  --c-mousse: 255 251 245; /* Milk (text on Roast buttons) */
+  --c-danger: 154 47 34; /* Error */
+
+  /* Brown light theme tokens. Colour and shadow only; light mode. */
+  --pk-bg: #F6EFE4;
+  --pk-surface: #FFFBF5;
+  --pk-sunken: #EDE1CF;
+  --pk-line: #DCCBB3;
+  --pk-field: #9C8168;
+  --pk-text: #2E1C12;
+  --pk-text-muted: #6A5142;
+  --pk-text-subtle: #7A6152;
+  --pk-on-dark: #FFFBF5;
+  --pk-on-dark-muted: #E5D3BC;
+  --pk-primary: #5A3825;
+  --pk-primary-hover: #472A1B;
+  --pk-footer: #3A2418;
+  --pk-link: #8C5A2E;
+  --pk-caramel: #B8814F;
+  --pk-latte: #E3C9A6;
+  --pk-tan: #CFAE8A;
+  --pk-success: #3F6B3A;
+  --pk-success-bg: #E4EBD8;
+  --pk-warning: #8A5A12;
+  --pk-warning-bg: #F6E6C3;
+  --pk-error: #9A2F22;
+  --pk-error-bg: #F6DDD6;
+  --pk-info: #3C5E6C;
+  --pk-info-bg: #DFE8EA;
+  --pk-radius-sm: 8px;
+  --pk-radius-md: 14px;
+  --pk-radius-lg: 20px;
+  --pk-radius-pill: 999px;
+  --pk-shadow-card: 0 1px 2px rgba(58,36,24,.06), 0 6px 20px rgba(58,36,24,.07);
+  --pk-shadow-raised: 0 12px 32px rgba(58,36,24,.14);
+  --pk-focus: 0 0 0 2px var(--pk-bg), 0 0 0 4px var(--pk-primary);
 }
 
 .dark {
@@ -19,6 +80,29 @@
   --color-surface: 46 36 29; /* #2E241D */
   --color-ink: 240 233 221; /* Warm Ivory (dark-mode text) #F0E9DD */
   --color-border: 176 141 87; /* gold-500 #B08D57 — unchanged from before */
+
+  /* Original values of the brand scales (see :root). */
+  --c-terracotta-50: 251 238 227;
+  --c-terracotta-100: 244 218 194;
+  --c-terracotta-300: 221 163 119;
+  --c-terracotta-500: 196 113 60;
+  --c-terracotta-600: 173 94 44;
+  --c-terracotta-700: 140 74 35;
+  --c-forest-50: 234 238 233;
+  --c-forest-100: 204 214 202;
+  --c-forest-300: 126 145 121;
+  --c-forest-500: 59 74 58;
+  --c-forest-700: 40 51 42;
+  --c-forest-900: 22 30 23;
+  --c-gold-50: 247 241 230;
+  --c-gold-100: 235 223 198;
+  --c-gold-300: 203 173 124;
+  --c-gold-500: 176 141 87;
+  --c-gold-700: 133 106 64;
+  --c-mocha-500: 111 78 55;
+  --c-mocha-600: 94 66 47;
+  --c-mousse: 232 221 208;
+  --c-danger: 181 69 60;
 }
 
 body {
@@ -68,8 +152,18 @@ body {
     @apply mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10;
   }
 
+  /* Light mode uses the theme's --pk-focus ring; dark mode keeps its
+   * original terracotta ring. */
   .focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-terracotta-500 focus-visible:ring-offset-2 focus-visible:ring-offset-page;
+    @apply outline-none;
+  }
+
+  .focus-ring:focus-visible {
+    box-shadow: var(--pk-focus);
+  }
+
+  .dark .focus-ring:focus-visible {
+    @apply ring-2 ring-terracotta-500 ring-offset-2 ring-offset-page;
   }
 
   /* photo-frame-and-card-depth.md §1 — persistent frame on every photo

@@ -30,8 +30,8 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  Pending: "bg-[#A7866A] text-cocoa dark:bg-gold-500 dark:text-espresso",
-  Paid: "bg-forest-500 text-mousse dark:bg-sage-500 dark:text-espresso",
+  Pending: "bg-pk-warning-bg text-pk-warning dark:bg-gold-500 dark:text-espresso",
+  Paid: "bg-pk-success text-pk-on-dark dark:bg-sage-500 dark:text-espresso",
   Failed: "bg-danger text-mousse dark:text-white",
 };
 

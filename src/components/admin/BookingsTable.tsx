@@ -27,17 +27,17 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 const PAYMENT_BADGE: Record<string, string> = {
-  Pending: "bg-[#A7866A] text-cocoa dark:bg-gold-500 dark:text-espresso",
-  Paid: "bg-forest-500 text-mousse dark:bg-sage-500 dark:text-espresso",
+  Pending: "bg-pk-warning-bg text-pk-warning dark:bg-gold-500 dark:text-espresso",
+  Paid: "bg-pk-success text-pk-on-dark dark:bg-sage-500 dark:text-espresso",
   Failed: "bg-danger text-mousse dark:text-white",
   Refunded: "bg-ink/10 text-ink/80",
 };
 
 const BOOKING_BADGE: Record<string, string> = {
-  Confirmed: "bg-forest-500 text-mousse dark:bg-sage-500 dark:text-espresso",
+  Confirmed: "bg-pk-success text-pk-on-dark dark:bg-sage-500 dark:text-espresso",
   Cancelled: "bg-danger text-mousse dark:text-white",
   Blocked: "bg-ink/10 text-ink/80",
-  "Pending Verification": "bg-[#A7866A] text-cocoa dark:bg-gold-500 dark:text-espresso",
+  "Pending Verification": "bg-pk-warning-bg text-pk-warning dark:bg-gold-500 dark:text-espresso",
 };
 
 export default function BookingsTable({ bookings }: { bookings: AdminBookingRow[] }) {

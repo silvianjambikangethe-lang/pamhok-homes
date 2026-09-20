@@ -11,7 +11,7 @@ export default async function Footer() {
     // Dark mode: no section gets its own accent-color background — the
     // footer drops to the same near-black as the page (a touch darker, to
     // recede) instead of a full Forest fill.
-    <footer className="border-t border-taupe/20 bg-forest-700 text-white/80 dark:bg-[#191410]">
+    <footer className="border-t border-taupe/20 bg-pk-footer text-pk-on-dark-muted dark:bg-[#191410] dark:text-white/80">
       <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Link href="/" className="focus-ring inline-block rounded-md">
@@ -25,7 +25,7 @@ export default async function Footer() {
         </div>
 
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-gold-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-pk-on-dark dark:text-gold-300">
             Explore
           </p>
           <ul className="mt-4 space-y-2">
@@ -43,7 +43,7 @@ export default async function Footer() {
         </div>
 
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-gold-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-pk-on-dark dark:text-gold-300">
             Get in touch
           </p>
           <ul className="mt-4 space-y-3 text-sm text-white/70">
@@ -64,7 +64,7 @@ export default async function Footer() {
 
         {adminPhone && (
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-gold-300">
+            <p className="text-sm font-semibold uppercase tracking-wide text-pk-on-dark dark:text-gold-300">
               Chat with us
             </p>
             <p className="mt-4 text-sm text-white/70">

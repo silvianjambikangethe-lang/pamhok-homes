@@ -19,35 +19,67 @@ const config: Config = {
         ink: "rgb(var(--color-ink) / <alpha-value>)",
         taupe: "rgb(var(--color-border) / <alpha-value>)",
 
-        // Static brand colors — same hex in both themes. Where a role
+        // Brown light theme tokens (light mode; see :root in globals.css).
+        // Use these instead of typing hex values in components.
+        pk: {
+          bg: "var(--pk-bg)",
+          surface: "var(--pk-surface)",
+          sunken: "var(--pk-sunken)",
+          line: "var(--pk-line)",
+          field: "var(--pk-field)",
+          text: "var(--pk-text)",
+          "text-muted": "var(--pk-text-muted)",
+          "text-subtle": "var(--pk-text-subtle)",
+          "on-dark": "var(--pk-on-dark)",
+          "on-dark-muted": "var(--pk-on-dark-muted)",
+          primary: "var(--pk-primary)",
+          "primary-hover": "var(--pk-primary-hover)",
+          footer: "var(--pk-footer)",
+          link: "var(--pk-link)",
+          caramel: "var(--pk-caramel)",
+          latte: "var(--pk-latte)",
+          tan: "var(--pk-tan)",
+          success: "var(--pk-success)",
+          "success-bg": "var(--pk-success-bg)",
+          warning: "var(--pk-warning)",
+          "warning-bg": "var(--pk-warning-bg)",
+          error: "var(--pk-error)",
+          "error-bg": "var(--pk-error-bg)",
+          info: "var(--pk-info)",
+          "info-bg": "var(--pk-info-bg)",
+        },
+
+        // Brand colors. terracotta, gold, forest, mocha, mousse and danger are
+        // variable-backed: brown theme in light mode, original values under
+        // .dark (see globals.css). The rest are static hex. Where a role
         // swaps between themes (secondary button, "Paid" badge, locked
         // wash), that's handled with explicit dark: variants at the
         // usage site, not by changing what these tokens mean.
         terracotta: {
-          DEFAULT: "#C4713C",
-          50: "#FBEEE3",
-          100: "#F4DAC2",
-          300: "#DDA377",
-          500: "#C4713C",
-          600: "#AD5E2C",
-          700: "#8C4A23",
+          DEFAULT: "rgb(var(--c-terracotta-500) / <alpha-value>)",
+          50: "rgb(var(--c-terracotta-50) / <alpha-value>)",
+          100: "rgb(var(--c-terracotta-100) / <alpha-value>)",
+          300: "rgb(var(--c-terracotta-300) / <alpha-value>)",
+          500: "rgb(var(--c-terracotta-500) / <alpha-value>)",
+          600: "rgb(var(--c-terracotta-600) / <alpha-value>)",
+          700: "rgb(var(--c-terracotta-700) / <alpha-value>)",
         },
         gold: {
-          DEFAULT: "#B08D57",
-          50: "#F7F1E6",
-          100: "#EBDFC6",
-          300: "#CBAD7C",
-          500: "#B08D57",
-          700: "#856A40",
+          DEFAULT: "rgb(var(--c-gold-500) / <alpha-value>)",
+          50: "rgb(var(--c-gold-50) / <alpha-value>)",
+          100: "rgb(var(--c-gold-100) / <alpha-value>)",
+          300: "rgb(var(--c-gold-300) / <alpha-value>)",
+          500: "rgb(var(--c-gold-500) / <alpha-value>)",
+          700: "rgb(var(--c-gold-700) / <alpha-value>)",
         },
         forest: {
-          DEFAULT: "#3B4A3A",
-          50: "#EAEEE9",
-          100: "#CCD6CA",
-          300: "#7E9179",
-          500: "#3B4A3A",
-          700: "#28332A",
-          900: "#161E17",
+          DEFAULT: "rgb(var(--c-forest-500) / <alpha-value>)",
+          50: "rgb(var(--c-forest-50) / <alpha-value>)",
+          100: "rgb(var(--c-forest-100) / <alpha-value>)",
+          300: "rgb(var(--c-forest-300) / <alpha-value>)",
+          500: "rgb(var(--c-forest-500) / <alpha-value>)",
+          700: "rgb(var(--c-forest-700) / <alpha-value>)",
+          900: "rgb(var(--c-forest-900) / <alpha-value>)",
         },
         sage: {
           DEFAULT: "#8A9A82",
@@ -72,16 +104,16 @@ const config: Config = {
         // explicit dark: override rather than these tokens changing
         // meaning, matching the convention used above for terracotta/
         // gold/forest/etc.
-        mousse: "#E8DDD0", // Creamy Mousse — light text on a dark/mid fill
-        cocoa: "#3E2A20", // Rich Cocoa — dark text on a light/mid fill
+        mousse: "rgb(var(--c-mousse) / <alpha-value>)", // Creamy Mousse — light text on a dark/mid fill
+        cocoa: "#3A2418", // Rich Cocoa — dark text on a light/mid fill
         mocha: {
-          DEFAULT: "#6F4E37",
-          500: "#6F4E37",
-          600: "#5E422F",
+          DEFAULT: "rgb(var(--c-mocha-500) / <alpha-value>)",
+          500: "rgb(var(--c-mocha-500) / <alpha-value>)",
+          600: "rgb(var(--c-mocha-600) / <alpha-value>)",
         },
 
-        success: "#3F6A4C",
-        danger: "#B5453C",
+        success: "#3F6B3A",
+        danger: "rgb(var(--c-danger) / <alpha-value>)",
         // Legacy aliases kept only where a handful of call sites still
         // reference them for genuinely static UI chrome (not page/dark
         // sensitive) — new code should use the tokens above.

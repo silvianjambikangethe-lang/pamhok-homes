@@ -44,7 +44,7 @@ export default async function HomePage() {
           #3B4A3A used on Neighborhood, unchanged between light/dark per
           master-color-scheme.md (already dark enough for both). */}
       <section
-        className="relative overflow-hidden bg-[#2A3428] bg-cover bg-center"
+        className="relative overflow-hidden bg-pk-footer dark:bg-[#2A3428] bg-cover bg-center"
         style={
           content.hero_image_url
             ? {
