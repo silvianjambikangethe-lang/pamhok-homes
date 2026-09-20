@@ -219,7 +219,17 @@ property's pin (`contact.maps_lat`/`maps_lng` set).
   the actual UI live.
 - **Test data pattern**: create disposable guests/bookings via direct
   SQL for live verification, always clean up (`delete from ...`)
-  immediately after. Never leave test rows behind.
+  immediately after. Never leave test rows behind. **If a test booking
+  had ID photos uploaded, deleting its row is NOT enough:** the files stay
+  in the private `id-documents` bucket forever, and SQL can't delete
+  storage objects (Supabase blocks it, since that would strand the bytes).
+  First call `POST /api/portal/<access_token>/checkout` (it removes the
+  files through the Storage API and wipes the phone), blank the guest's
+  email beforehand if you don't want the review-link email sent, then
+  delete the rows. To purge already-orphaned files, insert a stand-in
+  booking with the same id + file paths and check it out the same way.
+  The database was reset to a clean slate on 2026-09-20 (0 bookings/guests,
+  test room and all test data removed; the 10 real rooms untouched).
 - **Local dev**: `npm run dev` (port 3000). If port 3000 is already
   taken by another session's server on this machine, connect directly
   via the browser tool with `url: "http://localhost:3000"` rather than
