@@ -370,7 +370,7 @@ const DEFAULT_TERMS_CONTENT: TermsContent = {
   sections: [
     {
       title: "1. Booking & Payment",
-      body: "- All bookings are confirmed only once payment has been received in full through one of our accepted payment methods: M-Pesa or PayPal (which also accepts cards directly, no PayPal account required).\n- Prices are listed in Kenyan Shillings (KES); amounts shown in other currencies are approximate conversions for reference only.\n- A unique booking reference number is issued upon confirmation.",
+      body: "- All bookings are confirmed only once payment has been received in full through M-Pesa.\n- Prices are listed in Kenyan Shillings (KES); amounts shown in other currencies are approximate conversions for reference only.\n- A unique booking reference number is issued upon confirmation.",
     },
     {
       title: "2. Identity Verification",
@@ -390,7 +390,7 @@ const DEFAULT_TERMS_CONTENT: TermsContent = {
     },
     {
       title: "6. Cancellations & Refunds",
-      body: "- To cancel a booking, call the host on +254 704 393 189. Cancellations are handled by phone only and are not self-service through the site. This applies whether or not a refund is due, so the reservation can be removed from the calendar and the room freed up for other guests.\n- A cancellation takes effect once the host confirms it on the call. The time of the call is the time that counts.\n- Cancellations made at least 36 hours before check-in are eligible for a full refund.\n- Cancellations made less than 36 hours before check-in are not eligible for a refund through the site. Please still call the host as soon as possible: a refund or credit may be offered at the host's discretion, depending on the circumstances.\n- If you booked more than one room, call the host to cancel one room or all of them. The same 36-hour limit applies to each room.\n- Refunds are processed manually by the host (M-Pesa, bank transfer, or through PayPal, depending on how you paid) after the cancellation is confirmed. They are not issued automatically by the site.",
+      body: "- To cancel a booking, call the host on +254 704 393 189. Cancellations are handled by phone only and are not self-service through the site. This applies whether or not a refund is due, so the reservation can be removed from the calendar and the room freed up for other guests.\n- A cancellation takes effect once the host confirms it on the call. The time of the call is the time that counts.\n- Cancellations made at least 36 hours before check-in are eligible for a full refund.\n- Cancellations made less than 36 hours before check-in are not eligible for a refund through the site. Please still call the host as soon as possible: a refund or credit may be offered at the host's discretion, depending on the circumstances.\n- If you booked more than one room, call the host to cancel one room or all of them. The same 36-hour limit applies to each room.\n- Refunds are processed manually by the host (M-Pesa or bank transfer, depending on how you paid) after the cancellation is confirmed. They are not issued automatically by the site.",
     },
     {
       title: "7. House Rules",

@@ -8,7 +8,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // /admin, /staff, /api, /portal, /verify, /terms, /privacy, and /contact
 // are deliberately excluded from that gate: the dashboards must stay
 // usable to reopen the site (or keep working a shift), server-to-server
-// callbacks (M-Pesa/PayPal) must keep working, a guest already checked
+// callbacks (M-Pesa/Jenga) must keep working, a guest already checked
 // in shouldn't lose their door code/WiFi because of an unrelated
 // emergency, and the legal pages plus the contact page (WhatsApp/call/
 // email/address) should all stay reachable regardless of site status —

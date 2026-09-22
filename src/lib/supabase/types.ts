@@ -1,5 +1,5 @@
 export type PaymentStatus = "Pending" | "Paid" | "Failed" | "Refunded";
-export type PaymentMethod = "mpesa" | "paypal" | "manual";
+export type PaymentMethod = "mpesa" | "manual";
 export type BookingStatus = "Confirmed" | "Cancelled" | "Blocked" | "Pending Verification";
 export type IdVerificationStatus =
   | "Not Submitted"
@@ -159,7 +159,7 @@ export type Booking = {
 };
 
 export type LaundryPaymentStatus = "Pending" | "Paid" | "Failed";
-export type LaundryPaymentMethod = "mpesa" | "paypal" | "manual";
+export type LaundryPaymentMethod = "mpesa" | "manual";
 
 export type GuestRequest = {
   id: string;

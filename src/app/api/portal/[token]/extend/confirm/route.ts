@@ -88,8 +88,8 @@ export async function POST(
 
   // check_out is deliberately NOT updated here — the extra nights are only
   // granted once payment for them is confirmed (see the payment-completion
-  // paths: PayPal capture, admin mark-paid, and the mpesa-callback edge
-  // function, which all call resolvePendingExtensionAfterPayment when they
+  // paths: admin mark-paid and the mpesa-callback edge function, which
+  // both call resolvePendingExtensionAfterPayment when they
   // flip payment_status to Paid). Until then this is a real hold, not just
   // a note: availability_view treats pending_extension_check_out as
   // occupied for up to EXTENSION_HOLD_HOURS from

@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
 // Service-role client — bypasses RLS entirely.
-// SERVER-ONLY: used for payment webhooks (M-Pesa/PayPal callbacks),
+// SERVER-ONLY: used for payment webhooks (M-Pesa/Jenga callbacks),
 // guest-portal-by-token lookups, and other public-page reads with no
 // RLS policy of their own (e.g. the admin contact number), where there is
 // no logged-in Supabase session to carry RLS context. Never import this

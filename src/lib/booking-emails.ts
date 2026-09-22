@@ -8,8 +8,8 @@ import {
 import { generateReceiptImage } from "@/lib/receipt-image";
 
 // Single call site for "payment_status just became Paid", used by every
-// path that can cause that transition: PayPal capture, the Jenga M-Pesa
-// callback (its own duplicate implementation — Deno Edge Functions can't
+// path that can cause that transition: the Jenga M-Pesa callback (its
+// own duplicate implementation — Deno Edge Functions can't
 // import this file, see supabase/functions/mpesa-callback/index.ts), and
 // the admin manual mark-paid route. Centralized here instead of repeated
 // per call site so the two email variants can't drift out of sync.

@@ -4,8 +4,8 @@ import type { Booking } from "@/lib/supabase/types";
 
 // Per the Terms (Section 6): every cancellation is confirmed with the
 // admin by phone first, and any refund owed is sent manually by the
-// admin outside the site (M-Pesa, bank transfer, PayPal dashboard,
-// whatever fits) — nothing here calls a payment provider automatically.
+// admin outside the site (M-Pesa, bank transfer, whatever fits) —
+// nothing here calls a payment provider automatically.
 // This route's only job is to flag that a refund is owed, the same way
 // the ID-verification-rejection path already does, so it shows up on the
 // Overview "Refunds needed" card and the Mark Refunded button appears —

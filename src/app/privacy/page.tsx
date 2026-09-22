@@ -88,7 +88,7 @@ export default function PrivacyPage() {
         <Section title="Payment Information">
           <p>
             We do not store your full card or payment account details.
-            Payments are processed directly through M-Pesa or PayPal, and
+            Payments are processed directly through M-Pesa, and
             we only retain a payment confirmation reference, not your
             underlying payment credentials.
           </p>

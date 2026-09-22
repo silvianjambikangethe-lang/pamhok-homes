@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 // Closes the loop on a refund that needed manual action (M-Pesa has no
-// refund API wired up, or a PayPal auto-refund attempt failed) — the
+// refund API wired up) — the
 // admin sends the money themselves, then confirms it here.
 export async function POST(
   request: Request,

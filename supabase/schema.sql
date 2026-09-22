@@ -162,9 +162,9 @@ create table if not exists bookings (
 
   -- 'Pending' | 'Paid' | 'Failed' | 'Refunded'
   payment_status text not null default 'Pending',
-  -- 'mpesa' | 'paypal' | 'manual'
+  -- 'mpesa' | 'manual'
   payment_method text,
-  payment_reference text,       -- M-Pesa receipt number / PayPal capture id / etc
+  payment_reference text,       -- M-Pesa receipt number / etc
   paid_at timestamptz,
 
   -- 'Confirmed' | 'Cancelled' | 'Blocked' | 'Pending Verification'
@@ -195,9 +195,8 @@ create table if not exists bookings (
 
   -- Refund bookkeeping — set when an admin rejects a booking that was
   -- already paid (see /api/admin/bookings/[id]/verify). refund_status is
-  -- only set when the refund needs attention: 'Needs Manual Refund' (e.g.
-  -- M-Pesa, which has no refund API wired up) or 'Refund Failed' (a
-  -- PayPal API refund attempt errored) — null once resolved.
+  -- only set when the refund needs attention: 'Needs Manual Refund' (M-Pesa
+  -- has no refund API wired up) — null once resolved.
   -- payment_status becomes 'Refunded' only once the refund is actually
   -- confirmed done (auto-success, or an admin manually marking it so).
   refund_status text,
@@ -263,7 +262,7 @@ create table if not exists guest_requests (
   -- 'Paid'; 'Failed' = an attempt (M-Pesa) came back unsuccessful, still
   -- retriable.
   laundry_payment_status text,
-  laundry_payment_method text, -- 'mpesa' | 'paypal' | 'manual'
+  laundry_payment_method text, -- 'mpesa' | 'manual'
   laundry_payment_reference text,
   laundry_paid_at timestamptz,
   -- Who last advanced status/completed_by, and when — set explicitly by
