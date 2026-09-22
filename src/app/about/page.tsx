@@ -73,9 +73,15 @@ export default async function AboutPage() {
             <Eyebrow>Behind the scenes</Eyebrow>
             <h2 className="font-serif text-h2 text-ink">Get to know Pamhok Homes</h2>
           </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-5">
+          {/* Phone: a swipeable carousel, one video at a time. sm: and up
+              revert to the plain wrapped, centred row. */}
+          <div className="no-scrollbar -mx-6 mt-8 flex snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-2 sm:mx-0 sm:flex-wrap sm:snap-none sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0">
             {content.videos.map((url, i) => (
-              <SlideIn key={url} className="w-full max-w-[220px]" delayMs={i * 120}>
+              <SlideIn
+                key={url}
+                className="w-[220px] shrink-0 snap-center sm:w-full sm:max-w-[220px] sm:shrink"
+                delayMs={i * 120}
+              >
                 <video
                   src={url}
                   controls

@@ -160,6 +160,19 @@ body {
     @apply mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10;
   }
 
+  /* Phone-only swipe carousels (reviews, video tours). Hides the scrollbar
+   * that a horizontally-scrolling flex row would otherwise show; the
+   * carousel itself (scroll-snap) is done with utility classes at each call
+   * site, reverting to the normal wrapped/grid layout at sm: and up. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Light mode uses the theme's --pk-focus ring; dark mode keeps its
    * original terracotta ring. */
   .focus-ring {

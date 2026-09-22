@@ -133,9 +133,15 @@ export default async function HomePage() {
             <Eyebrow className="font-bold text-terracotta-600">See it for yourself</Eyebrow>
             <h2 className="font-serif text-h2 text-ink">Take a video tour</h2>
           </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-5">
+          {/* Phone: a swipeable carousel, one video at a time. sm: and up
+              revert to the plain wrapped, centred row. */}
+          <div className="no-scrollbar -mx-6 mt-8 flex snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-2 sm:mx-0 sm:flex-wrap sm:snap-none sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0">
             {content.tour_videos.map((url, i) => (
-              <SlideIn key={url} className="w-full max-w-[220px]" delayMs={i * 120}>
+              <SlideIn
+                key={url}
+                className="w-[220px] shrink-0 snap-center sm:w-full sm:max-w-[220px] sm:shrink"
+                delayMs={i * 120}
+              >
                 <video
                   src={url}
                   controls
@@ -194,11 +200,13 @@ export default async function HomePage() {
           </h2>
         </div>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+        {/* Phone: a swipeable carousel, one card at a time, snapping right to
+            left as the guest swipes. sm: and up revert to the plain grid. */}
+        <div className="no-scrollbar -mx-6 mt-10 flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-2 sm:mx-0 sm:grid sm:snap-none sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 sm:grid-cols-3">
           {featuredReviews.map((review) => (
             <figure
               key={review.id}
-              className="flex flex-col gap-4 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card"
+              className="flex w-[82%] shrink-0 snap-center flex-col gap-4 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card sm:w-auto sm:shrink"
             >
               <div className="flex gap-1 text-gold-500" aria-hidden="true">
                 {Array.from({ length: review.rating }).map((_, i) => (
