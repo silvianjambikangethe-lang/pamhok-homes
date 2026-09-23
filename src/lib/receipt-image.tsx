@@ -58,12 +58,12 @@ function loadFonts() {
   return fontsPromise;
 }
 
-// Rendered at 3x the original 600x720 design so the downloaded/emailed
+// Rendered at 3.5x the original 600x720 design so the downloaded/emailed
 // image stays crisp when a guest zooms in or prints it, and reads as a
 // visibly bigger image (more raw pixels) when opened directly — every
 // pixel value below is the original design's value times SCALE, not a
 // separate set of numbers, so the layout proportions are unchanged.
-const SCALE = 3;
+const SCALE = 3.5;
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
