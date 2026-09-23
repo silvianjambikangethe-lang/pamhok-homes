@@ -6,6 +6,7 @@ import { generateBookingReference, generatePassReference } from "@/lib/booking-r
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { isNameBlocked } from "@/lib/guest-blocklist";
 import { SITE } from "@/lib/site";
+import { EMAIL_RE, PHONE_RE } from "@/lib/validation";
 
 // One response for anything that stops a booking being created on our side,
 // including a name on the host's blocked list. A real hiccup and a blocked
@@ -33,9 +34,6 @@ interface BookingRequestBody {
 }
 
 const MAX_EXTRA_ROOMS = 9;
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[0-9+()\-\s]{7,20}$/;
 
 function isValidBody(body: unknown): body is BookingRequestBody {
   if (!body || typeof body !== "object") return false;
