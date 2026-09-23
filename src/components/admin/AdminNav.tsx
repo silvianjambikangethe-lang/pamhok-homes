@@ -13,7 +13,6 @@ import {
   ListChecks,
   PencilSimple,
   Receipt,
-  ShieldCheck,
   SignOut,
   Star,
   UsersThree,
@@ -35,7 +34,6 @@ const LINKS = [
   { href: "/admin/reviews", label: "Reviews", icon: Star },
   { href: "/admin/expenses", label: "Expenses", icon: Receipt },
   { href: "/admin/whatsapp-setup", label: "WhatsApp Contact", icon: DeviceMobile },
-  { href: "/admin/security", label: "Security Log", icon: ShieldCheck },
   { href: "/admin/settings", label: "Settings", icon: Gear },
 ];
 
