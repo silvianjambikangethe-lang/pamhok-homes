@@ -58,6 +58,22 @@ function loadFonts() {
   return fontsPromise;
 }
 
+// The receipt uses its own bundled logo file (assets/branding/receipt-logo.png)
+// rather than SITE.logoIconUrl — a higher-detail circular mark (gold key +
+// house line art) the owner supplied specifically for this receipt, fetched
+// as a data URI the same way fonts are loaded from disk rather than over
+// the network, so generating a receipt never depends on Supabase storage
+// being reachable.
+let logoDataUriPromise: Promise<string> | null = null;
+function loadLogoDataUri() {
+  if (!logoDataUriPromise) {
+    logoDataUriPromise = readFile(join(process.cwd(), "assets/branding/receipt-logo.png")).then(
+      (buf) => `data:image/png;base64,${buf.toString("base64")}`,
+    );
+  }
+  return logoDataUriPromise;
+}
+
 // Rendered at 3.5x the original 600x720 design so the downloaded/emailed
 // image stays crisp when a guest zooms in or prints it, and reads as a
 // visibly bigger image (more raw pixels) when opened directly — every
@@ -84,7 +100,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuffer> {
-  const fonts = await loadFonts();
+  const [fonts, logoDataUri] = await Promise.all([loadFonts(), loadLogoDataUri()]);
 
   const nights = Math.max(
     1,
@@ -116,42 +132,36 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
           padding: `${32 * SCALE}px ${32 * SCALE}px ${28 * SCALE}px`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 20 * SCALE }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 20 * SCALE,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              fontFamily: "Caprasimo",
+              color: COLORS.accent800,
+              fontSize: 30 * SCALE,
+            }}
+          >
+            {SITE.name}
+          </div>
+
           {/* Satori (next/og's renderer) only understands plain <img>,
               not next/image's <Image> — this JSX never touches the real
               DOM, it's fed to ImageResponse to rasterize server-side. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={SITE.logoIconUrl}
+            src={logoDataUri}
             alt=""
-            width={88 * SCALE}
-            height={88 * SCALE}
-            style={{ borderRadius: 999, marginRight: 14 * SCALE }}
+            width={110 * SCALE}
+            height={110 * SCALE}
+            style={{ borderRadius: 999, marginLeft: 14 * SCALE, flexShrink: 0 }}
           />
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            fontFamily: "Caprasimo",
-            color: COLORS.accent800,
-            fontSize: 30 * SCALE,
-          }}
-        >
-          {SITE.name}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            color: COLORS.neutral700,
-            fontSize: 13 * SCALE,
-            letterSpacing: 1,
-            textTransform: "uppercase",
-            marginTop: 2 * SCALE,
-            marginBottom: 4 * SCALE,
-          }}
-        >
-          Where luxury meets comfort
         </div>
 
         <div
