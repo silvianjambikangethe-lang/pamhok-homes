@@ -58,11 +58,25 @@ function loadFonts() {
   return fontsPromise;
 }
 
+// Rendered at 3x the original 600x720 design so the downloaded/emailed
+// image stays crisp when a guest zooms in or prints it, and reads as a
+// visibly bigger image (more raw pixels) when opened directly — every
+// pixel value below is the original design's value times SCALE, not a
+// separate set of numbers, so the layout proportions are unchanged.
+const SCALE = 3;
+
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-      <span style={{ color: COLORS.neutral700, fontSize: 14 }}>{label}</span>
-      <span style={{ color: COLORS.text, fontWeight: 700, fontSize: 14, textAlign: "right" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 * SCALE }}>
+      <span style={{ color: COLORS.neutral700, fontSize: 14 * SCALE }}>{label}</span>
+      <span
+        style={{
+          color: COLORS.text,
+          fontWeight: 700,
+          fontSize: 14 * SCALE,
+          textAlign: "right",
+        }}
+      >
         {value}
       </span>
     </div>
@@ -95,14 +109,14 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
         style={{
           display: "flex",
           flexDirection: "column",
-          width: 420,
+          width: 420 * SCALE,
           background: COLORS.neutral100,
-          borderRadius: 28,
-          border: `2px solid ${COLORS.accent300}`,
-          padding: "32px 32px 28px",
+          borderRadius: 28 * SCALE,
+          border: `${2 * SCALE}px solid ${COLORS.accent300}`,
+          padding: `${32 * SCALE}px ${32 * SCALE}px ${28 * SCALE}px`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 20 * SCALE }}>
           {/* Satori (next/og's renderer) only understands plain <img>,
               not next/image's <Image> — this JSX never touches the real
               DOM, it's fed to ImageResponse to rasterize server-side. */}
@@ -110,41 +124,85 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
           <img
             src={SITE.logoIconUrl}
             alt=""
-            width={56}
-            height={56}
-            style={{ borderRadius: 999, marginRight: 14 }}
+            width={88 * SCALE}
+            height={88 * SCALE}
+            style={{ borderRadius: 999, marginRight: 14 * SCALE }}
           />
         </div>
 
-        <div style={{ display: "flex", fontFamily: "Caprasimo", color: COLORS.accent800, fontSize: 30 }}>
+        <div
+          style={{
+            display: "flex",
+            fontFamily: "Caprasimo",
+            color: COLORS.accent800,
+            fontSize: 30 * SCALE,
+          }}
+        >
           {SITE.name}
         </div>
         <div
           style={{
             display: "flex",
             color: COLORS.neutral700,
-            fontSize: 13,
+            fontSize: 13 * SCALE,
             letterSpacing: 1,
             textTransform: "uppercase",
-            marginTop: 2,
-            marginBottom: 4,
+            marginTop: 2 * SCALE,
+            marginBottom: 4 * SCALE,
           }}
         >
           Where luxury meets comfort
         </div>
 
-        <div style={{ display: "flex", height: 1, background: COLORS.accent200, margin: "18px 0" }} />
+        <div
+          style={{
+            display: "flex",
+            height: 1,
+            background: COLORS.accent200,
+            margin: `${18 * SCALE}px 0`,
+          }}
+        />
 
-        <div style={{ display: "flex", color: COLORS.accent700, fontWeight: 700, fontSize: 13, letterSpacing: 1, textTransform: "uppercase" }}>
+        <div
+          style={{
+            display: "flex",
+            color: COLORS.accent700,
+            fontWeight: 700,
+            fontSize: 13 * SCALE,
+            letterSpacing: 1,
+            textTransform: "uppercase",
+          }}
+        >
           Payment Receipt
         </div>
-        <div style={{ display: "flex", color: COLORS.neutral700, fontSize: 14, marginTop: 4 }}>
+        <div
+          style={{
+            display: "flex",
+            color: COLORS.neutral700,
+            fontSize: 14 * SCALE,
+            marginTop: 4 * SCALE,
+          }}
+        >
           Receipt No. {data.bookingReference ?? "—"} · {dateStr}
         </div>
 
-        <div style={{ display: "flex", height: 1, background: COLORS.accent200, margin: "18px 0" }} />
+        <div
+          style={{
+            display: "flex",
+            height: 1,
+            background: COLORS.accent200,
+            margin: `${18 * SCALE}px 0`,
+          }}
+        />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10 * SCALE,
+            marginBottom: 20 * SCALE,
+          }}
+        >
           <Row label="Room" value={data.roomName} />
           <Row label="Guest" value={data.guestName} />
           <Row label="Stay dates" value={stayDates} />
@@ -158,26 +216,45 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
             justifyContent: "space-between",
             alignItems: "baseline",
             background: COLORS.accent100,
-            borderRadius: 16,
-            padding: "16px 20px",
-            marginBottom: 14,
+            borderRadius: 16 * SCALE,
+            padding: `${16 * SCALE}px ${20 * SCALE}px`,
+            marginBottom: 14 * SCALE,
           }}
         >
-          <span style={{ color: COLORS.accent800, fontWeight: 700, fontSize: 14 }}>Total paid</span>
-          <span style={{ fontFamily: "Caprasimo", color: COLORS.accent800, fontSize: 28 }}>
+          <span style={{ color: COLORS.accent800, fontWeight: 700, fontSize: 14 * SCALE }}>
+            Total paid
+          </span>
+          <span style={{ fontFamily: "Caprasimo", color: COLORS.accent800, fontSize: 28 * SCALE }}>
             {formatMoney(data.totalAmount, data.currency)}
           </span>
         </div>
 
-        <div style={{ display: "flex", height: 1, borderTop: `1px dashed ${COLORS.accent300}`, marginBottom: 16 }} />
+        <div
+          style={{
+            display: "flex",
+            height: 1,
+            borderTop: `${1 * SCALE}px dashed ${COLORS.accent300}`,
+            marginBottom: 16 * SCALE,
+          }}
+        />
 
-        <div style={{ display: "flex", justifyContent: "center", color: COLORS.accent700, fontSize: 14 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            color: COLORS.accent700,
+            fontSize: 14 * SCALE,
+          }}>
           Thank you for staying with us.
         </div>
       </div>
     </div>
   );
 
-  const response = new ImageResponse(element, { width: 600, height: 720, fonts });
+  const response = new ImageResponse(element, {
+    width: 600 * SCALE,
+    height: 720 * SCALE,
+    fonts,
+  });
   return response.arrayBuffer();
 }

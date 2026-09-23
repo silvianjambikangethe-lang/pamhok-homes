@@ -56,6 +56,17 @@ export default function PortalClient({
   const [showArrival, setShowArrival] = useState(false);
   const checkOutDate = startOfDay(parseISO(booking.check_out));
   const isCheckoutDay = isPast(checkOutDate) || format(checkOutDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+  // The page clears itself — door code/WiFi, requests, and the booking
+  // summary all stop showing — the moment either happens: the guest taps
+  // "Confirm Check-Out", or 2pm Nairobi time arrives on the check-out
+  // date, whichever is first. The 2pm cutoff is a backstop for a guest
+  // who's already left but never tapped the button; it doesn't touch the
+  // database (no auto-checkout privacy cleanup runs), it only stops the
+  // page from showing anything once the room should reasonably be free.
+  // Kenya is a fixed UTC+3 with no daylight saving, so 2pm Nairobi is
+  // always 11:00 UTC — no timezone library needed for this comparison.
+  const checkoutClearCutoff = new Date(`${booking.check_out}T11:00:00Z`);
+  const isCleared = !!booking.checked_out_at || Date.now() >= checkoutClearCutoff.getTime();
   const checkoutNotices = getCheckoutNotices(booking.check_out);
   const cleaningNotices = getCleaningNotices(booking.check_in, booking.check_out);
   // Only the rooms this guest booked together (this one first). Empty for a
@@ -81,15 +92,16 @@ export default function PortalClient({
   // brand-new booking (paid_at still null) still needs the full
   // isPassReady gate before any of that unlocks for the first time.
   const wasEverActive = booking.id_verification_status === "Verified" && !!booking.paid_at;
-  const isVerifiedAndActive = wasEverActive && !booking.checked_out_at;
+  const isVerifiedAndActive = wasEverActive && !isCleared;
   const passReference = booking.pass_reference;
   // Deliberately looser than wasEverActive: a guest who's ID-verified but
   // hasn't paid yet (still mid first-payment, or freshly transferred to a
   // different room after their old one wasn't free for extra nights)
   // should still be able to reach the host if something goes wrong — the
   // contact button just offers a way to ask for help, unlike door
-  // code/WiFi/laundry which stay gated behind full payment.
-  const canContactHost = booking.id_verification_status === "Verified";
+  // code/WiFi/laundry which stay gated behind full payment. Still drops
+  // once the page clears, same as everything else.
+  const canContactHost = booking.id_verification_status === "Verified" && !isCleared;
 
   const { setHidden } = useWhatsappVisibility();
   // Hide the floating WhatsApp button only before ID verification —
@@ -109,36 +121,38 @@ export default function PortalClient({
       />
 
       <div className="container-page max-w-3xl py-12 sm:py-16">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
-        <div className="flex items-center gap-2 text-sm text-ink/80">
-          <CalendarBlank size={18} className="text-terracotta-600" />
-          {format(parseISO(booking.check_in), "EEE, d MMM yyyy")} →{" "}
-          {format(parseISO(booking.check_out), "EEE, d MMM yyyy")}
-        </div>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[booking.payment_status]}`}
-        >
-          Payment: {booking.payment_status}
-        </span>
-        <span className="ml-auto font-serif text-lg font-semibold text-ink">
-          {formatCurrency(booking.total_amount, booking.currency)}
-        </span>
-        {booking.booking_reference && (
-          <span className="w-full font-mono text-xs text-ink/65">
-            Booking reference: {booking.booking_reference}
-          </span>
-        )}
-        {booking.payment_status === "Paid" && (
-          <a
-            href={`/api/portal/${token}/receipt`}
-            download
-            className="focus-ring flex items-center gap-1.5 text-xs font-semibold text-terracotta-600 hover:underline dark:text-terracotta-400"
+      {!isCleared && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
+          <div className="flex items-center gap-2 text-sm text-ink/80">
+            <CalendarBlank size={18} className="text-terracotta-600" />
+            {format(parseISO(booking.check_in), "EEE, d MMM yyyy")} →{" "}
+            {format(parseISO(booking.check_out), "EEE, d MMM yyyy")}
+          </div>
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[booking.payment_status]}`}
           >
-            <ReceiptIcon size={16} weight="bold" />
-            Download receipt
-          </a>
-        )}
-      </div>
+            Payment: {booking.payment_status}
+          </span>
+          <span className="ml-auto font-serif text-lg font-semibold text-ink">
+            {formatCurrency(booking.total_amount, booking.currency)}
+          </span>
+          {booking.booking_reference && (
+            <span className="w-full font-mono text-xs text-ink/65">
+              Booking reference: {booking.booking_reference}
+            </span>
+          )}
+          {booking.payment_status === "Paid" && (
+            <a
+              href={`/api/portal/${token}/receipt`}
+              download
+              className="focus-ring flex items-center gap-1.5 text-xs font-semibold text-terracotta-600 hover:underline dark:text-terracotta-400"
+            >
+              <ReceiptIcon size={16} weight="bold" />
+              Download receipt
+            </a>
+          )}
+        </div>
+      )}
 
       {booking.siblingBookings.length > 0 && (
         <div className="mt-6 rounded-2xl border border-taupe/20 bg-pk-surface p-6 shadow-card dark:bg-surface">
@@ -167,7 +181,7 @@ export default function PortalClient({
         </div>
       )}
 
-      {isPassReady && !booking.checked_out_at && (
+      {isPassReady && !isCleared && (
         <div className="mt-6">
           <CheckInConfirmationMessage checkIn={booking.check_in} />
         </div>
@@ -191,11 +205,13 @@ export default function PortalClient({
       )}
 
       <div className="mt-8 space-y-6">
-        <VerificationPassSection
-          isReady={isPassReady}
-          idVerified={booking.id_verification_status === "Verified"}
-          hasPendingExtension={!!booking.pending_extension_check_out}
-        />
+        {!isCleared && (
+          <VerificationPassSection
+            isReady={isPassReady}
+            idVerified={booking.id_verification_status === "Verified"}
+            hasPendingExtension={!!booking.pending_extension_check_out}
+          />
+        )}
 
         {isVerifiedAndActive && (
           <ArrivalSection
@@ -352,12 +368,22 @@ export default function PortalClient({
           <CheckoutSection token={token} isCheckoutDay={isCheckoutDay} />
         )}
 
-        {booking.checked_out_at && (
+        {isCleared && (
           <>
             <div className="rounded-2xl border border-forest-500/30 bg-forest-500/10 p-6 shadow-card">
               <p className="font-serif text-h2 text-ink">
                 Thanks for staying with {SITE.name} — hope to host you again!
               </p>
+              {booking.payment_status === "Paid" && (
+                <a
+                  href={`/api/portal/${token}/receipt`}
+                  download
+                  className="focus-ring mt-3 flex w-fit items-center gap-1.5 text-xs font-semibold text-terracotta-600 hover:underline dark:text-terracotta-400"
+                >
+                  <ReceiptIcon size={16} weight="bold" />
+                  Download receipt
+                </a>
+              )}
             </div>
             {!booking.hasReview && <ReviewForm token={token} />}
           </>
