@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
 
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id, paid_at, access_token")
+    .select("id, access_token")
     .eq("payment_reference", orderReference)
     .eq("payment_method", "card")
     .maybeSingle();
@@ -147,18 +147,26 @@ Deno.serve(async (req) => {
   }
 
   const success = (status ?? "").toLowerCase() === "paid";
-  const wasAlreadyPaid = booking.paid_at != null;
 
   if (success) {
-    if (!wasAlreadyPaid) {
-      await supabase
-        .from("bookings")
-        .update({ payment_status: "Paid", paid_at: new Date().toISOString() })
-        .eq("id", booking.id);
+    // mark_booking_paid (see the guest_payment_rpc_functions migration) is
+    // the single source of truth for this write now, same reasoning as
+    // mpesa-callback's use of the same function.
+    const { data: result, error: rpcError } = await supabase.rpc("mark_booking_paid", {
+      p_booking_id: booking.id,
+      p_method: "card",
+      p_reference: orderReference,
+    });
+    if (rpcError) {
+      console.error("mark_booking_paid failed", rpcError);
+    } else if (!result?.already_paid && !result?.extension_reverted) {
       await sendPaymentSucceededEmail(supabase, booking.id);
     }
   } else {
-    await supabase.from("bookings").update({ payment_status: "Failed" }).eq("id", booking.id);
+    const { error: rpcError } = await supabase.rpc("mark_booking_payment_failed", {
+      p_booking_id: booking.id,
+    });
+    if (rpcError) console.error("mark_booking_payment_failed failed", rpcError);
   }
 
   const portalUrl = `${siteUrl}/portal/${booking.access_token}?payment=${success ? "success" : "failed"}`;

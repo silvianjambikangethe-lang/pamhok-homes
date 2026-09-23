@@ -23,12 +23,16 @@
 //     Jenga signs its callbacks (their docs don't mention it) and verify
 //     that signature here before this goes anywhere near production.
 //
-// Extension-hold handling below mirrors src/lib/extension-hold.ts's
-// resolvePendingExtensionAfterPayment() on the Next.js side — duplicated
-// here (not imported) because this Deno function has no access to that
-// Node module tree, same reason _shared/email.ts duplicates
-// src/lib/email.ts's templates instead of importing them. Keep both in
-// sync if the hold rules or email copy ever change.
+// Marking the booking paid and resolving any pending extension hold both
+// happen inside the mark_booking_paid() Postgres function (see the
+// guest_payment_rpc_functions migration) rather than as raw table writes
+// here — a deliberate blast-radius reduction: this callback carries the
+// full service-role key and is one of the least-trusted entry points in
+// the app (see the "NOT signature-verified" note below), so the actual
+// side effects live in a single, narrow, reviewed database function
+// instead of being freely expressible from this file. mark_booking_paid
+// mirrors src/lib/extension-hold.ts's resolvePendingExtensionAfterPayment()
+// logic — keep both in sync if the hold rules ever change.
 //
 // IMPORTANT: Supabase Edge Functions are a separate deployment target
 // from Vercel — a `git push` alone does NOT update the live function.
@@ -40,9 +44,121 @@
 // redeployed — don't repeat that.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sendPaymentSucceededEmail } from "../_shared/email.ts";
 
-const EXTENSION_HOLD_HOURS = 3;
+// Inlined from ../_shared/email.ts — the deploy path used for this
+// function doesn't resolve relative shared imports (same reason
+// jenga-card-callback/index.ts carries its own copy of this same
+// function). Keep in sync with _shared/email.ts and src/lib/email.ts if
+// the copy ever changes.
+const SITE = {
+  name: "Pamhok Homes",
+  address: "Near Thika Road Mall (TRM), Nairobi, Kenya",
+  phone: "+254 704 393 189",
+  contactEmail: "hello@pamhokhomes.com",
+};
+
+function fromAddress(): string {
+  return Deno.env.get("EMAIL_FROM_ADDRESS") ?? `${SITE.name} <onboarding@resend.dev>`;
+}
+
+function wrapper(bodyHtml: string): string {
+  return `<div style="background:#FBF7F1; padding:32px 16px;">
+    <style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Plus+Jakarta+Sans:wght@400;600&display=swap');</style>
+    <div style="font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; max-width: 480px; margin: 0 auto; color: #2a2118; font-size: 15px; line-height: 1.6;">
+      <h1 style="font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 22px; margin: 0 0 20px;">${SITE.name}</h1>
+      ${bodyHtml}
+      <p style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #EBDFC6; font-size: 13px; color: #8a7d6e;">
+        ${SITE.address} · ${SITE.phone}
+      </p>
+    </div>
+  </div>`;
+}
+
+function button(url: string, label: string): string {
+  return `<p style="margin: 24px 0;">
+    <a href="${url}" style="display:inline-block; background:#C4713C; color:#ffffff; padding:12px 28px; border-radius:999px; text-decoration:none; font-weight:600; font-size:14px;">${label}</a>
+  </p>`;
+}
+
+// deno-lint-ignore no-explicit-any
+async function sendPaymentSucceededEmail(
+  supabase: any,
+  bookingId: string,
+  wasAlreadyPaid: boolean,
+): Promise<void> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) return;
+
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select(
+      "check_in, check_out, total_amount, currency, booking_reference, access_token, guest:guests(full_name, email), room:rooms(name)",
+    )
+    .eq("id", bookingId)
+    .maybeSingle();
+
+  const guest = booking?.guest as { full_name: string; email: string | null } | null;
+  if (!booking || !guest?.email) return;
+
+  const siteUrl = Deno.env.get("NEXT_PUBLIC_SITE_URL") ?? "https://www.pamhokhomes.com";
+  const portalUrl = `${siteUrl}/portal/${booking.access_token}`;
+  const roomName = (booking.room as { name?: string } | null)?.name ?? "your room";
+  const amountText = new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency: booking.currency,
+    maximumFractionDigits: 0,
+  }).format(booking.total_amount);
+
+  const { subject, html } = wasAlreadyPaid
+    ? {
+        subject: `Stay extended — new checkout ${booking.check_out}`,
+        html: wrapper(`
+          <p>Hi ${guest.full_name},</p>
+          <p>Your extension is confirmed! We've updated your stay in ${roomName}.</p>
+          <ul style="padding-left: 18px;">
+            <li><strong>New checkout date:</strong> ${booking.check_out}</li>
+            <li><strong>Total confirmed for your stay:</strong> ${amountText}</li>
+          </ul>
+          ${button(portalUrl, "View my booking")}
+        `),
+      }
+    : {
+        subject: `Payment confirmed — ${roomName}, ${booking.check_in} to ${booking.check_out}`,
+        html: wrapper(`
+          <p>Hi ${guest.full_name},</p>
+          <p>Your payment is confirmed and your stay is booked. Here's your summary:</p>
+          <ul style="padding-left: 18px;">
+            <li><strong>Room:</strong> ${roomName}</li>
+            <li><strong>Check-in:</strong> ${booking.check_in}</li>
+            <li><strong>Check-out:</strong> ${booking.check_out}</li>
+            <li><strong>Paid:</strong> ${amountText}</li>
+            ${booking.booking_reference ? `<li><strong>Reference:</strong> ${booking.booking_reference}</li>` : ""}
+          </ul>
+          <p>Your door code and WiFi details will be ready on your booking page once your ID is verified (if it isn't already):</p>
+          ${button(portalUrl, "View my booking")}
+        `),
+      };
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromAddress(),
+        to: guest.email,
+        subject,
+        html,
+        reply_to: SITE.contactEmail,
+      }),
+    });
+    if (!res.ok) console.error("Resend send failed:", await res.text());
+  } catch (err) {
+    console.error("Resend send threw:", err);
+  }
+}
 
 Deno.serve(async (req) => {
   try {
@@ -60,9 +176,7 @@ Deno.serve(async (req) => {
 
     const { data: booking } = await supabase
       .from("bookings")
-      .select(
-        "id, paid_at, room_id, check_out, total_amount, pending_extension_check_out, pending_extension_nights, pending_extension_amount, pending_extension_requested_at",
-      )
+      .select("id")
       .eq("payment_reference", reference)
       .maybeSingle();
 
@@ -72,102 +186,32 @@ Deno.serve(async (req) => {
     }
 
     if (payload.status === true && payload.code === 0) {
-      const wasAlreadyPaid = booking.paid_at != null;
+      // mark_booking_paid (see the guest_payment_rpc_functions migration)
+      // is the single source of truth for this side effect now — it does
+      // the status update AND the pending-extension-hold resolution in one
+      // reviewed, narrow unit of work, rather than this function chaining
+      // raw table writes with its own copy of the hold logic.
+      const { data: result, error: rpcError } = await supabase.rpc("mark_booking_paid", {
+        p_booking_id: booking.id,
+        p_method: "mpesa",
+        p_reference: payload.telcoReference ? String(payload.telcoReference) : reference,
+      });
 
-      await supabase
-        .from("bookings")
-        .update({
-          payment_status: "Paid",
-          payment_reference: payload.telcoReference ? String(payload.telcoReference) : reference,
-          paid_at: new Date().toISOString(),
-        })
-        .eq("id", booking.id);
-
-      // A stay extension only takes effect once its payment actually
-      // clears — apply the held pending_extension_check_out now, after
-      // re-checking the hold hasn't expired and nobody else took the
-      // dates in the meantime. No-op if there's no pending extension.
-      let extensionReverted = false;
-      if (booking.pending_extension_check_out) {
-        const requestedAt = booking.pending_extension_requested_at
-          ? new Date(booking.pending_extension_requested_at).getTime()
-          : 0;
-        const expired = Date.now() - requestedAt > EXTENSION_HOLD_HOURS * 60 * 60 * 1000;
-
-        let conflict = false;
-        if (!expired && booking.room_id) {
-          const { data: conflicts } = await supabase
-            .from("bookings")
-            .select("id")
-            .eq("room_id", booking.room_id)
-            .neq("id", booking.id)
-            .in("booking_status", ["Confirmed", "Blocked", "Pending Verification"])
-            .lt("check_in", booking.pending_extension_check_out)
-            .gt("check_out", booking.check_out);
-          conflict = !!conflicts && conflicts.length > 0;
-        }
-
-        await supabase
-          .from("guest_requests")
-          .update({ status: "Closed" })
-          .eq("booking_id", booking.id)
-          .eq("request_type", "extension")
-          .eq("status", "Open");
-
-        if (expired || conflict) {
-          extensionReverted = true;
-          await supabase
-            .from("bookings")
-            .update({
-              total_amount: booking.total_amount - (booking.pending_extension_amount ?? 0),
-              pending_extension_check_out: null,
-              pending_extension_nights: null,
-              pending_extension_amount: null,
-              pending_extension_requested_at: null,
-            })
-            .eq("id", booking.id);
-
-          await supabase.from("guest_requests").insert({
-            booking_id: booking.id,
-            request_type: "extension",
-            message: expired
-              ? "Guest paid via M-Pesa, but their extension hold had already expired (3hr window passed) before payment cleared — extra nights were NOT granted, amount adjusted back down. Check whether a refund of the difference is owed."
-              : "Guest paid via M-Pesa, but the extra nights were booked by someone else in the meantime — extra nights were NOT granted, amount adjusted back down. Check whether a refund of the difference is owed.",
-            status: "Open",
-          });
-        } else {
-          await supabase
-            .from("bookings")
-            .update({
-              check_out: booking.pending_extension_check_out,
-              pending_extension_check_out: null,
-              pending_extension_nights: null,
-              pending_extension_amount: null,
-              pending_extension_requested_at: null,
-            })
-            .eq("id", booking.id);
-
-          await supabase.from("guest_requests").insert({
-            booking_id: booking.id,
-            request_type: "extension",
-            message: `Extension confirmed — M-Pesa payment received for ${booking.pending_extension_nights} extra night${booking.pending_extension_nights === 1 ? "" : "s"}. Stay now extends to ${booking.pending_extension_check_out}.`,
-            status: "Open",
-          });
-        }
-      }
-
-      // If the hold expired or lost the dates right as payment landed,
-      // neither the "booking confirmed" nor "extension confirmed" email
-      // is true — admin was already notified above and needs to sort out
-      // a possible refund before the guest hears anything.
-      if (!extensionReverted) {
-        await sendPaymentSucceededEmail(supabase, booking.id, wasAlreadyPaid);
+      if (rpcError) {
+        console.error("mark_booking_paid failed", rpcError);
+      } else if (!result?.extension_reverted) {
+        // If the hold expired or lost the dates right as payment landed,
+        // neither the "booking confirmed" nor "extension confirmed" email
+        // is true — the admin-facing guest_requests row already covers
+        // it, and the guest shouldn't hear anything until a possible
+        // refund is sorted out.
+        await sendPaymentSucceededEmail(supabase, booking.id, result?.already_paid ?? false);
       }
     } else {
-      await supabase
-        .from("bookings")
-        .update({ payment_status: "Failed" })
-        .eq("id", booking.id);
+      const { error: rpcError } = await supabase.rpc("mark_booking_payment_failed", {
+        p_booking_id: booking.id,
+      });
+      if (rpcError) console.error("mark_booking_payment_failed failed", rpcError);
     }
 
     return new Response(JSON.stringify({ received: true }), {

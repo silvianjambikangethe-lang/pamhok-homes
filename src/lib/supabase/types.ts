@@ -119,6 +119,18 @@ export type ShiftLog = {
   created_at: string;
 };
 
+// One row per invocation of a guest_payment_rpc_functions migration
+// function (mark_booking_paid, mark_laundry_paid, etc.) — see
+// src/app/admin/(dashboard)/security/page.tsx.
+export type SecurityEvent = {
+  id: string;
+  event_type: string;
+  booking_id: string | null;
+  request_id: string | null;
+  detail: Record<string, unknown> | null;
+  created_at: string;
+};
+
 export type Booking = {
   id: string;
   room_id: string | null;
@@ -509,6 +521,27 @@ export interface Database {
             columns: ["staff_member_id"];
             isOneToOne: false;
             referencedRelation: "staff_members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      security_events: {
+        Row: SecurityEvent;
+        Insert: Partial<SecurityEvent>;
+        Update: Partial<SecurityEvent>;
+        Relationships: [
+          {
+            foreignKeyName: "security_events_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "security_events_request_id_fkey";
+            columns: ["request_id"];
+            isOneToOne: false;
+            referencedRelation: "guest_requests";
             referencedColumns: ["id"];
           },
         ];

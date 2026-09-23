@@ -39,22 +39,20 @@ Deno.serve(async (req) => {
     }
 
     if (payload.status === true && payload.code === 0) {
-      await supabase
-        .from("guest_requests")
-        .update({
-          laundry_payment_status: "Paid",
-          laundry_payment_reference: payload.telcoReference
-            ? String(payload.telcoReference)
-            : reference,
-          laundry_paid_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", laundryRequest.id);
+      // mark_laundry_paid (see the guest_payment_rpc_functions migration)
+      // is the single source of truth for this write now, same reasoning
+      // as mpesa-callback's use of mark_booking_paid.
+      const { error: rpcError } = await supabase.rpc("mark_laundry_paid", {
+        p_request_id: laundryRequest.id,
+        p_method: "mpesa",
+        p_reference: payload.telcoReference ? String(payload.telcoReference) : reference,
+      });
+      if (rpcError) console.error("mark_laundry_paid failed", rpcError);
     } else {
-      await supabase
-        .from("guest_requests")
-        .update({ laundry_payment_status: "Failed", updated_at: new Date().toISOString() })
-        .eq("id", laundryRequest.id);
+      const { error: rpcError } = await supabase.rpc("mark_laundry_payment_failed", {
+        p_request_id: laundryRequest.id,
+      });
+      if (rpcError) console.error("mark_laundry_payment_failed failed", rpcError);
     }
 
     return new Response(JSON.stringify({ received: true }), {
