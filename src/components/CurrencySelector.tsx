@@ -29,6 +29,7 @@ export default function CurrencySelector({
   useEffect(() => {
     if (typeof navigator === "undefined") return;
     const guess = guessCurrencyFromLocale(navigator.language);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time locale guess, not a render sync
     setCurrency(guess);
     onChange?.(guess);
     // Only guess once on mount — after that, the guest's manual choice wins.

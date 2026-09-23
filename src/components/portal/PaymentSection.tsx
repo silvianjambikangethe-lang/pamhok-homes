@@ -29,7 +29,6 @@ export default function PaymentSection({
   rates: Record<DisplayCurrency, number>;
 }) {
   const router = useRouter();
-  const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>("KES");
   const [mpesaPhone, setMpesaPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +116,7 @@ export default function PaymentSection({
         <h2 className="font-serif text-h3 text-ink">
           Complete your payment
         </h2>
-        <CurrencySelector amountKes={totalAmount} rates={rates} onChange={setDisplayCurrency} />
+        <CurrencySelector amountKes={totalAmount} rates={rates} />
       </div>
       <p className="mt-1 text-sm text-ink/80">
         Pay with M-Pesa. Your room stays reserved.

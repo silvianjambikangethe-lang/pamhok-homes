@@ -25,7 +25,6 @@ export default function LaundryPaymentSection({
   rates: Record<DisplayCurrency, number>;
 }) {
   const router = useRouter();
-  const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>("KES");
   const [mpesaPhone, setMpesaPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +81,7 @@ export default function LaundryPaymentSection({
     <div className="mt-3 rounded-xl border border-terracotta-300 bg-terracotta-50/60 p-4 dark:border-terracotta-700/40 dark:bg-terracotta-700/10">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-sm font-semibold text-ink">Laundry payment due</span>
-        <CurrencySelector amountKes={amount} rates={rates} onChange={setDisplayCurrency} />
+        <CurrencySelector amountKes={amount} rates={rates} />
       </div>
 
       {awaitingMpesa ? (

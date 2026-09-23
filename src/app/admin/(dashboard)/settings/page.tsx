@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminSettingsPage() {
-  const { supabase, admin } = await requireAdmin();
+  const { supabase } = await requireAdmin();
   const siteStatus = await getSiteStatus();
 
   // staff_users has no admin-facing RLS policy at all (the host manages

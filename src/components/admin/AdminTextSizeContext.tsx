@@ -15,8 +15,12 @@ export function AdminTextSizeProvider({ children }: { children: React.ReactNode 
   const [scale, setScaleState] = useState<TextScale>(1);
 
   useEffect(() => {
+    // Deferred to an effect (not a lazy initializer) so the client's first
+    // render matches the server-rendered zoom:1 markup; only after hydration
+    // do we apply the guest's stored preference.
     const stored = Number(window.localStorage.getItem(STORAGE_KEY));
     if (stored === 1 || stored === 1.25 || stored === 1.5) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration read, see above
       setScaleState(stored);
     }
   }, []);

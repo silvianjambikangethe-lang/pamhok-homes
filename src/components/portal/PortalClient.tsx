@@ -65,8 +65,16 @@ export default function PortalClient({
   // page from showing anything once the room should reasonably be free.
   // Kenya is a fixed UTC+3 with no daylight saving, so 2pm Nairobi is
   // always 11:00 UTC — no timezone library needed for this comparison.
-  const checkoutClearCutoff = new Date(`${booking.check_out}T11:00:00Z`);
-  const isCleared = !!booking.checked_out_at || Date.now() >= checkoutClearCutoff.getTime();
+  // Read the clock in an effect, not during render, so the component stays
+  // pure (server and first client render agree); the guest's page then
+  // clears itself the moment the effect runs past the cutoff.
+  const [pastCutoff, setPastCutoff] = useState(false);
+  useEffect(() => {
+    const cutoff = new Date(`${booking.check_out}T11:00:00Z`);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time clock read, not a render sync
+    setPastCutoff(Date.now() >= cutoff.getTime());
+  }, [booking.check_out]);
+  const isCleared = !!booking.checked_out_at || pastCutoff;
   const checkoutNotices = getCheckoutNotices(booking.check_out);
   const cleaningNotices = getCleaningNotices(booking.check_in, booking.check_out);
   // Only the rooms this guest booked together (this one first). Empty for a
