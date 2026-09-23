@@ -1,7 +1,6 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-09-13 (revised same day — passkeys replaced with
-Google sign-in). Paste this file into a new chat to continue
+Last updated: 2026-09-23. Paste this file into a new chat to continue
 with full context. This is a **condensed rewrite** — full session-by-
 session history before this date lives in git (`git log HANDOFF.md`,
 or `git show <commit>:HANDOFF.md` for any prior version) if you ever
@@ -14,253 +13,240 @@ open work.
 (`prj_V4kgqkjvM3TQpo6McnsQRjmEyTtA`). Git-connected: merging to
 `master` auto-deploys. Supabase project `ajxijucojqkxszfkepqr`
 ("PAMHOK HOMES"), org on the **Pro** plan. GitHub:
-`silvianjambikangethe-lang/pamhok-homes`, public, only `master` exists
-(all merged feature branches are deleted after merge — keep doing
-this, it was a 32-branch cleanup job as of 2026-09-13).
+`silvianjambikangethe-lang/pamhok-homes`, public, only `master` exists.
 
 ## Currently open / blocked
 
-- **OWNER ACTION, urgent: change every room's door code and WiFi
-  password.** Until 2026-09-20 they were readable by anyone on the
-  internet (public API + View Source on `/rooms`), for an unknown period
-  since launch — treat them as compromised. Edit them in
-  `/admin/rooms`, and change the physical lock/router to match; the
-  database fix stops future exposure but can't un-expose old values. API
-  logs (kept ~1 week) show no anonymous writes or direct secret reads
-  from 2026-09-14 onward; older than that is unknowable.
-- **M-Pesa (Jenga) STK push — blocked on Jenga/Equity's side, not
-  ours.** Both the private key and the Consumer Key/Secret/Merchant
-  Code secrets were bad in Supabase (empty/corrupted key, then a
-  sandbox-vs-production credential mixup) — both fixed and confirmed
-  2026-09-13 via safe diagnostic calls that never touched a real phone
-  (see `mpesa-initiate/index.ts`'s auth-failure logging, added the same
-  day). With those fixed, the real, signed STK request now reaches
-  Jenga's live production API and gets back `"Not Authorized to access
-  the API"` — the STK/USSD Push product itself isn't enabled for the
-  regenerated API credentials, even though they authenticate fine.
-  Likely cause: Jenga treats a regenerated Consumer Key as a new API
-  client under the hood that doesn't inherit the STK approval Equity
-  granted the old one on 2026-09-12. **Owner needs to contact
-  Jenga/Equity** and ask them to confirm STK/USSD push is enabled for
-  the *current* API credentials — nothing left to fix in code or
-  secrets. Applies to both integrations (booking's `mpesa-initiate` and
-  laundry's `mpesa-initiate-laundry`) since they share the same Jenga
-  account/credentials.
-- **PayPal — merchant account itself is restricted by PayPal, so it's
-  been deliberately switched OFF site-wide (2026-09-13), not just left
-  broken.** Confirmed live: `create-order` started returning `422
-  PAYEE_ACCOUNT_RESTRICTED — "The merchant account is restricted."`
-  — a real account-level restriction PayPal placed, not a code/config
-  issue, same category as the Jenga blocker below. Rather than leave
-  guests hitting a dead "PayPal / Card" button, added a single kill
-  switch: `PAYPAL_DISABLED` in `src/lib/payment-flags.ts` (currently
-  `true`). This makes `isPaypalConfigured()` return false everywhere
-  (blocking both create-order routes), both capture routes redirect as
-  failed immediately, and the PayPal button is hidden entirely from
-  both `PaymentSection.tsx` and `LaundryPaymentSection.tsx` — guests
-  currently only see M-Pesa as a payment option. Refunds
-  (`refundPaypalCapture`) are untouched and still work, since they're
-  unaffected by the restriction. **Owner needs to log into paypal.com,
-  check the Resolution Center** for what's needed to lift the
-  restriction (a $0 test transaction triggered an identity/proof-of-
-  service request there), then flip `PAYPAL_DISABLED` back to `false`
-  once resolved — that one line is the only change needed to bring it
-  back. Worth noting the account was working minutes
-  before this appeared — plausibly triggered by the unusual pattern of
-  several small real test orders created in quick succession.
-- **Two Supabase dashboard-only settings, likely already fine.** A
-  fresh advisor scan (2026-09-13) no longer flags
-  `auth_leaked_password_protection` (it flags this loudly when off, so
-  its absence is a good sign). The Pro plan also includes automatic
-  daily backups by default. Neither is readable via any available tool
-  — a 10-second glance at Authentication → Policies and Database →
-  Backups would fully close this out.
+- **PayPal is gone, fully removed 2026-09-22** (was previously disabled
+  via a kill switch after PayPal restricted the merchant account — that
+  whole code path, `lib/paypal.ts`, `payment-flags.ts`, and all PayPal
+  routes/UI are deleted, not just switched off). Guests now choose
+  **M-Pesa or card** only. Don't re-add PayPal without the owner asking.
+- **Jenga PGW card payment — built and working in SANDBOX only, not
+  live.** `jenga-card-initiate`/`jenga-card-callback` Edge Functions
+  read `JENGA_SANDBOX_*` secrets and only ever call Jenga's UAT hosts
+  (`uat.finserve.africa`, `v3-uat.jengapgw.io`) — confirmed end-to-end
+  via a real test booking (auth → signed PGW request → real Jenga
+  checkout page → Card channel selectable → redirected back → booking
+  marked paid). **Do not point this at live/production** — the owner's
+  settlement account isn't linked to Jenga yet, and they've been
+  explicit about this staying sandbox-only until they say otherwise.
+  **Known gap**: neither this callback nor the existing M-Pesa one
+  verifies Jenga's signature/hash on the callback payload — Jenga's
+  public docs don't state the formula for either. Compensating control
+  (amount/reference cross-check) was planned but never built — see
+  "Blast-radius reduction" below for why this matters less now than it
+  used to.
+- **Jenga sandbox STK/USSD push — blocked on Jenga's side, unrelated
+  to the card work above.** A throwaway diagnostic function
+  (`mpesa-sandbox-test`, paired with a logging-only
+  `mpesa-sandbox-callback`) authenticates fine against
+  `JENGA_SANDBOX_*` credentials but the STK push call itself returns
+  `401 {"code":401101,"message":"Not Authorized to access the API"}`.
+  Likely cause: the sandbox merchant has "Mobile Money" (STK via PGW)
+  and "Card" subscribed, but not the separate raw STK/USSD Push
+  Initiate API product. **Owner needs to ask Jenga support** to enable
+  that specific product for the sandbox merchant — nothing left to fix
+  in code. Live M-Pesa STK (the real guest-facing payment flow,
+  `mpesa-initiate`) is unaffected by this and not known to be broken.
+  **Remember to delete `jenga-pgw-sandbox-test`,
+  `mpesa-sandbox-test`, and `mpesa-sandbox-callback`** once this is
+  resolved — all three are throwaway diagnostics, not part of the real
+  feature.
+- **OWNER ACTION, still outstanding as far as this session knows:
+  change every room's door code and WiFi password.** Flagged
+  2026-09-20 as previously exposed publicly; no confirmation seen since
+  that it's been done. If you're picking this up, check with the owner
+  directly rather than assuming it's resolved.
+- **Two Supabase dashboard-only settings, likely already fine.**
+  `auth_leaked_password_protection` and daily backups (Pro plan default)
+  — neither readable via any available tool, a 10-second glance at
+  Authentication → Policies and Database → Backups would confirm.
 - **Clock in/out has no notification** — admin checks "Staff Shifts"
   manually. Confirmed with owner this is fine as-is, not a gap.
 - **Vercel Git auto-deploy has occasionally not triggered on a push**
-  (a few times, self-resolved, no root cause found). If a merge doesn't
+  (self-resolved before, no root cause found). If a merge doesn't
   produce a new deployment within a couple minutes, check
-  `list_deployments`/`get_deployment` directly — don't assume it
-  worked. An empty no-op commit to `master` has fixed it before.
+  `list_deployments` directly.
 - **Zero real guest reviews yet** — homepage shows sample testimonials
   by design until real ones exist to feature via `/admin/reviews`.
+- **The site logo's source file is a 1254→2508px raster (not vector)**,
+  supplied directly by the owner. Sharpened via unsharp-mask, but
+  there's a real detail ceiling — if a vector (SVG/AI/EPS) or larger
+  export ever becomes available, swap it in for a genuinely sharper
+  result instead of more sharpening.
 
 ## What's built (current state, not a build log)
 
-**Guest flow**: browse rooms → book → pay (PayPal live; M-Pesa
-integrated but blocked on Jenga's side, see above) → upload ID (Dojah
-OCR + name-match, 2 auto attempts then manual admin review) → guest
-portal (`/portal/[token]`, token-only auth, no login) unlocks door
-code/WiFi/laundry/extend-stay/checkout → post-stay review.
+**Guest flow**: browse rooms → book → pay (M-Pesa live; card via Jenga
+PGW, sandbox only, see above) → upload ID (Dojah OCR + name-match, 2
+auto attempts then manual admin review) → guest portal
+(`/portal/[token]`, token-only auth, no login) unlocks door
+code/WiFi/laundry/extend-stay/checkout → post-stay review. **The
+portal page now clears itself** (hides the booking summary, door
+code/WiFi, requests, and the "Contact Host" button — leaving only a
+"Thanks for staying" card, receipt download, and the review form) the
+moment either happens: the guest taps "Confirm Check-Out", or 2pm
+Nairobi time arrives on the check-out date, whichever is first. The
+2pm cutoff is a pure display backstop — it does **not** touch the
+database or trigger `completeCheckout`'s privacy cleanup, it just stops
+the page from showing sensitive info once the room should reasonably
+be free. Implemented in `PortalClient.tsx` (`isCleared`/`pastCutoff`,
+read inside a `useEffect` rather than during render, so server and
+first client render agree and there's no hydration mismatch).
 
-**Dojah ID verification — confirmed fully working end-to-end
-(2026-09-13), two real bugs fixed along the way.** (1) `DOJAH_APP_ID`/
-`DOJAH_ENV`/`DOJAH_SECRET_KEY_PRODUCTION` didn't exist in Vercel at all
-despite the owner believing they'd been added — every upload was
-silently falling through to manual review. Added correctly (scoped to
-Production), plus the Dojah wallet needed a top-up (billing is
-pre-paid per API call, ~$0.04-0.06/check per Dojah's own pricing page,
-no stated expiry on unused balance). (2) Real phone camera ID photos
-(front+back, often 5-10MB+ combined) were hitting Vercel's hard 4.5MB
-serverless request body limit and failing with a generic "Upload
-failed" before ever reaching Dojah or storage — small test images
-always worked, which is what made this easy to miss initially. Fixed
-in `src/lib/compress-image.ts`: downscales to 1800px max dimension and
-re-encodes as JPEG client-side before upload, falling back to the
-original file if compression fails or doesn't help. `IdUploadForm.tsx`
-also now has a remove ("×") button on each photo slot once one's
-picked, so a wrong photo can be cleared without a page reload.
+**Repo-wide lint/type audit (2026-09-23, separate from the work
+above)** — `eslint`/`tsc --noEmit`/`next build` were all clean except
+five real eslint errors, now fixed and pushed to `master`
+(deployment `dpl_ExnQmyMaFseVUiAKA3mcKhfKzrBs`, READY): an impure
+`Date.now()` call during `PortalClient`'s render (the same
+`isCleared`/`pastCutoff` code above — this is where that `useEffect`
+pattern came from), a `require()` in `tailwind.config.ts` (now a
+proper `import`), and dead `displayCurrency` state left over in
+`PaymentSection.tsx`/`LaundryPaymentSection.tsx` from the currency-
+selector wiring (the selector renders its own converted amount
+internally — that state was never read). No behavior change intended
+beyond the render-purity fix; nothing else in the app was touched.
 
-**Guest portal features**: arrival card with QR verification pass,
-directions (routes from guest's current location via a name-based
-Google Maps destination — see "Maps & directions" below), a directions
-video link, laundry request + payment (see below), a general "Need
-something?" card (Assistance = real phone call, Cleaning/Other = text
-request to admin+staff), stay extension with room-transfer fallback,
-early-checkout checklist, downloadable payment receipt (PNG image, not
-PDF — see "Receipts" below).
+**Walk-in/admin-created bookings now give the guest a real portal
+link** (`src/app/api/admin/bookings/manual/route.ts` +
+`ManualBookingForm.tsx`) — this was a genuine, previously-unnoticed gap:
+a walk-in guest had no way to reach pay/ID-upload/door-code/requests at
+all before this. Guest email/phone are now optional fields on the
+walk-in form; if email is given, the same `sendPaymentSucceededEmail`
+every online-paid booking gets fires automatically (portal link
+included); if phone is given, a "Share on WhatsApp" button pre-fills
+the link. The Guest Card always shows the portal link directly too, as
+a fallback. Also now supports **multiple rooms under one guest name**
+in a single submission (checklist of additional rooms), mirroring the
+public site's group-booking behavior — one booking per room, same
+guest/dates, all-or-nothing on failure. **A real bug was found and
+fixed while testing this**: manual bookings never set `paid_at`, which
+`PortalClient.tsx`'s `isVerifiedAndActive` gate actually checks (not
+just `payment_status`) — without it, none of the self-service sections
+ever appeared even though the booking read "Paid". No real guest was
+ever affected (no walk-in booking had been created through this route
+before this session).
 
-**Laundry payment** (added 2026-09-13): once a laundry request is
-"Ready," an **admin** (not staff) sets a price on `/admin/requests`,
-which moves it to a new `Awaiting Payment` status and emails the guest.
-Guest pays via M-Pesa/PayPal/manual on their portal. Staff/admin are
-**blocked server-side** from marking it "Returned" until
-`laundry_payment_status = 'Paid'` — enforced in both
-`/api/staff/requests/[id]/status` and
-`/api/admin/requests/[id]/laundry-stage`, not just hidden in the UI.
-Admin's Guest Requests feed shows "Returned by `<staff name>` at
-`<time>`" (or "by admin"), via `guest_requests.completed_by` joined to
-`staff_members` and a `guest_requests.updated_at` column set explicitly
-by every route that touches status (this project sets timestamps in
-app code, not DB triggers — matches `site_content`'s existing pattern).
-All laundry payment fields (`laundry_amount`, `laundry_currency`,
-`laundry_payment_status/method/reference`, `laundry_paid_at`) live on
-`guest_requests`, fully independent of `bookings.payment_status` —
-a stay payment and a laundry charge can be in flight simultaneously.
+**Blast-radius reduction for guest-facing payment callbacks**
+(`supabase/migrations/20260923100000_guest_payment_rpc_functions.sql`).
+`mpesa-callback`, `mpesa-callback-laundry`, and `jenga-card-callback`
+— the least-trusted entry points in the app, since they carry the full
+service-role key and aren't signature-verified (see the Jenga gap
+above) — no longer do freeform table writes. They call narrow,
+single-purpose Postgres functions instead: `mark_booking_paid`,
+`mark_booking_payment_failed`, `mark_laundry_paid`,
+`mark_laundry_payment_failed`. `mark_booking_paid` also absorbed the
+pending-extension-hold resolution logic that used to live duplicated
+in `mpesa-callback`'s JS. Every call logs itself to a new
+`security_events` table, surfaced as a "Security Log" section at the
+bottom of `/admin/bookings` (folded in there rather than its own nav
+item — same line of work as the bookings list). Watch for the same
+booking appearing repeatedly, or a failed-then-paid pattern that
+doesn't match what actually happened.
 
-**Admin dashboard** (`/admin`): Overview, Bookings, ID Verifications,
-Calendar, Guest Requests (cleaning/laundry/assistance/other, laundry
-pricing lives here), Staff Shifts, Room Settings, Edit Content,
-Reviews, Expenses, WhatsApp Contact, Settings (site status, access
-website, password, staff login credentials, staff members + PINs,
-blocked guest names, terms content). **Site status / Access Website:**
-"Shut Down Website" makes `proxy.ts` rewrite the marketing pages to
-`/maintenance`; while closed, a visitor with an admin session (checked
-against `admin_users`, not just "has a session") still sees the real
-site, via Settings → Access Website (a plain link, no token). Everyone
-else, including staff and any random Google sign-in, gets the closed
-page. "Close a room" = Bookings page → "Block dates (maintenance /
-personal use)"; note blocked dates have no Unblock button yet.
-Admin login (`/admin/login`): two top-level choices, "Sign in with
-Google" or "Sign in with password" (picking password reveals the
-email/password fields, collapsed by default). Google sign-in fully
-set up and confirmed working end-to-end (2026-09-13) — replaced
-passkeys entirely, which kept getting intercepted by Windows' own
-native passkey broker before the site's code ever got a say, making
-cross-device sync unworkable in practice. Google sign-in works via
-Supabase Auth's automatic identity linking: signing in with the
-owner's real Google account (matching the existing admin email) lands
-on the same `admin_users` row password login already uses; any other
-Google account is rejected the same way a wrong password is. Google
-Cloud OAuth client + Supabase provider config are both done.
+**Dojah ID verification, laundry payment, Admin dashboard, Staff
+dashboard, Maps & directions**: unchanged from prior handoff, still
+accurate — see git history (`git show <pre-09-23 commit>:HANDOFF.md`)
+for the full detail on these if needed.
 
-**Staff dashboard** (`/staff`): one shared login (email/password) +
-per-worker PIN tap-in (added to stop one worker impersonating another
-via the shared login alone). Sections: Cleaning, Laundry, Clock
-In/Out, Schedule (checkout-driven, computed live). Staff and admin are
-**separate Supabase Auth accounts that share one browser cookie jar**
-— signing into one on the same device signs the other out. Staff never
-touches pricing/payment actions by design.
-
-**Security posture** (two audits: 2026-09-13 and 2026-09-20). The
-09-13 audit's "no anon write paths" claim was WRONG — a 09-20 test using
-only the public API key proved an anonymous visitor could: read every
-room's door code + WiFi password; insert a booking with
-`payment_status='Paid'`, `id_verification_status='Verified'` and their own
-`access_token` (free portal access); insert guests; and insert
-`guest_requests` through the owner-privileged `staff_task_updates` view.
-Cause: Supabase's default privileges grant every new table/view to
-`anon`, and earlier lockdowns only narrowed `authenticated`. Fixed
-2026-09-20 (migrations `20260920100000_lock_down_anon_access.sql` and
-`...100100_stop_default_anon_grants.sql`; commit `447d331`): `anon` now
-has SELECT on only `rooms` (public columns, no door/WiFi), `reviews`,
-`site_content`, `social_links`, `availability_view`, plus the
-column-level `bookings` SELECT that view needs, and NO write privilege
-anywhere; the two anon INSERT policies are dropped; new objects no longer
-auto-grant to `anon`. Every attack was re-run afterwards and is denied.
-**Rules that keep it closed:** (1) never `select("*")` on `rooms` from
-public/anon code — use `PUBLIC_ROOM_COLUMNS` in `lib/data.ts` (public
-pages once shipped door codes in their page data); (2) any new table
-needs an explicit `grant` to `anon` only if the public site truly reads
-it, and every write goes through a server route with the service-role
-client; (3) `getBookingByToken` withholds door/WiFi until verified + paid
-+ not checked out (this is enforced server-side; hiding in UI isn't
-enough); (4) an owner-privileged (`security_invoker=false`) view is
-writable past RLS by any role holding INSERT/UPDATE on it. Other
-standing items: `staff_members.pin_hash` column-locked; cron routes fail
-closed; ID uploads check magic bytes; no secrets in git history.
-`SUPABASE_SERVICE_ROLE_KEY` will **not** be rotated — the owner made that
-call explicitly on 2026-09-13; don't re-raise it as a task.
+**Site logo**: replaced 2026-09-23 with an owner-supplied circular mark
+(gold key + house line art + "PAMHOK HOMES" wordmark, no tagline) —
+overwrites the same Supabase Storage files the site already reads
+(`site-images/branding/icon.png`, `site-images/branding/logo.jpeg`), so
+every usage (header, footer, admin nav, staff/admin login pages,
+emails) picked it up with no code change. Every `<img>` using it was
+also switched to `rounded-full` (several places were still
+`rounded-md`/`rounded-xl`, leaving square corners around a circular
+mark). **The browser tab favicon (`src/app/icon.png`, `apple-icon.png`,
+`favicon.ico`) is deliberately NOT this logo** — it stays the separate
+house+key+"P" mark from the earlier favicon rebuild. This was swapped
+once by mistake and reverted — don't repeat that without being asked.
 
 **Receipts**: `src/lib/receipt-image.tsx`, rendered via `next/og`'s
-`ImageResponse` (Satori — bundled with Next.js, no extra dependency),
-styled from an owner-supplied ticket template. Guest-downloadable PNG
-on the portal and attached to the payment-confirmation email.
-Regenerated fresh every time, never stored.
+`ImageResponse` (Satori). Now bundles its own copy of the new logo
+(`assets/branding/receipt-logo.png`, loaded from disk as a data URI,
+same pattern as the receipt's fonts) instead of fetching
+`SITE.logoIconUrl` over the network — logo shown enlarged, next to the
+title instead of stacked above it, no subtitle line. Rendered at 3.5x
+the original 600×720 design (2100×2520) for a crisper, larger image.
+"Total paid" background is a brown-tinted beige (`COLORS.totalBg`,
+was a pale pink); the divider under "Receipt No." and the dashed rule
+under "Total paid" are both thicker/darker now. Still guest-downloadable
+PNG on the portal and attached to the payment-confirmation email,
+regenerated fresh every time, never stored.
 
-**Maps & directions**: `src/lib/maps.ts`'s
-`buildDirectionsFromCurrentLocationUrl()` builds a destination-only
-Google Directions URL (no `origin` — Maps uses the visitor's current
-location automatically) with the destination given as the text
-`"Pamhok Homes, Nairobi, Kenya"`, not raw coordinates — coordinates
-alone route correctly but display whatever POI Google has indexed at
-that exact point (was showing the ground-floor tenant's name instead
-of Pamhok Homes). Only shows once an admin has actually confirmed the
-property's pin (`contact.maps_lat`/`maps_lng` set).
+**Staff clock in/out times are now timezone-consistent.** Previously
+the staff clock page (renders client-side, browser's local timezone)
+and the admin Staff Shifts board (renders server-side, server's
+timezone — usually UTC) could show different times for the same shift.
+Both now go through `src/lib/format-time.ts`, pinned to
+`Africa/Nairobi` (fixed UTC+3, no DST, so no timezone library needed).
+
+**Security posture**: unchanged from the 2026-09-13/09-20 audits
+described in prior handoff versions (see git history) — still holds,
+plus the new blast-radius work above. Rules that keep it closed are
+unchanged: never `select("*")` on `rooms` from public/anon code; any
+new table needs an explicit `anon` grant only if the public site truly
+reads it; `getBookingByToken` withholds door/WiFi until verified + paid
++ not checked out; an owner-privileged view is writable past RLS by any
+role holding INSERT/UPDATE on it. `SUPABASE_SERVICE_ROLE_KEY` will
+**not** be rotated — standing owner decision, don't re-raise it.
 
 ## Reference
 
 - **Real admin/staff credentials are never known to any Claude
   session, by design.** Don't type into `/admin/login` or
-  `/staff/login` yourself, even for testing — verify behavior via
-  direct Supabase queries/API calls instead, or ask the owner to drive
-  the actual UI live.
+  `/staff/login` yourself — verify behavior via direct Supabase
+  queries/API calls, or ask the owner to drive the actual UI live. (The
+  owner has since driven `/admin/login` themselves multiple times this
+  session via "Sign in with password" — that's fine, it's their own
+  login; the rule is about *this session* never typing credentials in.)
 - **Test data pattern**: create disposable guests/bookings via direct
   SQL for live verification, always clean up (`delete from ...`)
-  immediately after. Never leave test rows behind. **If a test booking
-  had ID photos uploaded, deleting its row is NOT enough:** the files stay
-  in the private `id-documents` bucket forever, and SQL can't delete
-  storage objects (Supabase blocks it, since that would strand the bytes).
-  First call `POST /api/portal/<access_token>/checkout` (it removes the
-  files through the Storage API and wipes the phone), blank the guest's
-  email beforehand if you don't want the review-link email sent, then
-  delete the rows. To purge already-orphaned files, insert a stand-in
-  booking with the same id + file paths and check it out the same way.
-  The database was reset to a clean slate on 2026-09-20 (0 bookings/guests,
-  test room and all test data removed; the 10 real rooms untouched).
-- **Local dev**: `npm run dev` (port 3000). If port 3000 is already
-  taken by another session's server on this machine, connect directly
-  via the browser tool with `url: "http://localhost:3000"` rather than
-  fighting for the port or starting a second instance.
+  immediately after. Never leave test rows behind. If a test booking
+  had ID photos uploaded, deleting its row is NOT enough — see prior
+  handoff versions (git history) for the storage-orphan cleanup
+  procedure.
+- **Local dev**: `npm run dev` (port 3000), or the `preview_start`
+  browser tool with name `pamhok-dev` (reads `.claude/launch.json`).
+  **Never run `npm run build` while a dev server is also running** —
+  they share the `.next` output directory, and a build's `rm -rf .next`
+  out from under a live dev server sends it into a restart loop (hit
+  this twice this session). Stop the dev server first if a build is
+  needed, or vice versa.
+- **Google sign-in on `/admin/login` always redirects back to the
+  production domain** (`pamhokhomes.com`), never `localhost`, because
+  that's the callback URL registered with Google/Supabase OAuth — this
+  makes testing admin-gated pages via Google sign-in impossible on a
+  local dev server. Use "Sign in with password" instead for local
+  testing (no OAuth redirect involved), or add
+  `http://localhost:3000/**` to Supabase's Auth → URL Configuration →
+  Redirect URLs allow-list as a one-time fix if this comes up often.
 - **Supabase Edge Functions are a separate deploy target from
   Vercel** — a `git push` alone does not update them. Use the
-  `deploy_edge_function` MCP tool explicitly, and diff the deployed
-  content against git afterward (`get_edge_function`) to catch drift.
-  The MCP deploy tool cannot resolve relative imports across
-  `supabase/functions/<name>/` and `supabase/functions/_shared/` the
-  way the real Supabase CLI can — for anything deployed through this
-  tool, inline shared helpers into the function file itself rather than
-  importing them, or the deploy will fail with a "module not found"
-  bundling error.
+  `deploy_edge_function` MCP tool explicitly. It cannot resolve
+  relative imports across `supabase/functions/<name>/` and
+  `supabase/functions/_shared/` the way the real Supabase CLI can — for
+  anything deployed through this tool, inline shared helpers
+  (`signJenga`, `corsHeaders`, email templates) into the function file
+  itself rather than importing them, or the deploy fails with a
+  "module not found" bundling error. This project now has three
+  duplicated copies of the payment-confirmation email template
+  (`src/lib/email.ts`, `supabase/functions/_shared/email.ts`,
+  `jenga-card-callback/index.ts`, `mpesa-callback/index.ts`) for this
+  reason — keep them in sync by hand if the copy or styling changes.
 - **Postgres `CREATE OR REPLACE VIEW` only allows appending new
-  columns at the end** of the existing SELECT list — it cannot insert
-  or reorder them without an error. It also **resets a view's
-  `security_invoker` option to its default** every time it's re-run —
-  always re-apply `alter view ... set (security_invoker = false)`
-  after replacing a `SECURITY DEFINER`-style view (the four
-  `staff_*` views all rely on this).
+  columns at the end** of the existing SELECT list, and **resets a
+  view's `security_invoker` option to its default** every time it's
+  re-run — always re-apply `alter view ... set (security_invoker =
+  false)` after replacing a `SECURITY DEFINER`-style view.
 - **Supabase's default privileges grant new tables/views broad access**
-  to `anon`/`authenticated` regardless of RLS. A column-specific
-  `revoke`/`grant` does nothing if a broader table-wide grant already
-  exists underneath it — always `revoke all` first, then grant back
-  only the specific columns actually needed, per role.
+  to `anon`/`authenticated` regardless of RLS — always `revoke all`
+  first, then grant back only the specific columns actually needed.
+- **Uploading to Supabase Storage from a script**: no MCP tool for this
+  exists in this environment. Use `curl -X POST
+  {SUPABASE_URL}/storage/v1/object/{bucket}/{path}` with
+  `Authorization: Bearer {SUPABASE_SERVICE_ROLE_KEY}`, `apikey:` the
+  same key, and `x-upsert: true` to overwrite — read the key from
+  `.env.local`, never print it in a command's visible output.
