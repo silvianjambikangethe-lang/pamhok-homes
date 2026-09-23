@@ -36,7 +36,7 @@ export default async function VerifyPassPage({
         {isValid ? (
           <div className="rounded-2xl border-2 border-terracotta-500 bg-surface p-6 shadow-card">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={SITE.logoIconUrl} alt={SITE.name} className="h-8 w-8 rounded-md" />
+            <img src={SITE.logoIconUrl} alt={SITE.name} className="h-8 w-8 rounded-full" />
             <div className="mt-3 flex items-center gap-2">
               <SealCheck size={24} weight="fill" className="text-success" />
               <h1 className="font-serif text-h3 text-ink">Verified Guest</h1>

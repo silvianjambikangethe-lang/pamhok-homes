@@ -42,7 +42,7 @@ function LoginForm() {
       <div className="w-full max-w-sm rounded-2xl border border-taupe/20 bg-surface p-8 shadow-warm">
         <div className="flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={SITE.logoIconUrl} alt={SITE.name} className="h-16 w-16 rounded-xl object-cover" />
+          <img src={SITE.logoIconUrl} alt={SITE.name} className="h-16 w-16 rounded-full object-cover" />
         </div>
         <h1 className="mt-4 text-center font-serif text-2xl font-semibold text-ink">
           Staff Login

@@ -40,6 +40,10 @@ const COLORS = {
   accent300: "#ffc6a5",
   accent700: "#8c491a",
   accent800: "#643312",
+  // Brown-tinted beige behind "Total paid" — was accent100 (a pale pink),
+  // swapped for something that reads as part of the same warm-brown
+  // palette instead of a different hue entirely.
+  totalBg: "#ece0c6",
 };
 
 let fontsPromise: Promise<{ name: string; data: Buffer; weight: 400 | 700; style: "normal" }[]> | null = null;
@@ -199,8 +203,8 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
         <div
           style={{
             display: "flex",
-            height: 1,
-            background: COLORS.accent200,
+            height: 2.5 * SCALE,
+            background: COLORS.accent700,
             margin: `${18 * SCALE}px 0`,
           }}
         />
@@ -225,7 +229,7 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
             display: "flex",
             justifyContent: "space-between",
             alignItems: "baseline",
-            background: COLORS.accent100,
+            background: COLORS.totalBg,
             borderRadius: 16 * SCALE,
             padding: `${16 * SCALE}px ${20 * SCALE}px`,
             marginBottom: 14 * SCALE,
@@ -243,7 +247,7 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
           style={{
             display: "flex",
             height: 1,
-            borderTop: `${1 * SCALE}px dashed ${COLORS.accent300}`,
+            borderTop: `${2.5 * SCALE}px dashed ${COLORS.accent700}`,
             marginBottom: 16 * SCALE,
           }}
         />
