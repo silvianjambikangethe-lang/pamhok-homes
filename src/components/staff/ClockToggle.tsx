@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock } from "@phosphor-icons/react";
-import { format, parseISO } from "date-fns";
+import { formatShiftTime } from "@/lib/format-time";
 
 export default function ClockToggle({
   clockedIn,
@@ -37,7 +37,7 @@ export default function ClockToggle({
       </p>
       {clockedIn && clockInAt && (
         <p className="mt-1 text-sm text-ink/65">
-          Since {format(parseISO(clockInAt), "h:mm a")}
+          Since {formatShiftTime(clockInAt)}
         </p>
       )}
 

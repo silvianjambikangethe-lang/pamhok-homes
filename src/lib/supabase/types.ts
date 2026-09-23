@@ -1,5 +1,5 @@
 export type PaymentStatus = "Pending" | "Paid" | "Failed" | "Refunded";
-export type PaymentMethod = "mpesa" | "manual";
+export type PaymentMethod = "mpesa" | "card" | "manual";
 export type BookingStatus = "Confirmed" | "Cancelled" | "Blocked" | "Pending Verification";
 export type IdVerificationStatus =
   | "Not Submitted"

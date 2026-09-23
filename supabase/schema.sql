@@ -162,9 +162,9 @@ create table if not exists bookings (
 
   -- 'Pending' | 'Paid' | 'Failed' | 'Refunded'
   payment_status text not null default 'Pending',
-  -- 'mpesa' | 'manual'
+  -- 'mpesa' | 'card' | 'manual'
   payment_method text,
-  payment_reference text,       -- M-Pesa receipt number / etc
+  payment_reference text,       -- M-Pesa receipt number, Jenga PGW orderReference / etc
   paid_at timestamptz,
 
   -- 'Confirmed' | 'Cancelled' | 'Blocked' | 'Pending Verification'

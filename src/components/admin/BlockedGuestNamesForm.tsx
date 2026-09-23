@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash } from "@phosphor-icons/react";
+import { Plus, Trash, Warning } from "@phosphor-icons/react";
 import type { BlockedGuestName } from "@/lib/supabase/types";
 
 // Unlike StaffMembersForm, entries here are hard-deleted rather than
@@ -12,6 +12,9 @@ export default function BlockedGuestNamesForm({ initial }: { initial: BlockedGue
   const router = useRouter();
   const [entries, setEntries] = useState(initial);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // A misclick here un-blocks someone, so removing needs a second tap —
+  // this is the id currently showing its "are you sure?" row.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newReason, setNewReason] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +44,7 @@ export default function BlockedGuestNamesForm({ initial }: { initial: BlockedGue
   }
 
   async function handleRemove(id: string) {
+    setConfirmingId(null);
     setBusyId(id);
     setError(null);
 
@@ -70,6 +74,7 @@ export default function BlockedGuestNamesForm({ initial }: { initial: BlockedGue
         )}
         {entries.map((entry) => {
           const busy = busyId === entry.id;
+          const confirming = confirmingId === entry.id;
           return (
             <div
               key={entry.id}
@@ -79,15 +84,40 @@ export default function BlockedGuestNamesForm({ initial }: { initial: BlockedGue
                 <span className="text-sm font-medium text-ink">{entry.full_name}</span>
                 {entry.reason && <p className="text-xs text-ink/60">{entry.reason}</p>}
               </div>
-              <button
-                type="button"
-                onClick={() => handleRemove(entry.id)}
-                disabled={busy}
-                aria-label={`Remove ${entry.full_name} from the blocklist`}
-                className="focus-ring flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/10 disabled:opacity-60"
-              >
-                <Trash size={14} /> Remove
-              </button>
+
+              {confirming ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2">
+                  <Warning size={16} className="shrink-0 text-danger" />
+                  <span className="text-xs text-ink">
+                    Unblock {entry.full_name}?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(entry.id)}
+                    disabled={busy}
+                    className="focus-ring rounded-full bg-danger px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                  >
+                    {busy ? "Removing…" : "Yes, unblock"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingId(null)}
+                    disabled={busy}
+                    className="focus-ring rounded-full px-3 py-1.5 text-xs font-semibold text-ink/65 hover:text-ink disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingId(entry.id)}
+                  aria-label={`Remove ${entry.full_name} from the blocklist`}
+                  className="focus-ring flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/10"
+                >
+                  <Trash size={14} /> Remove
+                </button>
+              )}
             </div>
           );
         })}

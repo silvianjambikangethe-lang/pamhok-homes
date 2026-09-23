@@ -1,5 +1,6 @@
-import { format, formatDistanceStrict, parseISO } from "date-fns";
+import { formatDistanceStrict, parseISO } from "date-fns";
 import { Clock, UserCircle } from "@phosphor-icons/react/dist/ssr";
+import { formatShiftTime, formatShiftDateTime } from "@/lib/format-time";
 
 type ShiftRow = {
   id: string;
@@ -34,7 +35,7 @@ export default function StaffShiftBoard({
                 <div>
                   <p className="font-semibold text-ink">{s.staff_member?.name ?? "Unknown"}</p>
                   <p className="text-xs text-ink/65">
-                    Since {format(parseISO(s.clock_in_at), "h:mm a")}
+                    Since {formatShiftTime(s.clock_in_at)}
                   </p>
                 </div>
               </div>
@@ -67,11 +68,11 @@ export default function StaffShiftBoard({
                       {s.staff_member?.name ?? "Unknown"}
                     </td>
                     <td className="px-4 py-3 text-ink/80">
-                      {format(parseISO(s.clock_in_at), "d MMM, h:mm a")}
+                      {formatShiftDateTime(s.clock_in_at)}
                     </td>
                     <td className="px-4 py-3 text-ink/80">
                       {s.clock_out_at ? (
-                        format(parseISO(s.clock_out_at), "d MMM, h:mm a")
+                        formatShiftDateTime(s.clock_out_at)
                       ) : (
                         <span className="inline-flex items-center gap-1 text-success">
                           <Clock size={14} weight="fill" /> In progress

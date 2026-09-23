@@ -3,16 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DeviceMobile, Warning } from "@phosphor-icons/react";
+import { CreditCard, DeviceMobile, Warning } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import type { PaymentStatus } from "@/lib/supabase/types";
 import type { DisplayCurrency } from "@/lib/currency";
 import CurrencySelector from "@/components/CurrencySelector";
 
-// M-Pesa (via Jenga) only. PayPal was removed 2026-09-22 — it had been
-// switched off since a 2026-09-13 account restriction and was never
-// re-enabled; a Jenga card option is planned separately once the right
-// Jenga product/credentials are confirmed.
+// M-Pesa and Jenga PGW card checkout. PayPal was removed 2026-09-22 — it
+// had been switched off since a 2026-09-13 account restriction and was
+// never re-enabled.
+//
+// Card payment is SANDBOX ONLY right now (jenga-card-initiate reads
+// JENGA_SANDBOX_* secrets and always calls Jenga's UAT hosts) — do not
+// treat a successful test here as ready for real guest money until that
+// function is switched to live credentials.
 export default function PaymentSection({
   token,
   totalAmount,
@@ -31,6 +35,8 @@ export default function PaymentSection({
   const [error, setError] = useState<string | null>(null);
   const [awaitingMpesa, setAwaitingMpesa] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -78,6 +84,30 @@ export default function PaymentSection({
     } catch {
       setError("Could not reach the payment service.");
       setLoading(false);
+    }
+  }
+
+  async function handleCard() {
+    if (!agreedToTerms) return;
+    setCardLoading(true);
+    setCardError(null);
+
+    try {
+      const supabase = createClient();
+      const { data, error: fnError } = await supabase.functions.invoke("jenga-card-initiate", {
+        body: { token, termsAccepted: agreedToTerms },
+      });
+
+      if (fnError || data?.error || !data?.redirectUrl) {
+        setCardError(data?.error ?? "Could not start card payment. Please try again.");
+        setCardLoading(false);
+        return;
+      }
+
+      window.location.href = data.redirectUrl;
+    } catch {
+      setCardError("Could not reach the payment service.");
+      setCardLoading(false);
     }
   }
 
@@ -154,6 +184,27 @@ export default function PaymentSection({
           {error && (
             <p role="alert" className="flex items-center gap-2 text-sm text-danger">
               <Warning size={16} /> {error}
+            </p>
+          )}
+
+          <div className="flex items-center gap-3 pt-1 text-xs font-medium text-ink/50">
+            <span className="h-px flex-1 bg-taupe/25" />
+            or
+            <span className="h-px flex-1 bg-taupe/25" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCard}
+            disabled={cardLoading || !agreedToTerms}
+            className="focus-ring flex w-full items-center justify-center gap-2 rounded-lg border border-taupe/30 bg-page px-5 py-2.5 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <CreditCard size={18} />
+            {cardLoading ? "Starting…" : "Pay with Card"}
+          </button>
+          {cardError && (
+            <p role="alert" className="flex items-center gap-2 text-sm text-danger">
+              <Warning size={16} /> {cardError}
             </p>
           )}
         </form>
