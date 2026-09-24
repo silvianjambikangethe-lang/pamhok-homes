@@ -88,14 +88,25 @@ open work.
   check whether a refund is owed" (uses `detail.already_paid`; booking
   payments only, laundry duplicates are not detected). The pay card and
   its help dropdown mention that Jenga may add a small processing fee.
-- **Demo room kept for the next M-Pesa demo:** room `ZZ DEMO Room`
-  (`zz-demo-room`, inactive → hidden from the public site, admin calendar
-  and rooms page) and guest `Demo Client` (silvianjambikangethe@gmail.com)
-  remain. Both demo bookings were deleted (a booking on that room DOES show
-  in the admin Bookings list, adds to dashboard revenue/awaiting-payment
-  counts and would appear on the staff checkout schedule on its check-out
-  day) — create a fresh 1 KES booking on that room for each demo and delete
-  it afterwards. Real 1.04 KES demo charge: Jenga txn 626712015428.
+- **TEST ROOM for live end-to-end simulation (created 2026-09-24):** room
+  `Test Room` (slug `test-room`, id a3d1b3d9-5ed0-4dc4-8235-a90661d59ac5) is
+  ACTIVE and listed like the real rooms (display_order 11, same photos /
+  amenities / bed setup as Room One, description says it is an internal
+  test room). **1 KES per night**, fake door code `0000`, WiFi
+  `PamhokTest` / `test-wifi-1234` (never the real rooms' codes). Use it
+  for admin manual bookings, guest self-booking, payment, laundry and
+  cleaning with no bypassing. NOTE the public site is CLOSED
+  (`site_content.site_status.is_open = false` since 2026-09-21): visitors get
+  the maintenance page, only a signed-in admin sees the real site — so the
+  test room is not reachable by real guests unless the site is reopened.
+  **If the site is ever reopened, hide it first:**
+  `update rooms set is_active=false where slug='test-room';` (hidden
+  rooms vanish from the admin Rooms page, so re-activating is also SQL).
+  It appears in the sitemap while active. Bookings on it DO show in the
+  admin Bookings list, dashboard revenue/awaiting-payment counts and the
+  staff schedule — delete test bookings afterwards. Demo guest `Demo Client`
+  (silvianjambikangethe@gmail.com) is kept. Real 1.04 KES demo charge:
+  Jenga txn 626712015428.
 - **Guest screens are live (pushed 2026-09-24, commit 360f9aa).**
   `PaymentSection` and `LaundryPaymentSection` are one "Pay with M-Pesa or
   card" button (site theme: rounded-full mocha/terracotta, not green) calling
