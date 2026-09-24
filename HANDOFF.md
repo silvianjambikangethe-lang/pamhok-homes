@@ -169,10 +169,13 @@ open work.
   be changed.** (They were flagged 2026-09-20 as previously exposed; the
   public-exposure hole itself is closed, and the owner has decided to keep
   the current codes.) Do not re-raise this.
-- **Two Supabase dashboard-only settings, likely already fine.**
-  `auth_leaked_password_protection` and daily backups (Pro plan default)
-  — neither readable via any available tool, a 10-second glance at
-  Authentication → Policies and Database → Backups would confirm.
+- **Supabase settings checked 2026-09-24:** daily backups are ON (Pro
+  plan; 8 daily physical backups listed, newest 24 Sep 05:27 UTC) — note
+  they do NOT include Storage files (room photos, logo, ID uploads) and a
+  restore can lose up to a day of data; point-in-time recovery is a
+  separate paid add-on the owner may want once bookings are daily.
+  Leaked-password protection is not flagged by the security advisor
+  (enabled).
 - **Clock in/out has no notification** — admin checks "Staff Shifts"
   manually. Confirmed with owner this is fine as-is, not a gap.
 - **Vercel Git auto-deploy has occasionally not triggered on a push**
