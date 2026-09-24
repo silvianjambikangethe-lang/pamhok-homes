@@ -81,6 +81,10 @@ open work.
   (self-resolved before, no root cause found). If a merge doesn't
   produce a new deployment within a couple minutes, check
   `list_deployments` directly.
+- **Checkboxes use `accent-terracotta-500`, not `text-terracotta-500`** —
+  the latter only themes a checkbox with Tailwind's forms plugin, which is
+  not installed, so the browser's default blue showed (fixed 2026-09-24 in
+  BookingWidget, PaymentSection, CheckoutSection).
 - **Zero real guest reviews yet** — homepage shows sample testimonials
   by design until real ones exist to feature via `/admin/reviews`.
 - **The site logo's source file is a 1254→2508px raster (not vector)**,

@@ -71,7 +71,7 @@ export default function PaymentSection({
           type="checkbox"
           checked={agreedToTerms}
           onChange={(e) => setAgreedToTerms(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 text-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500"
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 accent-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500"
         />
         <span>
           I have read and agree to the{" "}

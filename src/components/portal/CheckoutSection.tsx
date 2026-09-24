@@ -77,7 +77,7 @@ export default function CheckoutSection({
                 onChange={(e) =>
                   setChecked((prev) => prev.map((v, idx) => (idx === i ? e.target.checked : v)))
                 }
-                className="h-5 w-5 rounded border-taupe/30 text-terracotta-500 focus:ring-terracotta-500"
+                className="h-5 w-5 rounded border-taupe/30 accent-terracotta-500 focus:ring-terracotta-500"
               />
               {item}
             </label>

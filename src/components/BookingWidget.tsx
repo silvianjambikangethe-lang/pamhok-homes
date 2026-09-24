@@ -335,7 +335,7 @@ export default function BookingWidget({
                               type="checkbox"
                               checked={checked}
                               onChange={() => toggleExtraRoom(r.id)}
-                              className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 text-terracotta-500 focus:ring-terracotta-500"
+                              className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 accent-terracotta-500 focus:ring-terracotta-500"
                             />
                             <span className="flex-1">
                               <span className="block font-semibold text-ink">{r.name}</span>
@@ -446,7 +446,7 @@ export default function BookingWidget({
             required
             checked={agreedToTerms}
             onChange={(e) => setAgreedToTerms(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 text-terracotta-500 focus:ring-terracotta-500"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 accent-terracotta-500 focus:ring-terracotta-500"
           />
           <span>
             I agree to the{" "}
