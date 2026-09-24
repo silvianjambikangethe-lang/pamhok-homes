@@ -127,8 +127,10 @@ open work.
   room show in the admin Bookings list, dashboard totals and the staff
   schedule. The public site is OPEN (site_status.is_open = true since
   2026-09-24 18:24 UTC) — a visible test room is bookable by real guests.
-  A test booking made by the owner on Room Seven (2026-09-24 19:13 UTC,
-  unpaid) appeared while cleaning up and was left in place.
+  The owner's later test bookings (Room Seven / Room Eight, 3 in all) were
+  deleted the same way on 2026-09-24 — the database now holds 0 bookings,
+  0 guests, 0 ID files, 10 real rooms. The site was CLOSED again at 19:49
+  UTC (site_status.is_open = false) and should be reopened by the owner.
 - **Guest screens are live (pushed 2026-09-24, commit 360f9aa).**
   `PaymentSection` and `LaundryPaymentSection` are one "Pay with M-Pesa or
   card" button (site theme: rounded-full mocha/terracotta, not green) calling
