@@ -5,6 +5,7 @@ import { CreditCard, Warning } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import type { DisplayCurrency } from "@/lib/currency";
 import CurrencySelector from "@/components/CurrencySelector";
+import PaymentNotes from "@/components/portal/PaymentNotes";
 
 // Same Jenga PGW hosted checkout as PaymentSection.tsx (jenga-pgw-initiate,
 // with `requestId` selecting the laundry charge instead of the booking).
@@ -63,17 +64,7 @@ export default function LaundryPaymentSection({
         <CreditCard size={18} />
         {loading ? "Starting…" : "Pay with M-Pesa or card"}
       </button>
-      <ul className="mt-3 space-y-1 text-xs text-ink/70">
-        <li>
-          <strong>Paying with M-Pesa:</strong> on the next page open{" "}
-          <strong>Mobile</strong>, choose <strong>MPESA</strong>, and enter your
-          Safaricom number.
-        </li>
-        <li>
-          <strong>Paying with card:</strong> on the next page open{" "}
-          <strong>Card</strong> and enter your card details.
-        </li>
-      </ul>
+      <PaymentNotes />
       {error && (
         <p role="alert" className="mt-2 flex items-center gap-2 text-sm text-danger">
           <Warning size={16} /> {error}

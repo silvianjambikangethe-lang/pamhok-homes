@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { PaymentStatus } from "@/lib/supabase/types";
 import type { DisplayCurrency } from "@/lib/currency";
 import CurrencySelector from "@/components/CurrencySelector";
+import PaymentNotes from "@/components/portal/PaymentNotes";
 
 // Payment goes through Jenga PGW's hosted checkout (jenga-pgw-initiate): the
 // guest is redirected to Jenga's page and picks M-Pesa/Equitel or card there.
@@ -103,17 +104,7 @@ export default function PaymentSection({
         <CreditCard size={18} />
         {loading ? "Starting…" : "Pay with M-Pesa or card"}
       </button>
-      <ul className="mt-3 space-y-1 text-xs text-ink/70">
-        <li>
-          <strong>Paying with M-Pesa:</strong> on the next page open{" "}
-          <strong>Mobile</strong>, choose <strong>MPESA</strong>, and enter your
-          Safaricom number.
-        </li>
-        <li>
-          <strong>Paying with card:</strong> on the next page open{" "}
-          <strong>Card</strong> and enter your card details.
-        </li>
-      </ul>
+      <PaymentNotes />
       {error && (
         <p role="alert" className="mt-3 flex items-center gap-2 text-sm text-danger">
           <Warning size={16} /> {error}
