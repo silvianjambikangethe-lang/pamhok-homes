@@ -5,7 +5,7 @@ import { format, isAfter, isBefore, isValid, parseISO, startOfDay } from "date-f
 import { CheckCircle, UsersThree } from "@phosphor-icons/react/dist/ssr";
 import RoomPhoto from "@/components/RoomPhoto";
 import BookingWidget from "@/components/BookingWidget";
-import { getAllAvailability, getAvailability, getRoomBySlug, getRooms } from "@/lib/data";
+import { getAllAvailability, getRoomBySlug, getRooms } from "@/lib/data";
 import { getExchangeRates } from "@/lib/currency";
 import { SITE, pageTitle } from "@/lib/site";
 
@@ -68,12 +68,14 @@ export default async function RoomDetailPage({
   const { room } = await getRoomBySlug(slug);
   if (!room) notFound();
 
-  const [availability, rates, { rooms: allRooms }, allAvailability] = await Promise.all([
-    getAvailability(room.id),
+  const [rates, { rooms: allRooms }, allAvailability] = await Promise.all([
     getExchangeRates(),
     getRooms(),
     getAllAvailability(),
   ]);
+  // Same view getAvailability(room.id) reads, filtered locally instead of a
+  // second round trip.
+  const availability = allAvailability.filter((a) => a.room_id === room.id);
 
   // Other rooms a group (more than 2 guests) can add for the same dates.
   const otherRooms = allRooms

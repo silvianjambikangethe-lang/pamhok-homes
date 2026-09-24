@@ -27,8 +27,10 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function RoomsPage() {
-  const { rooms, isSample } = await getRooms();
-  const availability = await getAllAvailability();
+  const [{ rooms, isSample }, availability] = await Promise.all([
+    getRooms(),
+    getAllAvailability(),
+  ]);
 
   return (
     <div>

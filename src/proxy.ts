@@ -43,17 +43,17 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   if (
     request.nextUrl.pathname.startsWith("/admin") ||
     request.nextUrl.pathname.startsWith("/staff")
   ) {
+    await supabase.auth.getUser();
     return response;
   }
 
+  // Guest pages: one flag lookup (uncached, so a shutdown is instant), no auth round trip at all
+  // while the site is open (only the closed-site admin bypass needs the
+  // user, and public pages never read the session).
   const { data } = await supabase
     .from("site_content")
     .select("value")
@@ -62,6 +62,9 @@ export async function proxy(request: NextRequest) {
   const isOpen = (data?.value as { is_open?: boolean } | null)?.is_open ?? true;
 
   if (!isOpen) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     // A signed-in admin still sees the real site while it's closed to
     // everyone else (Settings → "Access Website"). Checked against
     // admin_users, not just "has a session": any Google account can sign in

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/types";
@@ -134,7 +135,7 @@ const SAMPLE_ROOMS: Room[] = [
   },
 ];
 
-export async function getRooms(): Promise<{ rooms: Room[]; isSample: boolean }> {
+export const getRooms = cache(async function getRooms(): Promise<{ rooms: Room[]; isSample: boolean }> {
   if (!isSupabaseConfigured()) {
     return { rooms: SAMPLE_ROOMS, isSample: true };
   }
@@ -155,9 +156,10 @@ export async function getRooms(): Promise<{ rooms: Room[]; isSample: boolean }> 
   }
 
   return { rooms: (data ?? []).map(toPublicRoom), isSample: false };
-}
+});
 
-export async function getRoomBySlug(
+// React.cache: generateMetadata and the page both call this per request.
+export const getRoomBySlug = cache(async function getRoomBySlug(
   slug: string,
 ): Promise<{ room: Room | null; isSample: boolean }> {
   if (!isSupabaseConfigured()) {
@@ -187,7 +189,7 @@ export async function getRoomBySlug(
   }
 
   return { room: data ? toPublicRoom(data) : null, isSample: false };
-}
+});
 
 // Booked dates are read here on the server, not by the visitor's browser, so
 // the public never needs direct database access to bookings. Only the room,
@@ -213,7 +215,7 @@ export async function getAvailability(roomId: string): Promise<AvailabilityRow[]
 // the /rooms listing page to filter the whole grid down to rooms with no
 // conflicting booking for a guest-picked date range, without a round trip
 // per room.
-export async function getAllAvailability(): Promise<AvailabilityRow[]> {
+export const getAllAvailability = cache(async function getAllAvailability(): Promise<AvailabilityRow[]> {
   if (!isSupabaseConfigured()) return [];
 
   const { data, error } = await createAdminSupabaseClient()
@@ -222,7 +224,7 @@ export async function getAllAvailability(): Promise<AvailabilityRow[]> {
 
   if (error || !data) return [];
   return data;
-}
+});
 
 // Public reviews show the guest's display name (first name and last initial)
 // and what they wrote. The link back to the booking is deliberately not read.
