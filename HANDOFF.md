@@ -92,7 +92,7 @@ open work.
   `Test Room` (slug `test-room`, id a3d1b3d9-5ed0-4dc4-8235-a90661d59ac5) is
   ACTIVE and listed like the real rooms (display_order 11, same photos /
   amenities / bed setup as Room One, description says it is an internal
-  test room). **1 KES per night**, fake door code `0000`, WiFi
+  test room). **100 KES per night**, fake door code `0000`, WiFi
   `PamhokTest` / `test-wifi-1234` (never the real rooms' codes). Use it
   for admin manual bookings, guest self-booking, payment, laundry and
   cleaning with no bypassing. NOTE the public site is CLOSED
