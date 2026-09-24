@@ -53,16 +53,37 @@ open work.
   `mpesa-sandbox-test`, and `mpesa-sandbox-callback`** once this is
   resolved — all three are throwaway diagnostics, not part of the real
   feature.
-- **Live M-Pesa STK test, 2026-09-24: Jenga rejected it.** Called the
-  live `mpesa-initiate` (live `JENGA_*` secrets) against a hidden 0 KES
-  test room/booking (ID pre-marked Verified). Merchant auth to Jenga
-  succeeded, but the STK push returned HTTP 502 with
-  `{"error":"Not Authorized to access the API"}` — the same "not
-  authorized" as the sandbox 401101 above. So the live merchant likely
-  also lacks the raw STK/USSD Push Initiate product; ask Jenga support to
-  enable it on the live merchant. (0 KES may also be rejected by M-Pesa
-  itself; retest with a 1 KES room once enabled.) Live card was NOT
-  tested — `jenga-card-initiate` is still sandbox-only.
+- **Payments now go through Jenga PGW hosted checkout (2026-09-24).**
+  The live merchant is subscribed to PGW *Mobile Money (MPESA, Equitel)*
+  and *Card* — NOT the raw STK/USSD Push API (the old `mpesa-initiate`
+  got "Not Authorized" for that reason). New Edge Functions, deployed by
+  hand via the Supabase dashboard (the MCP deploy tool was blocked):
+  `jenga-pgw-initiate` (JWT on; booking, or laundry when `requestId` is
+  passed; `JENGA_ENV=production` → live `JENGA_*` secrets +
+  api.finserve.africa / v3.jengapgw.io, else sandbox) and
+  `jenga-pgw-callback` (JWT off; marks paid via the `mark_*` RPCs; method
+  taken from Jenga's `desc`; only *under*payment is rejected, since
+  Jenga adds a fee on top). References are random per attempt so a guest
+  can't forge a paid callback. Live test: `env:"live"`, real checkout
+  page, **Card works** (priced 1 KES as KSh 1.04), but **MPESA fails on
+  Jenga's page with error 1001 "unable to calculate charges"** at both
+  0 and 1 KES — a Jenga merchant-config issue, needs Jenga support
+  (message drafted in chat: ask them to enable charges/tariffs for
+  Mobile Money on the live merchant). Full paid-callback loop not yet
+  verified with real money.
+- **Guest-screen change NOT yet pushed** (local only): `PaymentSection`
+  and `LaundryPaymentSection` become one "Pay with M-Pesa or card"
+  button calling `jenga-pgw-initiate`; the polling routes
+  `api/portal/[token]/status` and `.../laundry/[requestId]/status` are
+  now unused. Superseded and still present/deployed, to delete once the
+  new flow is confirmed: functions `mpesa-initiate`,
+  `mpesa-initiate-laundry`, `mpesa-callback`, `mpesa-callback-laundry`,
+  `jenga-card-initiate`, `jenga-card-callback`, `jenga-pgw-sandbox-test`,
+  `mpesa-sandbox-test`, `mpesa-sandbox-callback` (repo folders and the
+  Supabase dashboard) and `supabase/functions/_shared`.
+- **Test rows to delete:** room `ZZ TEST Jenga live 0 KES`
+  (`zz-test-jenga-live`, inactive), guest `ZZ Test Jenga`, booking
+  `50af6043-624b-40e9-9391-22c564b3dd05` (now 1 KES).
 - **OWNER ACTION, still outstanding as far as this session knows:
   change every room's door code and WiFi password.** Flagged
   2026-09-20 as previously exposed publicly; no confirmation seen since
