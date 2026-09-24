@@ -66,7 +66,7 @@ open work.
   (Mobile) end to end — blocked on Jenga error 1001; when fixed, read the
   callback logs for the `paymentChannel` / `transactionStatus` values it
   sends for MPESA.
-- **Hardening 2026-09-24 (needs redeploy of BOTH edge functions):**
+- **Hardening 2026-09-24 (DEPLOYED: initiate v2, callback v4; verified):**
   migration `20260924140000_payment_attempts.sql` (APPLIED) adds
   `payment_attempts` (service-role only). `jenga-pgw-initiate` records every
   attempt reference and no longer returns Jenga error text / env to the
@@ -74,9 +74,15 @@ open work.
   (old `payment_reference` lookup kept as fallback) so a guest who starts a
   second attempt can still complete the first, and logs
   `DUPLICATE PAYMENT` if a booking is paid twice (guest charged twice, may
-  need a manual refund). Until both files are pasted into the Supabase
-  dashboard, the deployed versions still have the old single-reference
-  behaviour.
+  need a manual refund). Verified live with simulated Jenga callbacks on a temp booking
+  (deleted after): unknown reference ignored; PENDING left alone;
+  underpayment not accepted; explicit FAILED marks Failed; SUCCESS on an
+  OLDER attempt after a newer one failed marks Paid (the orphaning bug is
+  fixed); fee-inclusive amount accepted; a second SUCCESS logs DUPLICATE
+  PAYMENT and changes nothing else; FAILED after Paid stays Paid. Minor:
+  the duplicate success re-stamps `payment_reference` with the later
+  reference (the first is in `security_events.detail`). Not yet tightened:
+  the catch-all in `jenga-pgw-initiate` returns `err.message` (generic).
 - **Demo room kept for the next M-Pesa demo:** room `ZZ DEMO Room`
   (`zz-demo-room`, inactive → hidden from the public site, admin calendar
   and rooms page) and guest `Demo Client` (silvianjambikangethe@gmail.com)
