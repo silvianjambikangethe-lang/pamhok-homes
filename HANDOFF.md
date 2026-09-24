@@ -53,6 +53,16 @@ open work.
   `mpesa-sandbox-test`, and `mpesa-sandbox-callback`** once this is
   resolved — all three are throwaway diagnostics, not part of the real
   feature.
+- **Live M-Pesa STK test, 2026-09-24: Jenga rejected it.** Called the
+  live `mpesa-initiate` (live `JENGA_*` secrets) against a hidden 0 KES
+  test room/booking (ID pre-marked Verified). Merchant auth to Jenga
+  succeeded, but the STK push returned HTTP 502 with
+  `{"error":"Not Authorized to access the API"}` — the same "not
+  authorized" as the sandbox 401101 above. So the live merchant likely
+  also lacks the raw STK/USSD Push Initiate product; ask Jenga support to
+  enable it on the live merchant. (0 KES may also be rejected by M-Pesa
+  itself; retest with a 1 KES room once enabled.) Live card was NOT
+  tested — `jenga-card-initiate` is still sandbox-only.
 - **OWNER ACTION, still outstanding as far as this session knows:
   change every room's door code and WiFi password.** Flagged
   2026-09-20 as previously exposed publicly; no confirmation seen since
