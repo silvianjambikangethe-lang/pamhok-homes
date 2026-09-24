@@ -12,9 +12,8 @@
 // marked Paid. The full raw query is logged so the hash formula can be
 // worked out later.
 //
-// Duplicates sendPaymentSucceededEmail from _shared/email.ts and
-// src/lib/email.ts (the deploy path can't resolve relative imports) — keep
-// in sync if the copy changes.
+// Duplicates sendPaymentSucceededEmail from src/lib/email.ts (Edge Functions
+// deployed by hand can't import it) — keep in sync if the copy changes.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 

@@ -1,6 +1,6 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-09-23. Paste this file into a new chat to continue
+Last updated: 2026-09-24. Paste this file into a new chat to continue
 with full context. This is a **condensed rewrite** — full session-by-
 session history before this date lives in git (`git log HANDOFF.md`,
 or `git show <commit>:HANDOFF.md` for any prior version) if you ever
@@ -22,37 +22,11 @@ open work.
   whole code path, `lib/paypal.ts`, `payment-flags.ts`, and all PayPal
   routes/UI are deleted, not just switched off). Guests now choose
   **M-Pesa or card** only. Don't re-add PayPal without the owner asking.
-- **Jenga PGW card payment — built and working in SANDBOX only, not
-  live.** `jenga-card-initiate`/`jenga-card-callback` Edge Functions
-  read `JENGA_SANDBOX_*` secrets and only ever call Jenga's UAT hosts
-  (`uat.finserve.africa`, `v3-uat.jengapgw.io`) — confirmed end-to-end
-  via a real test booking (auth → signed PGW request → real Jenga
-  checkout page → Card channel selectable → redirected back → booking
-  marked paid). **Do not point this at live/production** — the owner's
-  settlement account isn't linked to Jenga yet, and they've been
-  explicit about this staying sandbox-only until they say otherwise.
-  **Known gap**: neither this callback nor the existing M-Pesa one
-  verifies Jenga's signature/hash on the callback payload — Jenga's
-  public docs don't state the formula for either. Compensating control
-  (amount/reference cross-check) was planned but never built — see
-  "Blast-radius reduction" below for why this matters less now than it
-  used to.
-- **Jenga sandbox STK/USSD push — blocked on Jenga's side, unrelated
-  to the card work above.** A throwaway diagnostic function
-  (`mpesa-sandbox-test`, paired with a logging-only
-  `mpesa-sandbox-callback`) authenticates fine against
-  `JENGA_SANDBOX_*` credentials but the STK push call itself returns
-  `401 {"code":401101,"message":"Not Authorized to access the API"}`.
-  Likely cause: the sandbox merchant has "Mobile Money" (STK via PGW)
-  and "Card" subscribed, but not the separate raw STK/USSD Push
-  Initiate API product. **Owner needs to ask Jenga support** to enable
-  that specific product for the sandbox merchant — nothing left to fix
-  in code. Live M-Pesa STK (the real guest-facing payment flow,
-  `mpesa-initiate`) is unaffected by this and not known to be broken.
-  **Remember to delete `jenga-pgw-sandbox-test`,
-  `mpesa-sandbox-test`, and `mpesa-sandbox-callback`** once this is
-  resolved — all three are throwaway diagnostics, not part of the real
-  feature.
+- **Old sandbox findings, superseded:** the sandbox merchant also lacked
+  the raw STK/USSD Push product (401101) — same root cause as the live
+  "Not Authorized"; both merchants are PGW-only. Known gap that remains:
+  the callback does not verify Jenga's `hash` (formula unpublished);
+  compensated by random per-attempt references + an underpayment check.
 - **Payments now go through Jenga PGW hosted checkout (2026-09-24).**
   The live merchant is subscribed to PGW *Mobile Money (MPESA, Equitel)*
   and *Card* — NOT the raw STK/USSD Push API (the old `mpesa-initiate`
@@ -71,22 +45,25 @@ open work.
   (message drafted in chat: ask them to enable charges/tariffs for
   Mobile Money on the live merchant). Full paid-callback loop not yet
   verified with real money.
-- **Guest-screen change NOT yet pushed** (local only): `PaymentSection`
-  and `LaundryPaymentSection` become one "Pay with M-Pesa or card"
-  button calling `jenga-pgw-initiate` (with a note under it telling the
-  guest to pick Mobile→MPESA or Card on Jenga's page — Jenga's docs
+- **Guest screens are live (pushed 2026-09-24, commit 360f9aa).**
+  `PaymentSection` and `LaundryPaymentSection` are one "Pay with M-Pesa or
+  card" button calling `jenga-pgw-initiate`, with a note under it telling
+  the guest to pick Mobile→MPESA or Card on Jenga's page (Jenga's docs
   have no parameter to preselect a channel/telco or prefill the M-Pesa
-  number); the polling routes
-  `api/portal/[token]/status` and `.../laundry/[requestId]/status` are
-  now unused. Superseded and still present/deployed, to delete once the
-  new flow is confirmed: functions `mpesa-initiate`,
+  number). Repo cleanup done: the old `mpesa-*` / `jenga-card-*` /
+  sandbox-test function folders, `supabase/functions/_shared`, and the
+  unused polling routes are deleted. **STILL DEPLOYED in Supabase, owner
+  to delete in the dashboard (Edge Functions):** `mpesa-initiate`,
   `mpesa-initiate-laundry`, `mpesa-callback`, `mpesa-callback-laundry`,
   `jenga-card-initiate`, `jenga-card-callback`, `jenga-pgw-sandbox-test`,
-  `mpesa-sandbox-test`, `mpesa-sandbox-callback` (repo folders and the
-  Supabase dashboard) and `supabase/functions/_shared`.
-- **Test rows to delete:** room `ZZ TEST Jenga live 0 KES`
-  (`zz-test-jenga-live`, inactive), guest `ZZ Test Jenga`, booking
-  `50af6043-624b-40e9-9391-22c564b3dd05` (now 1 KES).
+  `mpesa-sandbox-test`, `mpesa-sandbox-callback` — no code calls them
+  any more, but `mpesa-callback*` are unauthenticated endpoints holding
+  the service key, so remove them soon. Test rows from the live test were
+  deleted (DB back to 1 booking / 1 guest / 10 rooms).
+- **M-Pesa on the live checkout still fails (Jenga error 1001, "unable
+  to calculate charges")** — reproduced 3 times at 0 and 1 KES; support
+  message drafted in chat, awaiting the owner sending it to Jenga.
+  Last test order reference: PGWT6RFXL9U9YU7. Card works.
 - **OWNER ACTION, still outstanding as far as this session knows:
   change every room's door code and WiFi password.** Flagged
   2026-09-20 as previously exposed publicly; no confirmation seen since
@@ -112,8 +89,9 @@ open work.
 
 ## What's built (current state, not a build log)
 
-**Guest flow**: browse rooms → book → pay (M-Pesa live; card via Jenga
-PGW, sandbox only, see above) → upload ID (Dojah OCR + name-match, 2
+**Guest flow**: browse rooms → book → pay (one button → Jenga PGW hosted
+checkout, guest picks Mobile/MPESA or Card there; card live, M-Pesa
+blocked on Jenga error 1001, see above) → upload ID (Dojah OCR + name-match, 2
 auto attempts then manual admin review) → guest portal
 (`/portal/[token]`, token-only auth, no login) unlocks door
 code/WiFi/laundry/extend-stay/checkout → post-stay review. **The
