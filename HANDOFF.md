@@ -101,13 +101,9 @@ open work.
   have no parameter to preselect a channel/telco or prefill the M-Pesa
   number). Repo cleanup done: the old `mpesa-*` / `jenga-card-*` /
   sandbox-test function folders, `supabase/functions/_shared`, and the
-  unused polling routes are deleted. **STILL DEPLOYED in Supabase, owner
-  to delete in the dashboard (Edge Functions):** `mpesa-initiate`,
-  `mpesa-initiate-laundry`, `mpesa-callback`, `mpesa-callback-laundry`,
-  `jenga-card-initiate`, `jenga-card-callback`, `jenga-pgw-sandbox-test`,
-  `mpesa-sandbox-test`, `mpesa-sandbox-callback` — no code calls them
-  any more, but `mpesa-callback*` are unauthenticated endpoints holding
-  the service key, so remove them soon. Test rows from the live test were
+  unused polling routes are deleted. The nine old deployed functions (`mpesa-*`, `jenga-card-*`, sandbox
+  tests) were DELETED from Supabase on 2026-09-24 by the owner; only
+  `jenga-pgw-initiate` and `jenga-pgw-callback` remain. Test rows from the live test were
   deleted (DB back to 1 booking / 1 guest / 10 rooms).
 - **M-Pesa on the live checkout still fails (Jenga error 1001, "unable
   to calculate charges")** — reproduced 3 times at 0 and 1 KES; support
