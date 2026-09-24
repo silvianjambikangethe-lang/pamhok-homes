@@ -26,7 +26,9 @@ export async function isBookingAllowedByGate(
   const { data, error } = await supabase
     .from("site_content")
     .select("value")
-    .eq("key", "booking_gate")
+    // Not in the typed SiteContent key list on purpose: this gate is temporary
+    // and must not appear in the admin content editor's key set.
+    .eq("key", "booking_gate" as never)
     .maybeSingle();
 
   // Fail closed: if the gate row can't be read, don't let bookings through.
