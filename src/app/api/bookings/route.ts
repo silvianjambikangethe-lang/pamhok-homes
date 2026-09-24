@@ -5,7 +5,6 @@ import { isSupabaseConfigured } from "@/lib/data";
 import { generateBookingReference, generatePassReference } from "@/lib/booking-reference";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { isNameBlocked } from "@/lib/guest-blocklist";
-import { isBookingAllowedByGate } from "@/lib/booking-gate";
 import { SITE } from "@/lib/site";
 import { EMAIL_RE, PHONE_RE } from "@/lib/validation";
 
@@ -171,12 +170,6 @@ export async function POST(request: Request) {
 
     // Keep the order the guest picked them in.
     extraRooms = extraRoomIds.map((id) => extras.find((r) => r.id === id)!);
-  }
-
-  // Temporary testing gate (see src/lib/booking-gate.ts): while enabled, only
-  // the allowed names may book. Same generic answer as a blocked name.
-  if (!(await isBookingAllowedByGate(supabase, body.guest.fullName))) {
-    return cannotCompleteOnline();
   }
 
   // Blocklist gate. Runs after every check the visitor could fix themselves

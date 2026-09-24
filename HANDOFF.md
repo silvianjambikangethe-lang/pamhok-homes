@@ -88,16 +88,9 @@ open work.
   check whether a refund is owed" (uses `detail.already_paid`; booking
   payments only, laundry duplicates are not detected). The pay card and
   its help dropdown mention that Jenga may add a small processing fee.
-- **TEMPORARY BOOKING GATE (added 2026-09-24, REMOVE when testing ends):**
-  while `site_content.booking_gate` = `{"enabled":true,"allowed_names":["Stephen Kang'ethe"]}`
-  the public booking route (`/api/bookings`, via `src/lib/booking-gate.ts`)
-  only accepts guests with an allowed name (case/space/apostrophe
-  insensitive, name-only so anyone typing it passes); everyone else gets
-  the generic "call us to book" 503, same as a blocked name. Fails closed
-  if the row cannot be read. Admin manual bookings and existing-booking
-  flows (extend, laundry, requests) are NOT gated. Turn off with
-  `update site_content set value='{"enabled": false}' where key='booking_gate';`
-  (no deploy needed).
+- **Temporary booking gate: added then REMOVED 2026-09-24** (owner asked to
+  stop it). Code deleted, `site_content.booking_gate` row deleted; public
+  booking is open to everyone as before.
 - **TEST ROOM for live end-to-end simulation (created 2026-09-24):** room
   `Test Room` (slug `test-room`, id a3d1b3d9-5ed0-4dc4-8235-a90661d59ac5) is
   ACTIVE and listed like the real rooms (display_order 11, same photos /
