@@ -98,7 +98,7 @@ export default function PaymentSection({
         type="button"
         onClick={handlePay}
         disabled={loading || !agreedToTerms}
-        className="focus-ring mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-success px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+        className="focus-ring mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <CreditCard size={18} />
         {loading ? "Starting…" : "Pay with M-Pesa or card"}
