@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .select(
-        "id, total_amount, payment_status, id_verification_status, terms_accepted_at, guest:guests(full_name, email, phone)",
+        "id, room_id, check_in, check_out, paid_at, total_amount, payment_status, id_verification_status, terms_accepted_at, guest:guests(full_name, email, phone)",
       )
       .eq("access_token", token)
       .maybeSingle();
@@ -159,6 +159,30 @@ Deno.serve(async (req) => {
           .update({ terms_accepted_at: new Date().toISOString() })
           .eq("id", booking.id);
       }
+      // A booking only takes its dates once it is PAID (see the
+      // availability_only_paid_bookings migration), so before the first
+      // payment re-check that nobody else has paid for them in the meantime.
+      // Skipped once paid_at is set (e.g. paying for a stay extension), since
+      // the booking's own nights are then in the availability view.
+      if (!booking.paid_at && booking.room_id) {
+        const { data: taken, error: takenError } = await supabase
+          .from("availability_view")
+          .select("room_id")
+          .eq("room_id", booking.room_id)
+          .lt("check_in", booking.check_out)
+          .gt("check_out", booking.check_in)
+          .limit(1);
+        if (takenError) {
+          console.error("availability re-check failed", takenError);
+          return json({ error: "Could not start payment. Please try again." }, 500);
+        }
+        if (taken && taken.length > 0) {
+          return json(
+            { error: "Sorry, those dates were just booked by another guest. Please choose different dates." },
+            409,
+          );
+        }
+      }
       amountKes = Number(booking.total_amount);
       orderReference = randomReference("PGW");
       description = "Pamhok Homes booking payment";
@@ -194,32 +218,63 @@ Deno.serve(async (req) => {
     const firstName = sanitizeName(nameParts[0] ?? "Guest");
     const lastName = sanitizeName(nameParts.slice(1).join("")) || "Guest";
 
-    const form = new URLSearchParams({
-      token: accessToken,
-      merchantCode,
-      currency,
-      orderAmount,
-      orderReference,
-      productType: "Service",
-      productDescription: description,
-      paymentTimeLimit: "15mins",
-      customerFirstName: firstName,
-      customerLastName: lastName,
-      customerEmail: guest?.email || "guest@pamhokhomes.com",
-      customerPhone: guest?.phone || "254700000000",
-      customerAddress: "Nairobi",
-      customerPostalCodeZip: "00100",
-      countryCode: "KE",
-      callbackUrl,
-      signature,
+    // The guest types their own details on Jenga's page (the cardholder name
+    // has to match the card exactly, so pre-filled names caused mismatches).
+    // Jenga lists these fields as required, so they are sent BLANK first; only
+    // if Jenga refuses blanks do we fall back to the booking's own details.
+    const postToPgw = (details: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+      address: string;
+      postalCode: string;
+    }) =>
+      fetch(`${PGW_BASE}/processPayment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          token: accessToken,
+          merchantCode,
+          currency,
+          orderAmount,
+          orderReference,
+          productType: "Service",
+          productDescription: description,
+          paymentTimeLimit: "15mins",
+          customerFirstName: details.firstName,
+          customerLastName: details.lastName,
+          customerEmail: details.email,
+          customerPhone: details.phone,
+          customerAddress: details.address,
+          customerPostalCodeZip: details.postalCode,
+          countryCode: "KE",
+          callbackUrl,
+          signature,
+        }).toString(),
+        redirect: "manual",
+      });
+
+    let pgwRes = await postToPgw({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+      postalCode: "",
     });
 
-    const pgwRes = await fetch(`${PGW_BASE}/processPayment`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: form.toString(),
-      redirect: "manual",
-    });
+    if (pgwRes.status !== 302 || !pgwRes.headers.get("location")) {
+      console.error("Jenga rejected blank customer details; retrying with the booking's details", pgwRes.status);
+      pgwRes = await postToPgw({
+        firstName,
+        lastName,
+        email: guest?.email || "guest@pamhokhomes.com",
+        phone: guest?.phone || "254700000000",
+        address: "Nairobi",
+        postalCode: "00100",
+      });
+    }
 
     const redirectUrl = pgwRes.headers.get("location");
     if (pgwRes.status !== 302 || !redirectUrl) {

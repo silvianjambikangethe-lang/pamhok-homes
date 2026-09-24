@@ -64,7 +64,7 @@ export default function PaymentSection({
       </div>
       <p className="mt-1 text-sm text-ink/80">
         Pay with M-Pesa or card on Jenga&apos;s secure page. Jenga may add a
-        small processing fee, shown before you pay. Your room stays reserved.
+        small processing fee, shown before you pay. Your dates are secured once payment is complete.
       </p>
 
       <label className="mt-5 flex items-start gap-2.5 text-sm text-ink/80">

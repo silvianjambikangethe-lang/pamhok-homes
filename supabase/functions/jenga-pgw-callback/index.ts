@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
 
   let bookingQuery = supabase
     .from("bookings")
-    .select("id, access_token, total_amount, payment_status");
+    .select("id, room_id, check_in, check_out, access_token, total_amount, payment_status");
   bookingQuery = attempt
     ? bookingQuery.eq("id", attempt.booking_id)
     : bookingQuery.eq("payment_reference", orderReference);
@@ -217,8 +217,31 @@ Deno.serve(async (req) => {
       // A second successful payment for an already-paid booking: the guest
       // was charged twice and may be owed a refund.
       console.error("jenga-pgw-callback: DUPLICATE PAYMENT", orderReference, paidAmount);
-    } else if (!result?.extension_reverted) {
-      await sendPaymentSucceededEmail(supabase, booking.id);
+    } else {
+      // A booking only takes its dates once paid, so two guests can (rarely)
+      // pay for the same dates at the same moment. This booking is now in the
+      // availability view; if anyone else holds an overlapping range, flag it
+      // so one guest can be refunded.
+      if (booking.room_id) {
+        const { data: overlapping } = await supabase
+          .from("availability_view")
+          .select("room_id")
+          .eq("room_id", booking.room_id)
+          .lt("check_in", booking.check_out)
+          .gt("check_out", booking.check_in);
+        if (overlapping && overlapping.length > 1) {
+          console.error("jenga-pgw-callback: DOUBLE BOOKING", orderReference, booking.room_id);
+          const { error: eventError } = await supabase.from("security_events").insert({
+            event_type: "double_booking_conflict",
+            booking_id: booking.id,
+            detail: { reference: orderReference, check_in: booking.check_in, check_out: booking.check_out },
+          });
+          if (eventError) console.error("security_events insert failed", eventError);
+        }
+      }
+      if (!result?.extension_reverted) {
+        await sendPaymentSucceededEmail(supabase, booking.id);
+      }
     }
     return Response.redirect(`${portalBase}?payment=success`, 302);
   }

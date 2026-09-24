@@ -16,6 +16,7 @@ const EVENT_LABELS: Record<string, string> = {
   mark_booking_payment_failed: "Booking payment failed",
   mark_laundry_paid: "Laundry marked paid",
   mark_laundry_payment_failed: "Laundry payment failed",
+  double_booking_conflict: "Double booking — two guests paid for the same dates, refund one",
 };
 
 export default function SecurityEventsList({ events }: { events: SecurityEventRow[] }) {

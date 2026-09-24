@@ -91,6 +91,26 @@ open work.
 - **Temporary booking gate: added then REMOVED 2026-09-24** (owner asked to
   stop it). Code deleted, `site_content.booking_gate` row deleted; public
   booking is open to everyone as before.
+- **NO RESERVE BEFORE PAYMENT + BLANK JENGA DETAILS (2026-09-24, owner
+  request) — IN PROGRESS, needs the steps below:**
+  (1) Blank customer details on Jenga's page: `jenga-pgw-initiate` now
+  sends the customer name/email/phone/address BLANK so the guest types their
+  own (countryCode stays KE); if Jenga refuses blanks it retries once with
+  the booking's details (check logs for "rejected blank customer details").
+  (2) Rooms are only taken once PAID: migration
+  `20260924190000_availability_only_paid_bookings.sql` changes
+  `availability_view` so a booking holds its dates only when
+  `paid_at is not null` (or Blocked); unpaid / abandoned bookings no
+  longer lock a room. `jenga-pgw-initiate` re-checks the view right before
+  a first payment (409 "dates were just booked by another guest") and
+  `jenga-pgw-callback` logs a `double_booking_conflict` security event
+  (shown in the admin Security Log) if two guests still pay for the same
+  dates so one can be refunded. The 3-hour stay-EXTENSION hold is
+  deliberately unchanged. Site copy no longer says the room "stays
+  reserved" / "Reserve". ORDER: (a) redeploy BOTH edge functions, (b) THEN
+  apply the migration (applying it first would leave a window with no
+  "still free?" check). Status: migration NOT yet applied, functions NOT yet
+  redeployed as of this entry.
 - **TEST ROOM for live end-to-end simulation (created 2026-09-24):** room
   `Test Room` (slug `test-room`, id a3d1b3d9-5ed0-4dc4-8235-a90661d59ac5) is
   ACTIVE and listed like the real rooms (display_order 11, same photos /

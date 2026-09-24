@@ -474,13 +474,13 @@ export default function BookingWidget({
           className="focus-ring w-full rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3.5 text-btn text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting
-            ? "Reserving…"
+            ? "Booking…"
             : roomCount > 1
-              ? `Reserve ${roomCount} rooms — Continue to Payment`
-              : "Reserve — Continue to Payment"}
+              ? `Book ${roomCount} rooms — Continue to Payment`
+              : "Book — Continue to Payment"}
         </button>
         <p className="text-center text-small text-ink/65">
-          You won&apos;t be charged yet. Choose your payment method next.
+          You won&apos;t be charged yet. Your dates are secured once payment is complete. Choose your payment method next.
           {roomCount > 1 &&
             " Each room is paid for on its own booking page, linked from the first."}
         </p>
