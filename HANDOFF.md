@@ -57,19 +57,34 @@ open work.
   **Until the fixed file is pasted into the Supabase dashboard function
   `jenga-pgw-callback`, every real payment is charged but shown Failed.**
   The demo booking was repaired by hand with `mark_booking_paid`.
-- **Live test results 2026-09-24:** a real 1.04 KES CARD payment now
-  completes end to end after the callback field-name fix (repaired by hand
-  once; the fixed callback is deployed as version 3 but has not yet marked a
-  booking Paid on its own — verify with the next real payment). An
-  abandoned or declined card produces NO callback at all: the booking just
-  stays Pending and the guest can pay again. Still untested: the M-Pesa
-  (Mobile) path end to end — blocked on Jenga error 1001; when fixed,
-  check the callback logs for what `paymentChannel` / `transactionStatus`
-  look like for MPESA. **Demo rows still in the DB, delete when done:**
-  room `ZZ DEMO Room` (`zz-demo-room`, inactive), guest `Demo Client`,
-  bookings `8fa84262-ff5a-4125-ad3c-6a9f1b25e356` (Paid, card) and
-  `84abf65d-73c3-4013-98a5-0844c6bfcaa2` (Pending, 1 KES, kept for the
-  M-Pesa retest).
+- **Live test results 2026-09-24:** a real 1.04 KES CARD payment
+  (Jenga txn ref 626712015428) completes end to end after the callback
+  field-name fix — it was repaired by hand once, the fixed callback has not
+  yet marked a booking Paid on its own, so verify with the next real
+  payment. An abandoned or declined card produces NO callback: the booking
+  stays Pending and the guest can pay again. Still untested: M-Pesa
+  (Mobile) end to end — blocked on Jenga error 1001; when fixed, read the
+  callback logs for the `paymentChannel` / `transactionStatus` values it
+  sends for MPESA.
+- **Hardening 2026-09-24 (needs redeploy of BOTH edge functions):**
+  migration `20260924140000_payment_attempts.sql` (APPLIED) adds
+  `payment_attempts` (service-role only). `jenga-pgw-initiate` records every
+  attempt reference and no longer returns Jenga error text / env to the
+  browser; `jenga-pgw-callback` resolves references through that table
+  (old `payment_reference` lookup kept as fallback) so a guest who starts a
+  second attempt can still complete the first, and logs
+  `DUPLICATE PAYMENT` if a booking is paid twice (guest charged twice, may
+  need a manual refund). Until both files are pasted into the Supabase
+  dashboard, the deployed versions still have the old single-reference
+  behaviour.
+- **Demo room kept for the next M-Pesa demo:** room `ZZ DEMO Room`
+  (`zz-demo-room`, inactive → hidden from the public site, admin calendar
+  and rooms page) and guest `Demo Client` (silvianjambikangethe@gmail.com)
+  remain. Both demo bookings were deleted (a booking on that room DOES show
+  in the admin Bookings list, adds to dashboard revenue/awaiting-payment
+  counts and would appear on the staff checkout schedule on its check-out
+  day) — create a fresh 1 KES booking on that room for each demo and delete
+  it afterwards. Real 1.04 KES demo charge: Jenga txn 626712015428.
 - **Guest screens are live (pushed 2026-09-24, commit 360f9aa).**
   `PaymentSection` and `LaundryPaymentSection` are one "Pay with M-Pesa or
   card" button (site theme: rounded-full mocha/terracotta, not green) calling

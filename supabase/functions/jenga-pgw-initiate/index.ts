@@ -6,8 +6,8 @@
 //
 // Environment: JENGA_ENV=production uses the live JENGA_* secrets and the
 // live hosts (api.finserve.africa / v3.jengapgw.io); anything else uses the
-// JENGA_SANDBOX_* secrets and the UAT hosts. The response includes `env` so
-// a test call shows which one was actually used.
+// JENGA_SANDBOX_* secrets and the UAT hosts. Which one was used is only
+// logged, never returned to the browser.
 //
 // Signature payload: merchantCode+orderReference+currency+orderAmount+callbackUrl.
 //
@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
     if (!authRes.ok) {
       const authBody = await authRes.text().catch(() => "");
       console.error("Jenga auth failed", isProduction ? "live" : "sandbox", authRes.status, authBody);
-      return json({ error: "Could not authenticate with Jenga.", env: isProduction ? "live" : "sandbox" }, 502);
+      return json({ error: "Could not start payment." }, 502);
     }
     const { accessToken } = await authRes.json();
 
@@ -225,19 +225,21 @@ Deno.serve(async (req) => {
     if (pgwRes.status !== 302 || !redirectUrl) {
       const pgwBody = await pgwRes.text().catch(() => "");
       console.error("Jenga PGW checkout failed", pgwRes.status, pgwBody.slice(0, 1000));
-      return json(
-        {
-          error: "Could not start payment.",
-          env: isProduction ? "live" : "sandbox",
-          jengaStatus: pgwRes.status,
-          jengaBody: pgwBody.slice(0, 500),
-        },
-        502,
-      );
+      return json({ error: "Could not start payment." }, 502);
     }
 
+    // Every attempt is remembered so a guest who starts a second attempt can
+    // still complete the first (the callback resolves references here). A
+    // failure to record only degrades to the payment_reference fallback below.
+    const { error: attemptError } = await supabase.from("payment_attempts").insert({
+      reference: orderReference,
+      booking_id: requestId ? null : booking.id,
+      request_id: requestId ?? null,
+    });
+    if (attemptError) console.error("payment_attempts insert failed", attemptError);
+
     // The method (mpesa vs card) isn't known until the guest picks a channel
-    // on Jenga's page — the callback fills it in from Jenga's `desc`.
+    // on Jenga's page — the callback fills it in from Jenga's channel field.
     if (requestId) {
       await supabase
         .from("guest_requests")
@@ -250,7 +252,7 @@ Deno.serve(async (req) => {
         .eq("id", booking.id);
     }
 
-    return json({ ok: true, redirectUrl, env: isProduction ? "live" : "sandbox" });
+    return json({ ok: true, redirectUrl });
   } catch (err) {
     return json({ error: (err as Error).message }, 500);
   }

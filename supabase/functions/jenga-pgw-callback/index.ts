@@ -138,15 +138,26 @@ Deno.serve(async (req) => {
   const failed =
     !success && (responseOk === "false" || /fail|declin|cancel|error|reject|expire/.test(status));
 
-  // Laundry references are issued with an LND prefix, bookings with PGW
-  // (see jenga-pgw-initiate).
-  if (orderReference.startsWith("LND")) {
-    const { data: laundry } = await supabase
+  // Every issued reference is recorded in payment_attempts (see
+  // jenga-pgw-initiate), so an earlier attempt still resolves after the guest
+  // starts another. Fall back to the payment_reference columns for attempts
+  // issued before that table existed. Laundry references carry an LND prefix.
+  const { data: attempt } = await supabase
+    .from("payment_attempts")
+    .select("booking_id, request_id")
+    .eq("reference", orderReference)
+    .maybeSingle();
+  const isLaundry = attempt ? attempt.request_id !== null : orderReference.startsWith("LND");
+
+  if (isLaundry) {
+    let laundryQuery = supabase
       .from("guest_requests")
       .select("id, laundry_amount, laundry_payment_status, booking:bookings(access_token)")
-      .eq("laundry_payment_reference", orderReference)
-      .eq("request_type", "laundry")
-      .maybeSingle();
+      .eq("request_type", "laundry");
+    laundryQuery = attempt
+      ? laundryQuery.eq("id", attempt.request_id)
+      : laundryQuery.eq("laundry_payment_reference", orderReference);
+    const { data: laundry } = await laundryQuery.maybeSingle();
 
     if (!laundry) {
       console.error("jenga-pgw-callback: no laundry request for", orderReference);
@@ -176,11 +187,13 @@ Deno.serve(async (req) => {
     return Response.redirect(`${portalBase}?payment=${failed || success ? "failed" : "pending"}`, 302);
   }
 
-  const { data: booking } = await supabase
+  let bookingQuery = supabase
     .from("bookings")
-    .select("id, access_token, total_amount, payment_status")
-    .eq("payment_reference", orderReference)
-    .maybeSingle();
+    .select("id, access_token, total_amount, payment_status");
+  bookingQuery = attempt
+    ? bookingQuery.eq("id", attempt.booking_id)
+    : bookingQuery.eq("payment_reference", orderReference);
+  const { data: booking } = await bookingQuery.maybeSingle();
 
   if (!booking) {
     console.error("jenga-pgw-callback: no booking for orderReference", orderReference);
@@ -200,7 +213,11 @@ Deno.serve(async (req) => {
     });
     if (rpcError) {
       console.error("mark_booking_paid failed", rpcError);
-    } else if (!result?.already_paid && !result?.extension_reverted) {
+    } else if (result?.already_paid) {
+      // A second successful payment for an already-paid booking: the guest
+      // was charged twice and may be owed a refund.
+      console.error("jenga-pgw-callback: DUPLICATE PAYMENT", orderReference, paidAmount);
+    } else if (!result?.extension_reverted) {
       await sendPaymentSucceededEmail(supabase, booking.id);
     }
     return Response.redirect(`${portalBase}?payment=success`, 302);
