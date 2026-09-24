@@ -115,25 +115,20 @@ open work.
   fallback), and its checkout page opens with empty first/last name, email,
   phone and address; payment methods stay locked until the guest fills
   them in. Availability view checked: 0 rows while all bookings are unpaid.
-- **TEST ROOM for live end-to-end simulation (created 2026-09-24):** room
-  `Test Room` (slug `test-room`, id a3d1b3d9-5ed0-4dc4-8235-a90661d59ac5) is
-  ACTIVE and listed like the real rooms (display_order 11, same photos /
-  amenities / bed setup as Room One, description says it is an internal
-  test room). **100 KES per night**, fake door code `0000`, WiFi
-  `PamhokTest` / `test-wifi-1234` (never the real rooms' codes). Use it
-  for admin manual bookings, guest self-booking, payment, laundry and
-  cleaning with no bypassing. NOTE the public site is CLOSED
-  (`site_content.site_status.is_open = false` since 2026-09-21): visitors get
-  the maintenance page, only a signed-in admin sees the real site — so the
-  test room is not reachable by real guests unless the site is reopened.
-  **If the site is ever reopened, hide it first:**
-  `update rooms set is_active=false where slug='test-room';` (hidden
-  rooms vanish from the admin Rooms page, so re-activating is also SQL).
-  It appears in the sitemap while active. Bookings on it DO show in the
-  admin Bookings list, dashboard revenue/awaiting-payment counts and the
-  staff schedule — delete test bookings afterwards. Demo guest `Demo Client`
-  (silvianjambikangethe@gmail.com) is kept. Real 1.04 KES demo charge:
-  Jenga txn 626712015428.
+- **CLEAN SLATE 2026-09-24 (owner request): the Test Room, all test
+  bookings and all test guests were DELETED.** ID photos were removed
+  through the site's own check-out routine (POST /api/portal/<token>/checkout
+  after blanking the guest email), storage bucket `id-documents` checked
+  empty. Real rooms untouched (10 active, Room One..Ten). To run live
+  end-to-end tests again, recreate a hidden-or-visible test room by copying
+  Room One's photos/amenities/bed setup with FAKE door code (0000) and
+  WiFi, a small price (100 KES was used), `display_order` 11, then delete
+  the room, its bookings and guests afterwards. Remember: bookings on any
+  room show in the admin Bookings list, dashboard totals and the staff
+  schedule. The public site is OPEN (site_status.is_open = true since
+  2026-09-24 18:24 UTC) — a visible test room is bookable by real guests.
+  A test booking made by the owner on Room Seven (2026-09-24 19:13 UTC,
+  unpaid) appeared while cleaning up and was left in place.
 - **Guest screens are live (pushed 2026-09-24, commit 360f9aa).**
   `PaymentSection` and `LaundryPaymentSection` are one "Pay with M-Pesa or
   card" button (site theme: rounded-full mocha/terracotta, not green) calling
