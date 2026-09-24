@@ -1,22 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { CreditCard, DeviceMobile, Warning } from "@phosphor-icons/react";
+import { CreditCard, Warning } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import type { PaymentStatus } from "@/lib/supabase/types";
 import type { DisplayCurrency } from "@/lib/currency";
 import CurrencySelector from "@/components/CurrencySelector";
 
-// M-Pesa and Jenga PGW card checkout. PayPal was removed 2026-09-22 — it
-// had been switched off since a 2026-09-13 account restriction and was
-// never re-enabled.
-//
-// Card payment is SANDBOX ONLY right now (jenga-card-initiate reads
-// JENGA_SANDBOX_* secrets and always calls Jenga's UAT hosts) — do not
-// treat a successful test here as ready for real guest money until that
-// function is switched to live credentials.
+// Payment goes through Jenga PGW's hosted checkout (jenga-pgw-initiate): the
+// guest is redirected to Jenga's page and picks M-Pesa/Equitel or card there.
+// The merchant is subscribed to PGW Mobile Money + Card — not the raw STK
+// push API — so there is no in-app STK form. PayPal was removed 2026-09-22.
 export default function PaymentSection({
   token,
   totalAmount,
@@ -28,85 +23,33 @@ export default function PaymentSection({
   paymentStatus: PaymentStatus;
   rates: Record<DisplayCurrency, number>;
 }) {
-  const router = useRouter();
-  const [mpesaPhone, setMpesaPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [awaitingMpesa, setAwaitingMpesa] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [cardLoading, setCardLoading] = useState(false);
-  const [cardError, setCardError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
 
   if (paymentStatus === "Paid") return null;
 
-  async function handleMpesa(e: React.FormEvent) {
-    e.preventDefault();
+  async function handlePay() {
     if (!agreedToTerms) return;
     setLoading(true);
     setError(null);
 
     try {
       const supabase = createClient();
-      const { data, error: fnError } = await supabase.functions.invoke("mpesa-initiate", {
-        body: { token, phone: mpesaPhone, termsAccepted: agreedToTerms },
-      });
-
-      if (fnError || data?.error) {
-        setError(data?.error ?? "Could not start M-Pesa payment. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      setAwaitingMpesa(true);
-      setLoading(false);
-
-      pollRef.current = setInterval(async () => {
-        const res = await fetch(`/api/portal/${token}/status`);
-        if (!res.ok) return;
-        const status = await res.json();
-        if (status.payment_status === "Paid" || status.payment_status === "Failed") {
-          if (pollRef.current) clearInterval(pollRef.current);
-          setAwaitingMpesa(false);
-          if (status.payment_status === "Failed") {
-            setError("Payment did not go through. Please try again.");
-          }
-          router.refresh();
-        }
-      }, 3000);
-    } catch {
-      setError("Could not reach the payment service.");
-      setLoading(false);
-    }
-  }
-
-  async function handleCard() {
-    if (!agreedToTerms) return;
-    setCardLoading(true);
-    setCardError(null);
-
-    try {
-      const supabase = createClient();
-      const { data, error: fnError } = await supabase.functions.invoke("jenga-card-initiate", {
+      const { data, error: fnError } = await supabase.functions.invoke("jenga-pgw-initiate", {
         body: { token, termsAccepted: agreedToTerms },
       });
 
       if (fnError || data?.error || !data?.redirectUrl) {
-        setCardError(data?.error ?? "Could not start card payment. Please try again.");
-        setCardLoading(false);
+        setError(data?.error ?? "Could not start payment. Please try again.");
+        setLoading(false);
         return;
       }
 
       window.location.href = data.redirectUrl;
     } catch {
-      setCardError("Could not reach the payment service.");
-      setCardLoading(false);
+      setError("Could not reach the payment service.");
+      setLoading(false);
     }
   }
 
@@ -119,7 +62,7 @@ export default function PaymentSection({
         <CurrencySelector amountKes={totalAmount} rates={rates} />
       </div>
       <p className="mt-1 text-sm text-ink/80">
-        Pay with M-Pesa. Your room stays reserved.
+        Pay with M-Pesa or card on Jenga&apos;s secure page. Your room stays reserved.
       </p>
 
       <label className="mt-5 flex items-start gap-2.5 text-sm text-ink/80">
@@ -151,62 +94,30 @@ export default function PaymentSection({
         </span>
       </label>
 
-      {awaitingMpesa ? (
-        <p className="mt-5 flex items-center gap-2 text-sm font-medium text-ink">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-success" />
-          Check your phone and enter your M-Pesa PIN to complete payment…
+      <button
+        type="button"
+        onClick={handlePay}
+        disabled={loading || !agreedToTerms}
+        className="focus-ring mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-success px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <CreditCard size={18} />
+        {loading ? "Starting…" : "Pay with M-Pesa or card"}
+      </button>
+      <ul className="mt-3 space-y-1 text-xs text-ink/70">
+        <li>
+          <strong>Paying with M-Pesa:</strong> on the next page open{" "}
+          <strong>Mobile</strong>, choose <strong>MPESA</strong>, and enter your
+          Safaricom number.
+        </li>
+        <li>
+          <strong>Paying with card:</strong> on the next page open{" "}
+          <strong>Card</strong> and enter your card details.
+        </li>
+      </ul>
+      {error && (
+        <p role="alert" className="mt-3 flex items-center gap-2 text-sm text-danger">
+          <Warning size={16} /> {error}
         </p>
-      ) : (
-        <form onSubmit={handleMpesa} className="mt-5 space-y-3">
-          <label htmlFor="mpesaPhone" className="flex items-center gap-2 text-sm font-semibold text-ink/80">
-            <DeviceMobile size={18} />
-            M-Pesa phone number
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="mpesaPhone"
-              type="tel"
-              required
-              maxLength={20}
-              value={mpesaPhone}
-              onChange={(e) => setMpesaPhone(e.target.value)}
-              className="focus-ring flex-1 rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
-            />
-            <button
-              type="submit"
-              disabled={loading || !agreedToTerms}
-              className="focus-ring shrink-0 rounded-lg bg-success px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Sending…" : "Send STK Push"}
-            </button>
-          </div>
-          {error && (
-            <p role="alert" className="flex items-center gap-2 text-sm text-danger">
-              <Warning size={16} /> {error}
-            </p>
-          )}
-
-          <div className="flex items-center gap-3 pt-1 text-xs font-medium text-ink/50">
-            <span className="h-px flex-1 bg-taupe/25" />
-            or
-            <span className="h-px flex-1 bg-taupe/25" />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleCard}
-            disabled={cardLoading || !agreedToTerms}
-            className="focus-ring flex w-full items-center justify-center gap-2 rounded-lg border border-taupe/30 bg-page px-5 py-2.5 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <CreditCard size={18} />
-            {cardLoading ? "Starting…" : "Pay with Card"}
-          </button>
-          {cardError && (
-            <p role="alert" className="flex items-center gap-2 text-sm text-danger">
-              <Warning size={16} /> {cardError}
-            </p>
-          )}
-        </form>
       )}
     </div>
   );

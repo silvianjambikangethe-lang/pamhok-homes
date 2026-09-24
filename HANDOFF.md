@@ -73,7 +73,10 @@ open work.
   verified with real money.
 - **Guest-screen change NOT yet pushed** (local only): `PaymentSection`
   and `LaundryPaymentSection` become one "Pay with M-Pesa or card"
-  button calling `jenga-pgw-initiate`; the polling routes
+  button calling `jenga-pgw-initiate` (with a note under it telling the
+  guest to pick Mobile→MPESA or Card on Jenga's page — Jenga's docs
+  have no parameter to preselect a channel/telco or prefill the M-Pesa
+  number); the polling routes
   `api/portal/[token]/status` and `.../laundry/[requestId]/status` are
   now unused. Superseded and still present/deployed, to delete once the
   new flow is confirmed: functions `mpesa-initiate`,

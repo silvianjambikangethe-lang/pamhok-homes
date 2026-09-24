@@ -88,7 +88,7 @@ export async function releaseExpiredExtensionHold(
 
 // Called right after a booking's payment_status has just been set to
 // "Paid" by one of the payment-completion paths (admin mark-paid, the
-// mpesa-callback edge function). Applies a pending
+// jenga-pgw-callback edge function). Applies a pending
 // extension if one is waiting and still valid, or reverts it (with an
 // admin notification, so a human can check whether a refund of the
 // difference is owed) if the hold expired or the dates got taken by
