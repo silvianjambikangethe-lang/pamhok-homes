@@ -43,6 +43,11 @@ export default function PaymentNotes() {
             apostrophes) if it is printed on the card.
           </p>
         </div>
+        <p>
+          <strong className="text-ink">Processing fee:</strong> Jenga may add a
+          small fee to the amount. The final total is shown on its page before
+          you pay.
+        </p>
       </div>
     </details>
   );

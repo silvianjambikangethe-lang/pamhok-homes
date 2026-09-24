@@ -63,7 +63,8 @@ export default function PaymentSection({
         <CurrencySelector amountKes={totalAmount} rates={rates} />
       </div>
       <p className="mt-1 text-sm text-ink/80">
-        Pay with M-Pesa or card on Jenga&apos;s secure page. Your room stays reserved.
+        Pay with M-Pesa or card on Jenga&apos;s secure page. Jenga may add a
+        small processing fee, shown before you pay. Your room stays reserved.
       </p>
 
       <label className="mt-5 flex items-start gap-2.5 text-sm text-ink/80">

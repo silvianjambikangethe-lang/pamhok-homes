@@ -81,8 +81,13 @@ open work.
   fixed); fee-inclusive amount accepted; a second SUCCESS logs DUPLICATE
   PAYMENT and changes nothing else; FAILED after Paid stays Paid. Minor:
   the duplicate success re-stamps `payment_reference` with the later
-  reference (the first is in `security_events.detail`). Not yet tightened:
-  the catch-all in `jenga-pgw-initiate` returns `err.message` (generic).
+  reference (the first is in `security_events.detail`). The catch-all in
+  `jenga-pgw-initiate` now returns a generic message (source updated
+  2026-09-24 — redeploy `jenga-pgw-initiate` to take effect). The admin
+  Security Log highlights a second successful payment as "Paid twice —
+  check whether a refund is owed" (uses `detail.already_paid`; booking
+  payments only, laundry duplicates are not detected). The pay card and
+  its help dropdown mention that Jenga may add a small processing fee.
 - **Demo room kept for the next M-Pesa demo:** room `ZZ DEMO Room`
   (`zz-demo-room`, inactive → hidden from the public site, admin calendar
   and rooms page) and guest `Demo Client` (silvianjambikangethe@gmail.com)
@@ -109,11 +114,10 @@ open work.
   to calculate charges")** — reproduced 3 times at 0 and 1 KES; support
   message drafted in chat, awaiting the owner sending it to Jenga.
   Last test order reference: PGWT6RFXL9U9YU7. Card works.
-- **OWNER ACTION, still outstanding as far as this session knows:
-  change every room's door code and WiFi password.** Flagged
-  2026-09-20 as previously exposed publicly; no confirmation seen since
-  that it's been done. If you're picking this up, check with the owner
-  directly rather than assuming it's resolved.
+- **Door codes / WiFi passwords: OWNER DECISION 2026-09-24 — they will NOT
+  be changed.** (They were flagged 2026-09-20 as previously exposed; the
+  public-exposure hole itself is closed, and the owner has decided to keep
+  the current codes.) Do not re-raise this.
 - **Two Supabase dashboard-only settings, likely already fine.**
   `auth_leaked_password_protection` and daily backups (Pro plan default)
   — neither readable via any available tool, a 10-second glance at

@@ -254,6 +254,7 @@ Deno.serve(async (req) => {
 
     return json({ ok: true, redirectUrl });
   } catch (err) {
-    return json({ error: (err as Error).message }, 500);
+    console.error("jenga-pgw-initiate failed", err);
+    return json({ error: "Could not start payment. Please try again." }, 500);
   }
 });
