@@ -110,9 +110,11 @@ open work.
   reserved" / "Reserve". ORDER: (a) redeploy BOTH edge functions, (b) THEN
   apply the migration (applying it first would leave a window with no
   "still free?" check). STATUS 2026-09-24: functions redeployed (initiate v4, callback v5) and
-  the migration APPLIED — unpaid bookings no longer hold rooms. Still to
-  verify live: that Jenga accepts BLANK customer details (open a fresh
-  checkout link; check function logs for "rejected blank customer details").
+  the migration APPLIED — unpaid bookings no longer hold rooms. VERIFIED
+  LIVE 2026-09-24: Jenga accepted BLANK customer details on the first try (no
+  fallback), and its checkout page opens with empty first/last name, email,
+  phone and address; payment methods stay locked until the guest fills
+  them in. Availability view checked: 0 rows while all bookings are unpaid.
 - **TEST ROOM for live end-to-end simulation (created 2026-09-24):** room
   `Test Room` (slug `test-room`, id a3d1b3d9-5ed0-4dc4-8235-a90661d59ac5) is
   ACTIVE and listed like the real rooms (display_order 11, same photos /
