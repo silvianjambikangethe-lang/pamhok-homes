@@ -11,8 +11,9 @@ export default function PaymentNotes() {
     <div className="mt-4 space-y-3 rounded-xl border border-taupe/40 bg-pk-surface p-4 text-sm text-ink/80 dark:bg-page">
       <p>
         <strong className="text-ink">Paying with M-Pesa:</strong> on the next
-        page open <Option>Mobile</Option>, choose <Option>MPESA</Option>, and
-        enter your Safaricom number.
+        page open <Option>Mobile</Option>, select <Option>Kenya</Option> as the
+        country, choose <Option>MPESA</Option> as the telco provider, and enter
+        your Safaricom number.
       </p>
       <p>
         <strong className="text-ink">Paying with card:</strong> on the next

@@ -50,7 +50,7 @@ open work.
   card" button (site theme: rounded-full mocha/terracotta, not green) calling
   `jenga-pgw-initiate`, with a `PaymentNotes` card under it (bold + highlighted +
   underlined options) telling
-  the guest to pick Mobile→MPESA or Card on Jenga's page (Jenga's docs
+  the guest to pick Mobile→Kenya→MPESA or Card on Jenga's page (Jenga's docs
   have no parameter to preselect a channel/telco or prefill the M-Pesa
   number). Repo cleanup done: the old `mpesa-*` / `jenga-card-*` /
   sandbox-test function folders, `supabase/functions/_shared`, and the
