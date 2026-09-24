@@ -45,6 +45,18 @@ open work.
   (message drafted in chat: ask them to enable charges/tariffs for
   Mobile Money on the live merchant). Full paid-callback loop not yet
   verified with real money.
+- **BUG FOUND + FIXED IN SOURCE 2026-09-24 (redeploy needed):** a real
+  1.04 KES card payment succeeded at Jenga but the site showed Failed,
+  because the deployed `jenga-pgw-callback` read Jenga's documented
+  field names. The REAL callback is: `responseStatus=true&transactionStatus=SUCCESS
+  &orderReference&transactionReference&transactionDate&transactionAmount
+  &transactionCurrency&message&paymentChannel=CARD|MPESA|EQUITEL|AIRTEL
+  &secureResponse&extraData`. The source now uses those (documented names
+  kept as fallbacks), marks Failed only on an explicit failure, never flips
+  an already-Paid booking, and leaves unknown/processing statuses alone.
+  **Until the fixed file is pasted into the Supabase dashboard function
+  `jenga-pgw-callback`, every real payment is charged but shown Failed.**
+  The demo booking was repaired by hand with `mark_booking_paid`.
 - **Guest screens are live (pushed 2026-09-24, commit 360f9aa).**
   `PaymentSection` and `LaundryPaymentSection` are one "Pay with M-Pesa or
   card" button (site theme: rounded-full mocha/terracotta, not green) calling

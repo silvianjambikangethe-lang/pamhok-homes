@@ -5,8 +5,8 @@
 // Deploy with verify_jwt = false: Jenga sends this as a plain GET redirect of
 // the GUEST'S OWN BROWSER, so there is no Supabase auth header to check.
 //
-// KNOWN GAP: Jenga's `hash` query parameter is NOT verified (formula
-// unpublished). Compensating controls: the orderReference is random per
+// KNOWN GAP: Jenga's `secureResponse` query parameter (a signed/encrypted
+// blob; format unpublished) is NOT verified. Compensating controls: the orderReference is random per
 // attempt and never shown to the guest (so it can't be forged for a booking),
 // and the callback's amount must cover the stored amount before anything is
 // marked Paid. The full raw query is logged so the hash formula can be
@@ -108,9 +108,14 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
   const params = url.searchParams;
   const orderReference = params.get("orderReference");
-  const status = params.get("status");
-  const channel = params.get("desc") ?? "";
-  const paidAmount = Number(params.get("amount"));
+  // Field names are the ones Jenga ACTUALLY sends (seen in a live callback,
+  // 2026-09-24): transactionStatus / transactionAmount / paymentChannel /
+  // responseStatus. Jenga's docs list status / amount / desc instead, so the
+  // documented names are kept as fallbacks.
+  const status = (params.get("transactionStatus") ?? params.get("status") ?? "").toLowerCase();
+  const responseOk = params.get("responseStatus");
+  const channel = params.get("paymentChannel") ?? params.get("desc") ?? "";
+  const paidAmount = Number(params.get("transactionAmount") ?? params.get("amount"));
 
   console.log("jenga-pgw-callback raw query:", url.search);
 
@@ -125,16 +130,20 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Jenga's `desc` names the channel the guest actually used.
-  const method = /mpesa|m-pesa|mobile|equitel|mkey/i.test(channel) ? "mpesa" : "card";
-  const success = (status ?? "").toLowerCase() === "paid";
+  const method = /mpesa|m-pesa|mobile|equitel|airtel|mkey/i.test(channel) ? "mpesa" : "card";
+  const success =
+    (status === "success" || status === "paid") && responseOk !== "false";
+  // Only an explicit failure marks a payment Failed; an unknown or still-
+  // processing status leaves the booking untouched.
+  const failed =
+    !success && (responseOk === "false" || /fail|declin|cancel|error|reject|expire/.test(status));
 
   // Laundry references are issued with an LND prefix, bookings with PGW
   // (see jenga-pgw-initiate).
   if (orderReference.startsWith("LND")) {
     const { data: laundry } = await supabase
       .from("guest_requests")
-      .select("id, laundry_amount, booking:bookings(access_token)")
+      .select("id, laundry_amount, laundry_payment_status, booking:bookings(access_token)")
       .eq("laundry_payment_reference", orderReference)
       .eq("request_type", "laundry")
       .maybeSingle();
@@ -158,18 +167,18 @@ Deno.serve(async (req) => {
     }
     if (success) {
       console.error("jenga-pgw-callback: laundry amount mismatch", orderReference, paidAmount);
-    } else {
+    } else if (failed && laundry.laundry_payment_status !== "Paid") {
       const { error } = await supabase.rpc("mark_laundry_payment_failed", {
         p_request_id: laundry.id,
       });
       if (error) console.error("mark_laundry_payment_failed failed", error);
     }
-    return Response.redirect(`${portalBase}?payment=failed`, 302);
+    return Response.redirect(`${portalBase}?payment=${failed || success ? "failed" : "pending"}`, 302);
   }
 
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id, access_token, total_amount")
+    .select("id, access_token, total_amount, payment_status")
     .eq("payment_reference", orderReference)
     .maybeSingle();
 
@@ -199,11 +208,11 @@ Deno.serve(async (req) => {
 
   if (success) {
     console.error("jenga-pgw-callback: amount mismatch", orderReference, paidAmount);
-  } else {
+  } else if (failed && booking.payment_status !== "Paid") {
     const { error: rpcError } = await supabase.rpc("mark_booking_payment_failed", {
       p_booking_id: booking.id,
     });
     if (rpcError) console.error("mark_booking_payment_failed failed", rpcError);
   }
-  return Response.redirect(`${portalBase}?payment=failed`, 302);
+  return Response.redirect(`${portalBase}?payment=${failed || success ? "failed" : "pending"}`, 302);
 });
