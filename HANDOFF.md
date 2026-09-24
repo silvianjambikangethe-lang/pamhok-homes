@@ -60,8 +60,9 @@ open work.
 - **Guest screens are live (pushed 2026-09-24, commit 360f9aa).**
   `PaymentSection` and `LaundryPaymentSection` are one "Pay with M-Pesa or
   card" button (site theme: rounded-full mocha/terracotta, not green) calling
-  `jenga-pgw-initiate`, with a `PaymentNotes` card under it (bold + highlighted +
-  underlined options) telling
+  `jenga-pgw-initiate`, with a collapsible "Need help paying?" `PaymentNotes` card under it
+  (closed by default; bold + highlighted + underlined options; includes
+  "enter the cardholder name exactly as on the card") telling
   the guest to pick Mobile→Kenya→MPESA or Card on Jenga's page (Jenga's docs
   have no parameter to preselect a channel/telco or prefill the M-Pesa
   number). Repo cleanup done: the old `mpesa-*` / `jenga-card-*` /
