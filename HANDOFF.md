@@ -115,6 +115,22 @@ open work.
   fallback), and its checkout page opens with empty first/last name, email,
   phone and address; payment methods stay locked until the guest fills
   them in. Availability view checked: 0 rows while all bookings are unpaid.
+- **SECURITY FIX 2026-09-24 (migration `20260924210000_lock_payment_functions_to_service_role.sql`, APPLIED):**
+  Supabase's security advisor showed the four `mark_booking_paid` /
+  `mark_booking_payment_failed` / `mark_laundry_paid` /
+  `mark_laundry_payment_failed` functions were executable by any signed-in
+  (`authenticated`) account via /rest/v1/rpc — the earlier `revoke ... from
+  public` did not remove Supabase's default direct grant. Now executable by
+  `service_role` ONLY (verified: anon/authenticated = false). Only
+  `jenga-pgw-callback` calls them. LESSON: for any new SECURITY DEFINER
+  function, revoke execute from `public, anon, authenticated` explicitly and
+  re-run the advisor (`get_advisors` security) afterwards. Remaining advisor
+  items are expected: INFO `rls_enabled_no_policy` on login_attempts /
+  payment_attempts / rate_limits (service-role-only tables, by design) and
+  ERROR `security_definer_view` on staff_cleaning_laundry_feed /
+  staff_checkout_schedule (owner-privileged staff views guarded by
+  `auth.uid()` in staff_users, by design). Leaked-password protection is not
+  flagged by the advisor (i.e. enabled).
 - **CLEAN SLATE 2026-09-24 (owner request): the Test Room, all test
   bookings and all test guests were DELETED.** ID photos were removed
   through the site's own check-out routine (POST /api/portal/<token>/checkout
