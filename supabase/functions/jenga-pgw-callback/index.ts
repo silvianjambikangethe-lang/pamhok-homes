@@ -218,18 +218,22 @@ Deno.serve(async (req) => {
       // was charged twice and may be owed a refund.
       console.error("jenga-pgw-callback: DUPLICATE PAYMENT", orderReference, paidAmount);
     } else {
-      // A booking only takes its dates once paid, so two guests can (rarely)
-      // pay for the same dates at the same moment. This booking is now in the
-      // availability view; if anyone else holds an overlapping range, flag it
-      // so one guest can be refunded.
+      // A booking only takes its dates once paid (plus a short payment-window
+      // hold), so two guests can, very rarely, still pay for the same dates.
+      // Look at PAID or host-blocked bookings only (another guest's open
+      // payment window is not a clash) and flag any overlap so one guest can
+      // be refunded.
       if (booking.room_id) {
         const { data: overlapping } = await supabase
-          .from("availability_view")
-          .select("room_id")
+          .from("bookings")
+          .select("id")
           .eq("room_id", booking.room_id)
+          .neq("id", booking.id)
+          .or("paid_at.not.is.null,booking_status.eq.Blocked")
+          .in("booking_status", ["Confirmed", "Pending Verification", "Blocked"])
           .lt("check_in", booking.check_out)
           .gt("check_out", booking.check_in);
-        if (overlapping && overlapping.length > 1) {
+        if (overlapping && overlapping.length > 0) {
           console.error("jenga-pgw-callback: DOUBLE BOOKING", orderReference, booking.room_id);
           const { error: eventError } = await supabase.from("security_events").insert({
             event_type: "double_booking_conflict",

@@ -118,6 +118,15 @@ Deno.serve(async (req) => {
     let amountKes: number;
     let orderReference: string;
     let description: string;
+    // Set once this attempt has claimed the dates; released again if Jenga
+    // then refuses to open a checkout.
+    let claimedReference: string | null = null;
+    const releaseClaim = async () => {
+      if (claimedReference) {
+        await supabase.from("payment_attempts").delete().eq("reference", claimedReference);
+        claimedReference = null;
+      }
+    };
 
     if (requestId) {
       // Laundry charge: priced by the host after the request is made, and only
@@ -159,33 +168,51 @@ Deno.serve(async (req) => {
           .update({ terms_accepted_at: new Date().toISOString() })
           .eq("id", booking.id);
       }
-      // A booking only takes its dates once it is PAID (see the
-      // availability_only_paid_bookings migration), so before the first
-      // payment re-check that nobody else has paid for them in the meantime.
-      // Skipped once paid_at is set (e.g. paying for a stay extension), since
-      // the booking's own nights are then in the availability view.
+      amountKes = Number(booking.total_amount);
+      orderReference = randomReference("PGW");
+      description = "Pamhok Homes booking payment";
+
+      // A booking only takes its dates once PAID, plus a 15-minute hold while
+      // its payment session is open (payment_window_hold migration; 15 min =
+      // the paymentTimeLimit sent to Jenga below). So before the FIRST
+      // payment: record this attempt (which starts the hold), THEN check no
+      // other paid/blocked/held booking overlaps; if one does, drop the
+      // attempt again. Claiming first shrinks the race between two guests
+      // clicking Pay at once to a tiny window. Skipped once paid_at is set
+      // (e.g. paying for a stay extension): the booking's own nights are then
+      // already in the availability view.
       if (!booking.paid_at && booking.room_id) {
+        const { error: claimError } = await supabase.from("payment_attempts").insert({
+          reference: orderReference,
+          booking_id: booking.id,
+        });
+        if (claimError) {
+          console.error("payment window claim failed", claimError);
+          return json({ error: "Could not start payment. Please try again." }, 500);
+        }
+        claimedReference = orderReference;
+
         const { data: taken, error: takenError } = await supabase
           .from("availability_view")
-          .select("room_id")
+          .select("booking_id")
           .eq("room_id", booking.room_id)
+          .neq("booking_id", booking.id)
           .lt("check_in", booking.check_out)
           .gt("check_out", booking.check_in)
           .limit(1);
-        if (takenError) {
-          console.error("availability re-check failed", takenError);
-          return json({ error: "Could not start payment. Please try again." }, 500);
-        }
-        if (taken && taken.length > 0) {
+        if (takenError || (taken && taken.length > 0)) {
+          await supabase.from("payment_attempts").delete().eq("reference", orderReference);
+          claimedReference = null;
+          if (takenError) {
+            console.error("availability re-check failed", takenError);
+            return json({ error: "Could not start payment. Please try again." }, 500);
+          }
           return json(
-            { error: "Sorry, those dates were just booked by another guest. Please choose different dates." },
+            { error: "Sorry, those dates are being booked by another guest right now. Please try again in a few minutes or choose different dates." },
             409,
           );
         }
       }
-      amountKes = Number(booking.total_amount);
-      orderReference = randomReference("PGW");
-      description = "Pamhok Homes booking payment";
     }
 
     const authRes = await fetch(`${AUTH_BASE}/authentication/api/v3/authenticate/merchant`, {
@@ -196,6 +223,7 @@ Deno.serve(async (req) => {
     if (!authRes.ok) {
       const authBody = await authRes.text().catch(() => "");
       console.error("Jenga auth failed", isProduction ? "live" : "sandbox", authRes.status, authBody);
+      await releaseClaim();
       return json({ error: "Could not start payment." }, 502);
     }
     const { accessToken } = await authRes.json();
@@ -280,18 +308,23 @@ Deno.serve(async (req) => {
     if (pgwRes.status !== 302 || !redirectUrl) {
       const pgwBody = await pgwRes.text().catch(() => "");
       console.error("Jenga PGW checkout failed", pgwRes.status, pgwBody.slice(0, 1000));
+      await releaseClaim();
       return json({ error: "Could not start payment." }, 502);
     }
 
     // Every attempt is remembered so a guest who starts a second attempt can
-    // still complete the first (the callback resolves references here). A
+    // still complete the first (the callback resolves references here). First
+    // booking payments were already recorded above (that is what holds the
+    // dates); laundry charges and extension top-ups are recorded here. A
     // failure to record only degrades to the payment_reference fallback below.
-    const { error: attemptError } = await supabase.from("payment_attempts").insert({
-      reference: orderReference,
-      booking_id: requestId ? null : booking.id,
-      request_id: requestId ?? null,
-    });
-    if (attemptError) console.error("payment_attempts insert failed", attemptError);
+    if (!claimedReference) {
+      const { error: attemptError } = await supabase.from("payment_attempts").insert({
+        reference: orderReference,
+        booking_id: requestId ? null : booking.id,
+        request_id: requestId ?? null,
+      });
+      if (attemptError) console.error("payment_attempts insert failed", attemptError);
+    }
 
     // The method (mpesa vs card) isn't known until the guest picks a channel
     // on Jenga's page — the callback fills it in from Jenga's channel field.

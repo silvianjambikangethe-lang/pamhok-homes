@@ -241,6 +241,8 @@ export type AvailabilityRow = {
   check_in: string;
   check_out: string;
   booking_status: BookingStatus;
+  // Only present when the view is read with select("*") or asked for by name.
+  booking_id?: string;
 };
 
 export type HomepageContent = {

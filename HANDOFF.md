@@ -115,6 +115,25 @@ open work.
   fallback), and its checkout page opens with empty first/last name, email,
   phone and address; payment methods stay locked until the guest fills
   them in. Availability view checked: 0 rows while all bookings are unpaid.
+- **15-MINUTE PAYMENT-WINDOW HOLD (2026-09-24, owner request):** unpaid
+  bookings still never hold a room, but from the moment a guest clicks Pay
+  their dates are held for 15 minutes (= Jenga's paymentTimeLimit; a 3-minute
+  hold was rejected because payment can take longer and a second guest could
+  then start paying mid-payment). Migration `20260924220000_payment_window_hold.sql`
+  (APPLIED) adds a third branch to `availability_view` (unpaid booking with a
+  `payment_attempts` row < 15 min old) and a trailing `booking_id` column.
+  `jenga-pgw-initiate` now CLAIMS first (inserts the attempt), then checks no
+  other paid / blocked / held booking overlaps (ignoring its own via
+  `booking_id`); on overlap it deletes the claim and returns 409 "being booked
+  by another guest right now"; it also releases the claim if Jenga fails.
+  `jenga-pgw-callback`'s double-booking check now queries PAID/Blocked
+  `bookings` only (a rival's open window is not a clash). The hold ends at 15
+  min or when paid; a FAILED callback does not release it early. **Functions
+  must be redeployed (initiate + callback) — status below.** Audit result: no
+  code path deletes or auto-cancels an existing booking (only the booking
+  form's own rollback of a half-created group, the admin cancel / ID-reject
+  actions, and the daily cron that just releases an expired 3-hour
+  stay-EXTENSION hold; that extension hold is unchanged).
 - **SECURITY FIX 2026-09-24 (migration `20260924210000_lock_payment_functions_to_service_role.sql`, APPLIED):**
   Supabase's security advisor showed the four `mark_booking_paid` /
   `mark_booking_payment_failed` / `mark_laundry_paid` /
