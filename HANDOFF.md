@@ -150,6 +150,24 @@ open work.
   staff_checkout_schedule (owner-privileged staff views guarded by
   `auth.uid()` in staff_users, by design). Leaked-password protection is not
   flagged by the advisor (i.e. enabled).
+- **REAL BUG, LIVE 2026-09-25 to 2026-09-29, NOW FIXED:** the
+  `20260924220000_payment_window_hold.sql` migration (adds a 15-min
+  payment-window hold to `availability_view`) was applied on 2026-09-24, but
+  the matching `jenga-pgw-initiate` code (which excludes the guest's OWN
+  hold via `.neq("booking_id", booking.id)`) was not redeployed until
+  2026-09-29. In that window, ANY guest who reloaded the payment page or
+  retried on a second device within 15 minutes of their first payment
+  attempt was wrongly told "those dates were just booked by another guest"
+  — the old code saw the guest's own just-created hold as a conflict. Found
+  and reproduced live on a real test booking (owner: paid-attempt on phone,
+  retried on laptop, got blocked). Fixed by redeploying `jenga-pgw-initiate`
+  (now v5) and `jenga-pgw-callback` (now v6) together; re-tested with two
+  back-to-back initiate calls on the same booking — both now succeed.
+  **If this ever happens again: check the deployed function version's
+  content actually contains `.neq("booking_id"` before assuming it's Jenga's
+  fault** — the DB migration and the Edge Function code for this feature
+  must always be deployed in the same sitting, migration can go either
+  order relative to the initiate function but callback+initiate must match.
 - **CLEAN SLATE 2026-09-24 (owner request): the Test Room, all test
   bookings and all test guests were DELETED.** ID photos were removed
   through the site's own check-out routine (POST /api/portal/<token>/checkout
