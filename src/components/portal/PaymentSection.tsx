@@ -37,9 +37,19 @@ export default function PaymentSection({
 
     try {
       const supabase = createClient();
-      const { data, error: fnError } = await supabase.functions.invoke("jenga-pgw-initiate", {
-        body: { token, termsAccepted: agreedToTerms },
-      });
+      // Fail fast on a slow/stalled connection (seen on mobile) instead of
+      // waiting on the browser's own, much longer, native timeout.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      let data, fnError;
+      try {
+        ({ data, error: fnError } = await supabase.functions.invoke("jenga-pgw-initiate", {
+          body: { token, termsAccepted: agreedToTerms },
+          signal: controller.signal,
+        }));
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (fnError || data?.error || !data?.redirectUrl) {
         setError(data?.error ?? "Could not start payment. Please try again.");
@@ -48,8 +58,12 @@ export default function PaymentSection({
       }
 
       window.location.href = data.redirectUrl;
-    } catch {
-      setError("Could not reach the payment service.");
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        setError("The payment page took too long to load. Please check your connection and try again.");
+      } else {
+        setError("Could not reach the payment service.");
+      }
       setLoading(false);
     }
   }

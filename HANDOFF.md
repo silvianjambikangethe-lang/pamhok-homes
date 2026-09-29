@@ -168,6 +168,17 @@ open work.
   fault** — the DB migration and the Edge Function code for this feature
   must always be deployed in the same sitting, migration can go either
   order relative to the initiate function but callback+initiate must match.
+- **Mobile card-payment timeout fix (2026-09-29):** `PaymentSection.tsx`'s
+  `handlePay()` now wraps the `jenga-pgw-initiate` call in an
+  `AbortController` with a 30s timeout (the client library supports a
+  `signal` option on `.invoke()`). On abort, shows an inline message
+  ("The payment page took too long to load. Please check your connection
+  and try again.") instead of waiting on the browser's own native
+  connection timeout, which was suspected of producing a full-page
+  browser error on mobile before our JS ever got a chance to catch it.
+  Not yet confirmed to fix the actual mobile symptom (no repeatable
+  mobile test case exists yet) — this narrows the failure window and
+  gives a clean message if it recurs; watch for reports.
 - **CLEAN SLATE 2026-09-24 (owner request): the Test Room, all test
   bookings and all test guests were DELETED.** ID photos were removed
   through the site's own check-out routine (POST /api/portal/<token>/checkout
