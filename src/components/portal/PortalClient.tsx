@@ -22,7 +22,6 @@ import VerificationPassSection from "@/components/portal/VerificationPassSection
 import ArrivalSection from "@/components/portal/ArrivalSection";
 import CheckInConfirmationMessage from "@/components/portal/CheckInConfirmationMessage";
 import { firstNameLastInitial } from "@/lib/guest-display-name";
-import { createClient } from "@/lib/supabase/client";
 
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat("en-KE", {
@@ -114,31 +113,29 @@ export default function PortalClient({
   // once the page clears, same as everything else.
   const canContactHost = booking.id_verification_status === "Verified" && !isCleared;
 
-  // Refresh the page automatically when the admin approves or rejects this
-  // booking's ID — the guest never has to manually reload to see the status
-  // change. We only subscribe while the ID is not yet verified.
+  // Poll the verification status every 4 s while the ID is not yet decided.
+  // When the admin approves or rejects, the next poll picks it up and calls
+  // router.refresh() so the page updates without the guest reloading.
   useEffect(() => {
-    if (booking.id_verification_status === "Verified") return;
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`booking-verification-${booking.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "bookings",
-          filter: `id=eq.${booking.id}`,
-        },
-        () => {
+    if (booking.id_verification_status === "Verified" || booking.id_verification_status === "Rejected") return;
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/portal/${token}/verification-status`);
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { status: string };
+        if (data.status !== booking.id_verification_status) {
           router.refresh();
-        },
-      )
-      .subscribe();
+        }
+      } catch {
+        // network hiccup — next tick will retry
+      }
+    }, 4000);
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      clearInterval(interval);
     };
-  }, [booking.id, booking.id_verification_status, router]);
+  }, [token, booking.id_verification_status, router]);
 
   const { setHidden } = useWhatsappVisibility();
   // Hide the floating WhatsApp button only before ID verification —
