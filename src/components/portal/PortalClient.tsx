@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format, isPast, parseISO, startOfDay } from "date-fns";
 import { Broom, CalendarBlank, ClockCountdown, Info, Phone, Receipt as ReceiptIcon, WhatsappLogo } from "@phosphor-icons/react";
@@ -21,6 +22,7 @@ import VerificationPassSection from "@/components/portal/VerificationPassSection
 import ArrivalSection from "@/components/portal/ArrivalSection";
 import CheckInConfirmationMessage from "@/components/portal/CheckInConfirmationMessage";
 import { firstNameLastInitial } from "@/lib/guest-display-name";
+import { createClient } from "@/lib/supabase/client";
 
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat("en-KE", {
@@ -53,6 +55,7 @@ export default function PortalClient({
   mapsUrl: string | null;
   directionsVideoUrl: string | null;
 }) {
+  const router = useRouter();
   const [showArrival, setShowArrival] = useState(false);
   const checkOutDate = startOfDay(parseISO(booking.check_out));
   const isCheckoutDay = isPast(checkOutDate) || format(checkOutDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
@@ -110,6 +113,32 @@ export default function PortalClient({
   // code/WiFi/laundry which stay gated behind full payment. Still drops
   // once the page clears, same as everything else.
   const canContactHost = booking.id_verification_status === "Verified" && !isCleared;
+
+  // Refresh the page automatically when the admin approves or rejects this
+  // booking's ID — the guest never has to manually reload to see the status
+  // change. We only subscribe while the ID is not yet verified.
+  useEffect(() => {
+    if (booking.id_verification_status === "Verified") return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`booking-verification-${booking.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "bookings",
+          filter: `id=eq.${booking.id}`,
+        },
+        () => {
+          router.refresh();
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [booking.id, booking.id_verification_status, router]);
 
   const { setHidden } = useWhatsappVisibility();
   // Hide the floating WhatsApp button only before ID verification —
