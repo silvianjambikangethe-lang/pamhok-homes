@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { differenceInCalendarDays, format, isAfter, isBefore, isValid, parseISO, startOfDay } from "date-fns";
-import { CalendarBlank, Lock, UsersThree, Warning } from "@phosphor-icons/react";
+import { CalendarBlank, CheckCircle, Lock, UsersThree, Warning } from "@phosphor-icons/react";
 import BookingCalendar, {
   type DateRange,
   type DateSelection,
@@ -83,6 +83,7 @@ export default function BookingWidget({
   rates: Record<DisplayCurrency, number>;
   initialCheckIn?: string;
   initialCheckOut?: string;
+  changeFrom?: string;
 }) {
   const router = useRouter();
   const bookedRanges: DateRange[] = useMemo(
@@ -99,12 +100,11 @@ export default function BookingWidget({
   );
   const [{ selection, wasReset: datesWereReset }, setSelectionState] =
     useState(initialResult);
-  // Dates carried over from the /rooms search are locked on this page: the
-  // guest sees them but can't edit them here. A visit with no valid dates
-  // (direct link, stale or just-booked dates) keeps the editable calendar,
-  // since there'd be no other way to pick dates.
+  // Dates carried over from the /rooms search are locked on this page unless
+  // the guest is in the "change rooms" flow, where they should be able to
+  // edit them freely.
   const [datesLocked] = useState(
-    Boolean(initialResult.selection.checkIn && initialResult.selection.checkOut),
+    Boolean(initialResult.selection.checkIn && initialResult.selection.checkOut) && !changeFrom,
   );
   function setSelection(next: DateSelection) {
     setSelectionState({ selection: next, wasReset: false });
@@ -186,6 +186,7 @@ export default function BookingWidget({
           checkIn: format(selection.checkIn, "yyyy-MM-dd"),
           checkOut: format(selection.checkOut, "yyyy-MM-dd"),
           guest,
+          ...(changeFrom ? { changeFromToken: changeFrom } : {}),
         }),
       });
 
@@ -218,6 +219,13 @@ export default function BookingWidget({
           <span className="text-small font-normal text-ink/65"> / night</span>
         </p>
       </div>
+
+      {changeFrom && (
+        <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-forest-500/30 bg-forest-500/10 p-3.5 text-sm text-ink/80">
+          <CheckCircle size={18} weight="fill" className="mt-0.5 shrink-0 text-forest-600 dark:text-sage-400" />
+          <p>Your ID is already verified — no re-upload needed for this booking.</p>
+        </div>
+      )}
 
       {datesLocked && selection.checkIn && selection.checkOut ? (
         <div className="mt-6">

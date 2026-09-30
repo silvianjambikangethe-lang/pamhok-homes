@@ -331,7 +331,7 @@ export default function PortalClient({
 
         {booking.id_verification_status === "Verified" && booking.payment_status !== "Paid" && (
           <>
-            <PaymentNavigationGuard />
+            <PaymentNavigationGuard token={token} />
             <PaymentSection
               token={token}
               totalAmount={booking.total_amount}

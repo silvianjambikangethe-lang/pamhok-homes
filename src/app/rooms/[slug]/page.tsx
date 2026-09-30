@@ -61,10 +61,13 @@ export default async function RoomDetailPage({
     // booking around, and the ids of units already added to it.
     addTo?: string;
     extras?: string;
+    // "Change rooms" mode: token of the cancelled booking whose ID
+    // verification should carry over to the new booking.
+    changeFrom?: string;
   }>;
 }) {
   const { slug } = await params;
-  const { checkIn, checkOut, addTo, extras } = await searchParams;
+  const { checkIn, checkOut, addTo, extras, changeFrom } = await searchParams;
   const { room } = await getRoomBySlug(slug);
   if (!room) notFound();
 
@@ -234,6 +237,7 @@ export default async function RoomDetailPage({
                 rates={rates}
                 initialCheckIn={checkIn}
                 initialCheckOut={checkOut}
+                changeFrom={changeFrom}
               />
             )}
           </div>

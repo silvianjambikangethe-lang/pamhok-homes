@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CreditCard } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
+import { CreditCard, SpinnerGap, Warning } from "@phosphor-icons/react";
 
-export default function PaymentNavigationGuard() {
+export default function PaymentNavigationGuard({ token }: { token: string }) {
+  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const allowNavigate = useRef(false);
 
   useEffect(() => {
@@ -14,8 +18,7 @@ export default function PaymentNavigationGuard() {
 
     function handlePopState() {
       if (allowNavigate.current) return;
-      // User pressed back — re-push the guard so the stack stays consistent,
-      // then show the modal. History: [..., rooms_page, portal_page, guard]
+      // Re-push the guard so the stack stays consistent, then show the modal.
       history.pushState({ paymentGuard: true }, "");
       setShowModal(true);
     }
@@ -26,14 +29,31 @@ export default function PaymentNavigationGuard() {
 
   function handleComplete() {
     setShowModal(false);
+    setCancelError(null);
   }
 
-  function handleCancel() {
-    allowNavigate.current = true;
-    setShowModal(false);
-    // Go back 2 steps: past the re-pushed guard and past the portal entry,
-    // landing on the rooms page the guest came from.
-    history.go(-2);
+  async function handleCancel() {
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      const res = await fetch(`/api/portal/${token}/cancel-and-change`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as { checkIn?: string; checkOut?: string; error?: string };
+      if (!res.ok) {
+        setCancelError(data.error ?? "Something went wrong. Please try again.");
+        setCancelling(false);
+        return;
+      }
+      allowNavigate.current = true;
+      const params = new URLSearchParams({ changeFrom: token });
+      if (data.checkIn) params.set("checkIn", data.checkIn);
+      if (data.checkOut) params.set("checkOut", data.checkOut);
+      router.push(`/rooms?${params.toString()}`);
+    } catch {
+      setCancelError("Something went wrong. Please try again.");
+      setCancelling(false);
+    }
   }
 
   if (!showModal) return null;
@@ -51,15 +71,23 @@ export default function PaymentNavigationGuard() {
           Complete your payment?
         </h2>
         <p className="mt-2 text-sm text-ink/70">
-          You haven&apos;t finished paying yet — your room is still held for
-          you. Head back to complete it now.
+          You haven&apos;t finished paying yet — your room is still held for you.
+          Head back to complete it now.
         </p>
+
+        {cancelError && (
+          <p className="mt-3 flex items-center gap-2 text-sm text-danger">
+            <Warning size={16} />
+            {cancelError}
+          </p>
+        )}
 
         <div className="mt-6 flex flex-col gap-3">
           <button
             type="button"
             onClick={handleComplete}
-            className="focus-ring flex w-full items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
+            disabled={cancelling}
+            className="focus-ring flex w-full items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
           >
             <CreditCard size={16} weight="bold" />
             Complete Payment
@@ -67,8 +95,10 @@ export default function PaymentNavigationGuard() {
           <button
             type="button"
             onClick={handleCancel}
-            className="focus-ring w-full rounded-full border border-taupe/30 px-6 py-3 text-sm font-semibold text-ink/70 transition-colors hover:border-terracotta-300 hover:text-ink"
+            disabled={cancelling}
+            className="focus-ring flex w-full items-center justify-center gap-2 rounded-full border border-taupe/30 px-6 py-3 text-sm font-semibold text-ink/70 transition-colors hover:border-terracotta-300 hover:text-ink disabled:opacity-60"
           >
+            {cancelling && <SpinnerGap size={16} className="animate-spin" />}
             Cancel — change rooms
           </button>
         </div>

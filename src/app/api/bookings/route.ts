@@ -31,6 +31,9 @@ interface BookingRequestBody {
   checkIn: string;
   checkOut: string;
   guest: { fullName: string; email: string; phone: string };
+  // "Change rooms" flow: access_token of the cancelled booking whose
+  // id_verification_status should carry over to the new booking.
+  changeFromToken?: string;
 }
 
 const MAX_EXTRA_ROOMS = 9;
@@ -39,6 +42,9 @@ function isValidBody(body: unknown): body is BookingRequestBody {
   if (!body || typeof body !== "object") return false;
   const b = body as Record<string, unknown>;
   if (typeof b.roomId !== "string" || typeof b.checkIn !== "string" || typeof b.checkOut !== "string") {
+    return false;
+  }
+  if (typeof b.changeFromToken !== "undefined" && typeof b.changeFromToken !== "string") {
     return false;
   }
   if (typeof b.extraRoomIds !== "undefined") {
@@ -180,30 +186,62 @@ export async function POST(request: Request) {
     return cannotCompleteOnline();
   }
 
-  const { data: guestRow, error: guestError } = await supabase
-    .from("guests")
-    .insert({
-      full_name: body.guest.fullName.trim(),
-      email: body.guest.email.trim(),
-      phone: body.guest.phone.trim(),
-    })
-    .select("id")
-    .single();
-
-  if (guestError || !guestRow) {
-    return cannotCompleteOnline();
+  // "Change rooms" carry-over: if the guest is replacing a cancelled, verified
+  // booking, reuse their guest record and skip the ID step for the new one.
+  // Mirrors the precedent set in portal/[token]/extend/transfer/route.ts.
+  let inheritedVerification: { status: "Verified"; method: string } | null = null;
+  let inheritedGuestId: string | null = null;
+  if (body.changeFromToken) {
+    const { data: oldBooking } = await supabase
+      .from("bookings")
+      .select("guest_id, id_verification_status, id_verification_method, payment_status, booking_status")
+      .eq("access_token", body.changeFromToken)
+      .maybeSingle();
+    if (
+      oldBooking &&
+      oldBooking.booking_status === "Cancelled" &&
+      oldBooking.id_verification_status === "Verified" &&
+      oldBooking.payment_status !== "Paid"
+    ) {
+      inheritedGuestId = oldBooking.guest_id;
+      inheritedVerification = {
+        status: "Verified",
+        method: oldBooking.id_verification_method ?? "manual_override",
+      };
+    }
   }
 
-  const guestId = guestRow.id;
+  let guestId: string;
+  if (inheritedGuestId) {
+    guestId = inheritedGuestId;
+  } else {
+    const { data: guestRow, error: guestError } = await supabase
+      .from("guests")
+      .insert({
+        full_name: body.guest.fullName.trim(),
+        email: body.guest.email.trim(),
+        phone: body.guest.phone.trim(),
+      })
+      .select("id")
+      .single();
+
+    if (guestError || !guestRow) {
+      return cannotCompleteOnline();
+    }
+    guestId = guestRow.id;
+  }
   const created: { id: string; access_token: string; booking_reference: string | null }[] = [];
 
   // A group booking is all-or-nothing: if any room fails, remove whatever
   // was already created for this request so no half-booked group is left.
+  // Don't delete the guest row if it was carried over from a prior booking.
   async function rollback() {
     if (created.length > 0) {
       await supabase.from("bookings").delete().in("id", created.map((b) => b.id));
     }
-    await supabase.from("guests").delete().eq("id", guestId);
+    if (!inheritedGuestId) {
+      await supabase.from("guests").delete().eq("id", guestId);
+    }
   }
 
   // The requested room first, so its portal is where the guest lands; the
@@ -229,6 +267,12 @@ export async function POST(request: Request) {
           booking_status: "Confirmed",
           booking_reference: generateBookingReference(),
           pass_reference: generatePassReference(body.checkIn, bookedRoom.display_order),
+          ...(inheritedVerification
+            ? {
+                id_verification_status: inheritedVerification.status,
+                id_verification_method: inheritedVerification.method,
+              }
+            : {}),
         })
         .select("id, access_token, booking_reference")
         .single();

@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { differenceInCalendarDays, format, isAfter, isBefore, parseISO } from "date-fns";
-import { CalendarBlank, UsersThree } from "@phosphor-icons/react";
+import { useSearchParams } from "next/navigation";
+import { differenceInCalendarDays, format, isAfter, isBefore, isValid, parseISO, startOfDay } from "date-fns";
+import { CalendarBlank, CheckCircle, UsersThree } from "@phosphor-icons/react";
 import RoomPhoto from "@/components/RoomPhoto";
 import { getClosedRanges } from "@/lib/closed-dates";
 import BookingCalendar, { type DateRange, type DateSelection } from "@/components/BookingCalendar";
@@ -39,9 +40,26 @@ export default function RoomsBrowser({
   rooms: Room[];
   availability: AvailabilityRow[];
 }) {
-  const [selection, setSelection] = useState<DateSelection>({
-    checkIn: null,
-    checkOut: null,
+  const searchParams = useSearchParams();
+  const changeFrom = searchParams.get("changeFrom") ?? undefined;
+
+  // Pre-fill dates from URL when returning from a cancelled booking (changeFrom flow).
+  // Dates stay editable so the guest can pick different ones.
+  const [selection, setSelection] = useState<DateSelection>(() => {
+    const ci = searchParams.get("checkIn");
+    const co = searchParams.get("checkOut");
+    if (!ci || !co) return { checkIn: null, checkOut: null };
+    const checkIn = parseISO(ci);
+    const checkOut = parseISO(co);
+    if (
+      !isValid(checkIn) ||
+      !isValid(checkOut) ||
+      !isBefore(checkIn, checkOut) ||
+      isBefore(checkIn, startOfDay(new Date()))
+    ) {
+      return { checkIn: null, checkOut: null };
+    }
+    return { checkIn, checkOut };
   });
   const datesSelected = Boolean(selection.checkIn && selection.checkOut);
 
@@ -65,11 +83,20 @@ export default function RoomsBrowser({
       : 0;
 
   const dateQuery = datesSelected
-    ? `?checkIn=${format(selection.checkIn!, "yyyy-MM-dd")}&checkOut=${format(selection.checkOut!, "yyyy-MM-dd")}`
+    ? `?checkIn=${format(selection.checkIn!, "yyyy-MM-dd")}&checkOut=${format(selection.checkOut!, "yyyy-MM-dd")}${changeFrom ? `&changeFrom=${changeFrom}` : ""}`
     : "";
 
   return (
     <>
+      {changeFrom && (
+        <div className="mx-auto mb-6 flex max-w-md items-start gap-3 rounded-2xl border border-forest-500/30 bg-forest-500/10 p-4 text-sm text-ink/80">
+          <CheckCircle size={20} weight="fill" className="mt-0.5 shrink-0 text-forest-600 dark:text-sage-400" />
+          <p>
+            Your ID is already verified — you won&apos;t need to re-upload it
+            for the new room. Pick your dates and select a room to continue.
+          </p>
+        </div>
+      )}
       <div className="mx-auto max-w-md rounded-2xl border border-taupe/20 bg-pk-surface p-6 glow-gold dark:bg-surface">
         <p className="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-ink/80">
           <CalendarBlank size={18} />
