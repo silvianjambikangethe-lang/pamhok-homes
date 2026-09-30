@@ -58,6 +58,7 @@ function AttemptResult({ label, result }: { label: string; result: IdVerificatio
 export default function VerificationCard({ row }: { row: VerificationRow }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [removed, setRemoved] = useState(false);
   const [urls, setUrls] = useState<Partial<Record<DocType, string>>>({});
   const [loadingDoc, setLoadingDoc] = useState<DocType | null>(null);
 
@@ -80,7 +81,7 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
-    setBusy(false);
+    setRemoved(true);
     router.refresh();
   }
 
@@ -97,6 +98,8 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
       </button>
     );
   }
+
+  if (removed) return null;
 
   return (
     <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">

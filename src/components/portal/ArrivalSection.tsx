@@ -1,9 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { Confetti, MapPinLine, PlayCircle, X } from "@phosphor-icons/react";
 import { SITE } from "@/lib/site";
 import GetDirectionsButton from "@/components/GetDirectionsButton";
 import PassDetails from "@/components/portal/PassDetails";
+
+function toEmbedUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtube.com") || u.hostname.includes("youtu.be")) {
+      const id = u.hostname.includes("youtu.be")
+        ? u.pathname.slice(1)
+        : u.searchParams.get("v") ?? u.pathname.split("/").pop() ?? "";
+      return `https://www.youtube.com/embed/${id}?autoplay=1`;
+    }
+    if (u.hostname.includes("vimeo.com")) {
+      const id = u.pathname.split("/").filter(Boolean).pop() ?? "";
+      return `https://player.vimeo.com/video/${id}?autoplay=1`;
+    }
+  } catch {
+    // fall through to raw URL
+  }
+  return url;
+}
 
 export default function ArrivalSection({
   mapsUrl,
@@ -32,6 +52,8 @@ export default function ArrivalSection({
   onShowArrival: () => void;
   onCloseArrival: () => void;
 }) {
+  const [showVideo, setShowVideo] = useState(false);
+
   return (
     <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
       <div className="flex items-center gap-2">
@@ -52,17 +74,55 @@ export default function ArrivalSection({
           I&apos;ve Arrived
         </button>
         {directionsVideoUrl && (
-          <a
-            href={directionsVideoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={() => setShowVideo(true)}
             className="focus-ring flex items-center justify-center gap-2 rounded-full border border-taupe/25 px-5 py-2.5 text-sm font-semibold text-ink/80 transition-colors hover:border-terracotta-300"
           >
             <PlayCircle size={18} weight="fill" className="text-terracotta-600" />
             Watch directions video
-          </a>
+          </button>
         )}
       </div>
+
+      {showVideo && directionsVideoUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Directions video"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-espresso/80 p-4"
+        >
+          <div className="relative w-full max-w-2xl">
+            <button
+              type="button"
+              onClick={() => setShowVideo(false)}
+              aria-label="Close video"
+              className="focus-ring absolute -right-2 -top-10 rounded-full bg-surface p-1.5 text-ink/65 hover:text-ink"
+            >
+              <X size={22} />
+            </button>
+            <div className="overflow-hidden rounded-2xl bg-espresso shadow-warm">
+              {/\.(mp4|webm|ogg)(\?|$)/i.test(directionsVideoUrl) ? (
+                // eslint-disable-next-line jsx-a11y/media-has-caption
+                <video
+                  src={directionsVideoUrl}
+                  controls
+                  autoPlay
+                  className="aspect-video w-full"
+                />
+              ) : (
+                <iframe
+                  src={toEmbedUrl(directionsVideoUrl)}
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  className="aspect-video w-full border-0"
+                  title="Directions video"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showArrival && (
         <div

@@ -87,7 +87,7 @@ export default function IdUploadForm({
         <div className="relative">
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
             <UploadSimple size={28} className="text-terracotta-600" />
-            <span className="text-sm font-medium text-ink/80">
+            <span className="w-full truncate px-2 text-center text-sm font-medium text-ink/80">
               {frontFileName ?? "Click to choose the front of your ID (JPG, PNG, or PDF)"}
             </span>
             <input
@@ -118,7 +118,7 @@ export default function IdUploadForm({
         <div className="relative">
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-taupe/40 bg-surface px-4 py-8 text-center transition-colors hover:border-terracotta-300">
             <UploadSimple size={28} className="text-terracotta-600" />
-            <span className="text-sm font-medium text-ink/80">
+            <span className="w-full truncate px-2 text-center text-sm font-medium text-ink/80">
               {backFileName ?? "Click to choose the back of your ID (JPG, PNG, or PDF)"}
             </span>
             <input
