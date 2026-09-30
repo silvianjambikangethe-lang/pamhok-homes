@@ -21,6 +21,7 @@ import ReviewForm from "@/components/portal/ReviewForm";
 import VerificationPassSection from "@/components/portal/VerificationPassSection";
 import ArrivalSection from "@/components/portal/ArrivalSection";
 import CheckInConfirmationMessage from "@/components/portal/CheckInConfirmationMessage";
+import PaymentNavigationGuard from "@/components/portal/PaymentNavigationGuard";
 import { firstNameLastInitial } from "@/lib/guest-display-name";
 
 function formatCurrency(amount: number, currency: string) {
@@ -329,12 +330,15 @@ export default function PortalClient({
           )}
 
         {booking.id_verification_status === "Verified" && booking.payment_status !== "Paid" && (
-          <PaymentSection
-            token={token}
-            totalAmount={booking.total_amount}
-            paymentStatus={booking.payment_status}
-            rates={rates}
-          />
+          <>
+            <PaymentNavigationGuard />
+            <PaymentSection
+              token={token}
+              totalAmount={booking.total_amount}
+              paymentStatus={booking.payment_status}
+              rates={rates}
+            />
+          </>
         )}
 
         {isVerifiedAndActive && (
