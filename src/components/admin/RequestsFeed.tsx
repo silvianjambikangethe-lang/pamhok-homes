@@ -198,7 +198,13 @@ export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
             )}
 
             {needsPrice && (
-              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-taupe/20 pt-3">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSetPrice(r.id);
+                }}
+                className="mt-3 flex flex-wrap items-center gap-2 border-t border-taupe/20 pt-3"
+              >
                 <label htmlFor={`price-${r.id}`} className="text-xs font-medium text-ink/80">
                   Set laundry price
                 </label>
@@ -213,13 +219,13 @@ export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
                   className="focus-ring w-28 rounded-lg border border-taupe/25 bg-page px-2.5 py-1.5 text-sm text-ink"
                 />
                 <button
-                  onClick={() => handleSetPrice(r.id)}
+                  type="submit"
                   disabled={busyId === r.id}
                   className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-4 py-1.5 text-xs font-semibold text-mousse dark:text-white disabled:opacity-50"
                 >
                   Send Price
                 </button>
-              </div>
+              </form>
             )}
 
             {needsPayment && (
