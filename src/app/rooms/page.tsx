@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Info } from "@phosphor-icons/react/dist/ssr";
 import { getAllAvailability, getRooms } from "@/lib/data";
 import PageBanner from "@/components/PageBanner";
@@ -65,7 +66,16 @@ export default async function RoomsPage() {
 
       {rooms.length > 0 && (
         <div className="mt-12">
-          <RoomsBrowser rooms={rooms} availability={availability} />
+          {/* RoomsBrowser reads ?changeFrom=/?checkIn=/?checkOut= via
+              useSearchParams() to pre-fill the editable calendar when a
+              guest arrives from the "change room" flow — that hook requires
+              a Suspense boundary during static prerendering, or the build
+              fails outright (not just this page; the whole production
+              deploy). No visible fallback needed: RoomsBrowser's own first
+              paint already covers this same instant. */}
+          <Suspense fallback={null}>
+            <RoomsBrowser rooms={rooms} availability={availability} />
+          </Suspense>
         </div>
       )}
       </div>
