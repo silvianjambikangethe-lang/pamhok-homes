@@ -34,7 +34,7 @@ export default async function AdminVerificationsPage() {
     <div>
       <h1 className="font-serif text-h2 text-ink">ID Verifications</h1>
       <p className="mt-1 text-sm text-ink/80">
-        Guests get two automated Dojah checks before landing here — these are
+        Guests get two automated Dojah checks before landing here, these are
         the ones that need your call.
       </p>
 

@@ -79,7 +79,7 @@ export async function releaseExpiredExtensionHold(
   await supabase.from("guest_requests").insert({
     booking_id: booking.id,
     request_type: "extension",
-    message: `Extension hold expired unpaid after ${EXTENSION_HOLD_HOURS} hours — released, dates unchanged.`,
+    message: `Extension hold expired unpaid after ${EXTENSION_HOLD_HOURS} hours, released, dates unchanged.`,
     status: "Open",
   });
 
@@ -144,8 +144,8 @@ export async function resolvePendingExtensionAfterPayment(
       booking_id: booking.id,
       request_type: "extension",
       message: expired
-        ? "Guest paid, but their extension hold had already expired (3hr window passed) before payment cleared — extra nights were NOT granted, amount adjusted back down. Check whether a refund of the difference is owed."
-        : "Guest paid, but the extra nights were booked by someone else in the meantime — extra nights were NOT granted, amount adjusted back down. Check whether a refund of the difference is owed.",
+        ? "Guest paid, but their extension hold had already expired (3hr window passed) before payment cleared. Extra nights were NOT granted, amount adjusted back down. Check whether a refund of the difference is owed."
+        : "Guest paid, but the extra nights were booked by someone else in the meantime. Extra nights were NOT granted, amount adjusted back down. Check whether a refund of the difference is owed.",
       status: "Open",
     });
     return "reverted";
@@ -165,7 +165,7 @@ export async function resolvePendingExtensionAfterPayment(
   await supabase.from("guest_requests").insert({
     booking_id: booking.id,
     request_type: "extension",
-    message: `Extension confirmed — payment received for ${booking.pending_extension_nights} extra night${booking.pending_extension_nights === 1 ? "" : "s"}. Stay now extends to ${booking.pending_extension_check_out}.`,
+    message: `Extension confirmed, payment received for ${booking.pending_extension_nights} extra night${booking.pending_extension_nights === 1 ? "" : "s"}. Stay now extends to ${booking.pending_extension_check_out}.`,
     status: "Open",
   });
 

@@ -55,7 +55,7 @@ export async function POST(
   if (booking.pending_extension_check_out) {
     return NextResponse.json({
       available: false,
-      message: "You already have an extension awaiting payment — complete that payment before requesting more nights.",
+      message: "You already have an extension awaiting payment, complete that payment before requesting more nights.",
     });
   }
 
@@ -105,7 +105,7 @@ export async function POST(
 
     return NextResponse.json({
       available: false,
-      message: "Those extra nights aren't available in your current room — another guest is booked next.",
+      message: "Those extra nights aren't available in your current room, another guest is booked next.",
       newCheckOut,
       alternateRooms,
     });

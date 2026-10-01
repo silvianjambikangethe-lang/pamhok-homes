@@ -45,7 +45,7 @@ export default function VideoUploadField({
       return;
     }
     if (file.size > MAX_SIZE) {
-      setError("Video is too large — please keep it under 100MB.");
+      setError("Video is too large. Please keep it under 100MB.");
       return;
     }
 

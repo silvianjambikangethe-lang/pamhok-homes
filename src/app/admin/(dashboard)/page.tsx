@@ -209,7 +209,7 @@ export default async function AdminOverviewPage() {
                     {b.guest?.full_name ?? "Guest"} · {b.room?.name ?? "Room"}
                   </p>
                   <p className="text-xs text-ink/65">
-                    {b.booking_reference ?? "—"} · Check-out{" "}
+                    {b.booking_reference ?? "-"} · Check-out{" "}
                     {format(parseISO(b.check_out), "EEE d MMM")}
                   </p>
                 </div>
@@ -292,12 +292,12 @@ export default async function AdminOverviewPage() {
           </div>
           {pendingVerifications && pendingVerifications.length > 0 && (
             <p className="mt-1 text-xs font-semibold text-danger">
-              Guest dates held — needs your review
+              Guest dates held - needs your review
             </p>
           )}
           <ul className="mt-4 space-y-3">
             {(pendingVerifications ?? []).length === 0 && (
-              <p className="text-sm text-ink/65">Nothing pending — all caught up.</p>
+              <p className="text-sm text-ink/65">Nothing pending, all caught up.</p>
             )}
             {(pendingVerifications ?? []).map((b) => (
               <li key={b.id} className="flex items-center justify-between text-sm">
@@ -376,7 +376,7 @@ export default async function AdminOverviewPage() {
                 <p className="font-medium text-ink/80">
                   {(b as unknown as { guest?: { full_name?: string } }).guest?.full_name ??
                     "Guest"}{" "}
-                  · {b.booking_reference ?? "—"}
+                  · {b.booking_reference ?? "-"}
                 </p>
                 <p className="text-ink/65">{b.refund_status}</p>
               </li>

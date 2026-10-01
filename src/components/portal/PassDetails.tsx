@@ -33,7 +33,7 @@ export default function PassDetails({
         </div>
         <div>
           <dt className="text-xs uppercase tracking-wide text-ink/55">Reference</dt>
-          <dd className="font-mono font-semibold text-ink">{bookingReference ?? "—"}</dd>
+          <dd className="font-mono font-semibold text-ink">{bookingReference ?? "-"}</dd>
         </div>
       </dl>
     </div>

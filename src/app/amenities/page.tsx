@@ -7,7 +7,7 @@ import { SITE, pageTitle } from "@/lib/site";
 export const metadata: Metadata = {
   title: pageTitle("Amenities"),
   description:
-    "Free WiFi, free parking, a full kitchen, an in-room safe, and dry cleaning — everything you need for a comfortable stay at Pamhok Homes.",
+    "Free WiFi, free parking, a full kitchen, an in-room safe, and dry cleaning, everything you need for a comfortable stay at Pamhok Homes.",
   alternates: { canonical: `${SITE.url}/amenities` },
 };
 

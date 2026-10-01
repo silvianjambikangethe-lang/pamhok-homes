@@ -92,7 +92,7 @@ export default function RoomsBrowser({
         <div className="mx-auto mb-6 flex max-w-md items-start gap-3 rounded-2xl border border-forest-500/30 bg-forest-500/10 p-4 text-sm text-ink/80">
           <CheckCircle size={20} weight="fill" className="mt-0.5 shrink-0 text-forest-600 dark:text-sage-400" />
           <p>
-            Your ID is already verified — you won&apos;t need to re-upload it
+            Your ID is already verified, you won&apos;t need to re-upload it
             for the new room. Pick your dates and select a room to continue.
           </p>
         </div>
@@ -116,7 +116,7 @@ export default function RoomsBrowser({
           <p className="text-body-sm text-ink/65">
             No rooms are open from {format(selection.checkIn!, "d MMM")} to{" "}
             {format(selection.checkOut!, "d MMM yyyy")}. Try different dates, or
-            message us on WhatsApp — we may be able to help.
+            message us on WhatsApp, we may be able to help.
           </p>
           <button
             type="button"

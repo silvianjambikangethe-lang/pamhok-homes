@@ -114,7 +114,7 @@ export default async function HomePage() {
               {SITE.name} started with a simple idea: guests should feel
               genuinely cared for, not just checked in. Every room is
               thoughtfully furnished, every stay is guided personally, and
-              every question gets a real, quick answer — not an automated
+              every question gets a real, quick answer, not an automated
               one.
             </p>
             <Link

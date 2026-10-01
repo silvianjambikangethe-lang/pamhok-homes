@@ -80,7 +80,7 @@ export default function HomepageContentForm({ initial }: { initial: HomepageCont
           />
         </div>
         <ImageUploadField
-          label="Hero image (optional — falls back to a plain color background if empty)"
+          label="Hero image (optional, falls back to a plain color background if empty)"
           currentUrl={value.hero_image_url}
           path="homepage/hero"
           onUploaded={(url) => {
@@ -134,7 +134,7 @@ export default function HomepageContentForm({ initial }: { initial: HomepageCont
           />
         </div>
         <VideoListField
-          label="Video tour clips (optional — shown in a new section below the photos)"
+          label="Video tour clips (optional, shown in a new section below the photos)"
           urls={value.tour_videos}
           pathPrefix="homepage/tour"
           onChange={(tour_videos) => {

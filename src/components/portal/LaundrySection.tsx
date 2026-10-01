@@ -15,7 +15,7 @@ const GUEST_LABELS: Record<string, string> = {
   "Picked Up": "In Progress",
   Cleaning: "In Progress",
   Ready: "Ready for Return",
-  "Awaiting Payment": "Ready — payment due",
+  "Awaiting Payment": "Ready - payment due",
   Returned: "Returned",
 };
 
@@ -67,7 +67,7 @@ export default function LaundrySection({
     return (
       <div className="flex items-center gap-3 rounded-xl border border-taupe/20 bg-page px-4 py-3 text-sm text-ink/65">
         <TShirt size={20} className="shrink-0 opacity-60" />
-        Request Laundry Pickup — available once your stay begins.
+        Request Laundry Pickup - available once your stay begins.
       </div>
     );
   }
@@ -121,14 +121,14 @@ export default function LaundrySection({
             <span className="font-medium">
               Laundry: {GUEST_LABELS[status!] ?? status}
               {status === "Awaiting Payment" && laundryPaymentStatus !== "Paid" && laundryAmount != null && (
-                <> — {formatMoney(laundryAmount, laundryCurrency ?? "KES")}</>
+                <> - {formatMoney(laundryAmount, laundryCurrency ?? "KES")}</>
               )}
             </span>
           </div>
           {status === "Awaiting Payment" && requestId && laundryAmount != null && (
             laundryPaymentStatus === "Paid" ? (
               <p className="mt-3 text-sm text-ink/80">
-                Payment received — your laundry will be returned shortly.
+                Payment received, your laundry will be returned shortly.
               </p>
             ) : (
               <LaundryPaymentSection

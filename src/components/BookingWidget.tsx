@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { differenceInCalendarDays, format, isAfter, isBefore, isValid, parseISO, startOfDay } from "date-fns";
@@ -63,6 +63,11 @@ export interface OtherRoom {
   bed_config: string;
 }
 
+// Guests re-book often enough that re-typing name/email/phone every time is
+// real friction; storing it is opt-in via the "remember me" checkbox below
+// and never includes anything the guest didn't already type into this form.
+const REMEMBERED_GUEST_KEY = "pamhok_remembered_guest";
+
 export default function BookingWidget({
   room,
   availability,
@@ -114,9 +119,29 @@ export default function BookingWidget({
     initialExtraIds.length > 0 ? "other" : null,
   );
   const [guest, setGuest] = useState({ fullName: "", email: "", phone: "" });
+  const [rememberMe, setRememberMe] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Prefill from a previous booking on this device, if the guest opted in then.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(REMEMBERED_GUEST_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed.fullName === "string") {
+        setGuest({
+          fullName: parsed.fullName ?? "",
+          email: parsed.email ?? "",
+          phone: parsed.phone ?? "",
+        });
+        setRememberMe(true);
+      }
+    } catch {
+      // Ignore malformed/blocked storage — guest just types their details again.
+    }
+  }, []);
 
   const [extraRoomIds, setExtraRoomIds] = useState<string[]>(initialExtraIds);
 
@@ -178,6 +203,16 @@ export default function BookingWidget({
     setError(null);
 
     try {
+      try {
+        if (rememberMe) {
+          localStorage.setItem(REMEMBERED_GUEST_KEY, JSON.stringify(guest));
+        } else {
+          localStorage.removeItem(REMEMBERED_GUEST_KEY);
+        }
+      } catch {
+        // Storage may be unavailable (private mode, blocked); booking still proceeds.
+      }
+
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -224,7 +259,7 @@ export default function BookingWidget({
       {changeFrom && (
         <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-forest-500/30 bg-forest-500/10 p-3.5 text-sm text-ink/80">
           <CheckCircle size={18} weight="fill" className="mt-0.5 shrink-0 text-forest-600 dark:text-sage-400" />
-          <p>Your ID is already verified — no re-upload needed for this booking.</p>
+          <p>Your ID is already verified, no re-upload needed for this booking.</p>
         </div>
       )}
 
@@ -276,7 +311,7 @@ export default function BookingWidget({
           {datesWereReset && (
             <p className="mb-3 flex items-center gap-2 text-sm text-danger">
               <Warning size={16} className="shrink-0" />
-              Those dates were just booked — please pick new ones.
+              Those dates were just booked. Please pick new ones.
             </p>
           )}
           <BookingCalendar
@@ -433,6 +468,17 @@ export default function BookingWidget({
           </div>
         </div>
 
+        <label htmlFor="rememberMe" className="flex items-start gap-2.5 text-sm text-ink/80">
+          <input
+            id="rememberMe"
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 accent-terracotta-500 focus:ring-terracotta-500"
+          />
+          <span>Remember my details for next time, on this device</span>
+        </label>
+
         {nights > 0 && (
           <div className="rounded-xl bg-page px-4 py-3">
             {[room, ...selectedExtras].map((r) => (
@@ -485,8 +531,8 @@ export default function BookingWidget({
           {submitting
             ? "Booking…"
             : roomCount > 1
-              ? `Book ${roomCount} rooms — Continue to Payment`
-              : "Book — Continue to Payment"}
+              ? `Book ${roomCount} rooms - Continue to Payment`
+              : "Book - Continue to Payment"}
         </button>
         <p className="text-center text-small text-ink/65">
           You won&apos;t be charged yet. Your dates are secured once payment is complete. Choose your payment method next.

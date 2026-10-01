@@ -51,7 +51,7 @@ export default function SiteStatusForm({ initial }: { initial: SiteStatus }) {
       </div>
       <p className="mt-1 text-xs text-ink/65">
         Closing the site shows every visitor a &quot;temporarily closed&quot;
-        message with your contact details instead of the normal pages —
+        message with your contact details instead of the normal pages,
         homepage, rooms, about, contact, everything guests would browse.
         Current guests can still reach their own portal (door code, WiFi,
         requests), and this admin dashboard stays fully usable so you can

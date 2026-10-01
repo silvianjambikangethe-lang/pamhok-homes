@@ -99,7 +99,7 @@ export default function AboutContentForm({ initial }: { initial: AboutContent })
           />
         </div>
         <VideoListField
-          label="Video clips (optional — shown below the photos on the About page)"
+          label="Video clips (optional, shown below the photos on the About page)"
           urls={value.videos}
           pathPrefix="about/video"
           onChange={(videos) => {

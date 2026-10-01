@@ -82,7 +82,7 @@ export default function StaffShiftBoard({
                     <td className="px-4 py-3 text-ink/65">
                       {s.clock_out_at
                         ? formatDistanceStrict(parseISO(s.clock_in_at), parseISO(s.clock_out_at))
-                        : "—"}
+                        : "-"}
                     </td>
                   </tr>
                 ))}

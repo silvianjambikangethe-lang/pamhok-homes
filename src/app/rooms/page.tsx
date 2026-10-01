@@ -49,7 +49,7 @@ export default async function RoomsPage() {
         <div className="mx-auto mt-8 flex max-w-2xl items-start gap-3 rounded-2xl border border-gold-500/30 bg-gold-50 p-4 text-sm text-ink/80 dark:bg-gold-700/15">
           <Info size={20} className="mt-0.5 shrink-0 text-gold-700 dark:text-gold-300" />
           <p>
-            Showing sample rooms — connect your Supabase project and run{" "}
+            Showing sample rooms. Connect your Supabase project and run{" "}
             <code className="rounded bg-page px-1 py-0.5 text-xs">
               supabase/schema.sql
             </code>{" "}
@@ -60,7 +60,7 @@ export default async function RoomsPage() {
 
       {!isSample && rooms.length === 0 && (
         <p className="mx-auto mt-12 max-w-xl text-center text-body-sm text-ink/65">
-          No rooms are available to book right now — please check back soon.
+          No rooms are available to book right now. Please check back soon.
         </p>
       )}
 

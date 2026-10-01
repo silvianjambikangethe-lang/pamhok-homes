@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
   if (!worker.pin_hash) {
     return NextResponse.json(
-      { error: "No PIN set for this profile yet — ask the host to set one from Settings." },
+      { error: "No PIN set for this profile yet, ask the host to set one from Settings." },
       { status: 409 },
     );
   }

@@ -90,7 +90,7 @@ export async function POST(
     }).format(amount);
 
     rejectUpdate.refund_status = "Needs Manual Refund";
-    refundNote = `Since your booking was already paid, we're processing your refund of ${amountText} — you'll hear from us shortly.`;
+    refundNote = `Since your booking was already paid, we're processing your refund of ${amountText}, you'll hear from us shortly.`;
   }
 
   const { error: updateError } = await supabase.from("bookings").update(rejectUpdate).eq("id", id);

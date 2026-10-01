@@ -64,7 +64,7 @@ export default function BlockedGuestNamesForm({ initial }: { initial: BlockedGue
     <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card sm:p-8">
       <h2 className="font-serif text-lg font-semibold text-ink">Blocked Guests</h2>
       <p className="mt-1 text-xs text-ink/65">
-        A name added here can&apos;t complete a booking — checked against both the online booking
+        A name added here can&apos;t complete a booking, checked against both the online booking
         form and walk-in bookings you create yourself.
       </p>
 

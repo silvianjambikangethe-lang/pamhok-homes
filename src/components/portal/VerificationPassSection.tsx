@@ -17,7 +17,7 @@ export default function VerificationPassSection({
           {hasPendingExtension
             ? "Your extra nights are held for you, and your door code, WiFi, and other stay details stay active below. See the extension section for your payment deadline."
             : idVerified
-              ? "Your ID is already verified — complete payment below to unlock your door code and WiFi."
+              ? "Your ID is already verified, complete payment below to unlock your door code and WiFi."
               : "Your verification pass will be available once your ID is confirmed and payment is complete."}
         </p>
       </div>
@@ -29,7 +29,7 @@ export default function VerificationPassSection({
       <SealCheck size={20} weight="fill" className="mt-0.5 shrink-0 text-success" />
       <p>
         You&apos;re verified! Your guest card will appear once you tap{" "}
-        <strong className="text-ink">&quot;I&apos;ve Arrived&quot;</strong> below —
+        <strong className="text-ink">&quot;I&apos;ve Arrived&quot;</strong> below,
         that&apos;s what you&apos;ll show building security or reception.
       </p>
     </div>

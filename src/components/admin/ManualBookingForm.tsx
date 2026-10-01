@@ -20,13 +20,13 @@ type GuestCard = {
 
 function guestCardText(card: GuestCard) {
   return [
-    `${SITE.name} — Booking Confirmation`,
+    `${SITE.name} - Booking Confirmation`,
     "",
     `Guest: ${card.guestName}`,
     `Room${card.roomNames.length > 1 ? "s" : ""}: ${card.roomNames.join(", ")}`,
     `Check-in: ${format(parseISO(card.checkIn), "EEE, d MMM yyyy")} at ${CHECK_IN_TIME}`,
     `Check-out: ${format(parseISO(card.checkOut), "EEE, d MMM yyyy")} at ${CHECK_OUT_TIME}`,
-    `Reference: ${card.bookingReference ?? "—"}`,
+    `Reference: ${card.bookingReference ?? "-"}`,
     `Booking page: ${card.portalUrl}`,
   ].join("\n");
 }
@@ -107,7 +107,7 @@ export default function ManualBookingForm({
         Book a Guest (phone / walk-in)
       </h2>
       <p className="mt-1 text-sm text-ink/65">
-        For reservations made outside the website — creates a real booking and
+        For reservations made outside the website, creates a real booking and
         blocks the room, same as an online one.
       </p>
 
@@ -192,7 +192,7 @@ export default function ManualBookingForm({
         {otherRooms.length > 0 && (
           <div>
             <label className="text-sm font-medium text-ink/80">
-              Additional rooms <span className="font-normal text-ink/50">(optional — for a group under this name)</span>
+              Additional rooms <span className="font-normal text-ink/50">(optional, for a group under this name)</span>
             </label>
             <div className="mt-1.5 flex flex-wrap gap-2">
               {otherRooms.map((r) => (

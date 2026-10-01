@@ -10,7 +10,7 @@ export default function WebsiteAccessCard({ isOpen }: { isOpen: boolean }) {
       <p className="mt-1 text-sm text-ink/70">
         {isOpen
           ? "The site is open to everyone right now. This opens it in a new tab."
-          : "The site is closed to visitors, but because you're signed in as the admin you can still open and use it. Nobody else can — visitors keep seeing the closed page."}
+          : "The site is closed to visitors, but because you're signed in as the admin you can still open and use it. Nobody else can, visitors keep seeing the closed page."}
       </p>
 
       <a

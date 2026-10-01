@@ -106,7 +106,7 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
           ) : (
             <div className="mt-2 space-y-2">
               <p className="text-xs text-ink/80">
-                Confirm the guest has actually left — this removes the
+                Confirm the guest has actually left, this removes the
                 reservation and frees the room for new bookings.
               </p>
               <div className="flex gap-2">

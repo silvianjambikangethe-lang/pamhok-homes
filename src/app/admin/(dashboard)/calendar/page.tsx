@@ -44,7 +44,7 @@ export default async function AdminCalendarPage() {
     <div>
       <h1 className="font-serif text-h2 text-ink">Calendar</h1>
       <p className="mt-1 text-sm text-ink/80">
-        Next {DAYS_AHEAD} days across all rooms — booked, blocked, and available.
+        Next {DAYS_AHEAD} days across all rooms, booked, blocked, and available.
       </p>
 
       <div className="mt-6 flex gap-4 text-xs text-ink/80">
@@ -106,7 +106,7 @@ export default async function AdminCalendarPage() {
             {(rooms ?? []).length === 0 && (
               <tr>
                 <td colSpan={days.length + 1} className="px-4 py-8 text-center text-ink/65">
-                  No rooms yet — add one in Supabase to see it here.
+                  No rooms yet. Add one in Supabase to see it here.
                 </td>
               </tr>
             )}

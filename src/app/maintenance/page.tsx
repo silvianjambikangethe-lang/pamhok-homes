@@ -27,7 +27,7 @@ export default async function MaintenancePage() {
         <p className="mt-3 text-body-sm text-ink/80">
           Welcome to {SITE.name}! We&apos;re briefly offline for essential
           maintenance. To check availability or make a booking right now,
-          message us directly — we usually reply within minutes.
+          message us directly, we usually reply within minutes.
         </p>
 
         <div className="mt-6 flex flex-col gap-3">

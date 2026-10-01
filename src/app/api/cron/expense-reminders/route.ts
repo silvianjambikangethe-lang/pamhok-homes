@@ -49,13 +49,13 @@ function formatAmount(expense: DueExpense): string {
 function reminderEmail(expenses: DueExpense[]): { subject: string; html: string } {
   const subject =
     expenses.length === 1
-      ? `Renewal due in 3 days — ${expenses[0].name}`
+      ? `Renewal due in 3 days - ${expenses[0].name}`
       : `${expenses.length} renewals due in 3 days`;
 
   const items = expenses
     .map(
       (e) =>
-        `<li style="margin-bottom: 10px;"><strong>${e.name}</strong> — ${formatAmount(e)}, due ${e.next_due_date}${e.notes ? `<br /><span style="color:#8a7d6e; font-size: 13px;">${e.notes}</span>` : ""}</li>`,
+        `<li style="margin-bottom: 10px;"><strong>${e.name}</strong>, ${formatAmount(e)}, due ${e.next_due_date}${e.notes ? `<br /><span style="color:#8a7d6e; font-size: 13px;">${e.notes}</span>` : ""}</li>`,
     )
     .join("");
 

@@ -59,5 +59,5 @@ export function whatsappLink(phone: string, message?: string) {
 // the homepage) — use this instead of hardcoding the business name in each
 // page's metadata.
 export function pageTitle(suffix?: string) {
-  return suffix ? `${suffix} — ${SITE.name}` : SITE.name;
+  return suffix ? `${suffix} - ${SITE.name}` : SITE.name;
 }

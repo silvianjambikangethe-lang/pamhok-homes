@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   const { data: staffRow } = await adminClient.from("staff_users").select("id").maybeSingle();
   if (!staffRow) {
     return NextResponse.json(
-      { error: "No staff login exists yet — run scripts/bootstrap-staff.mjs first." },
+      { error: "No staff login exists yet. Run scripts/bootstrap-staff.mjs first." },
       { status: 404 },
     );
   }

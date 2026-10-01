@@ -110,7 +110,7 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
     1,
     differenceInCalendarDays(parseISO(data.checkOut), parseISO(data.checkIn)),
   );
-  const dateStr = data.paidAt ? format(parseISO(data.paidAt), "d MMM yyyy") : "—";
+  const dateStr = data.paidAt ? format(parseISO(data.paidAt), "d MMM yyyy") : "-";
   const stayDates = `${format(parseISO(data.checkIn), "d MMM")} - ${format(parseISO(data.checkOut), "d MMM yyyy")} (${nights} night${nights === 1 ? "" : "s"})`;
 
   const element = (
@@ -197,7 +197,7 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
             marginTop: 4 * SCALE,
           }}
         >
-          Receipt No. {data.bookingReference ?? "—"} · {dateStr}
+          Receipt No. {data.bookingReference ?? "-"} · {dateStr}
         </div>
 
         <div
@@ -220,8 +220,8 @@ export async function generateReceiptImage(data: ReceiptData): Promise<ArrayBuff
           <Row label="Room" value={data.roomName} />
           <Row label="Guest" value={data.guestName} />
           <Row label="Stay dates" value={stayDates} />
-          <Row label="Payment method" value={data.paymentMethod ?? "—"} />
-          <Row label="Payment reference" value={data.paymentReference ?? "—"} />
+          <Row label="Payment method" value={data.paymentMethod ?? "-"} />
+          <Row label="Payment reference" value={data.paymentReference ?? "-"} />
         </div>
 
         <div

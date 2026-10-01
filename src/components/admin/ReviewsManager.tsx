@@ -155,7 +155,7 @@ export default function ReviewsManager({ reviews: initialReviews }: { reviews: R
   if (reviews.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-taupe/40 bg-page p-6 text-center text-sm text-ink/65">
-        No reviews yet — guests can leave one from their portal once checked out.
+        No reviews yet, guests can leave one from their portal once checked out.
       </p>
     );
   }

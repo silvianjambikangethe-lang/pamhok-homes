@@ -73,14 +73,14 @@ export default function IdUploadForm({
           ? "Let's try that again"
           : rejected
             ? "Please re-upload your ID"
-            : "Step 1 — Verify your identity"}
+            : "Step 1 - Verify your identity"}
       </h2>
       <p className="mt-1 text-sm text-ink/80">
         {attemptsLeft !== undefined
-          ? `We couldn't verify that automatically. Please upload clearer photos of the front and back of your ID — you have ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} left before this needs a quick manual review from your host.`
+          ? `We couldn't verify that automatically. Please upload clearer photos of the front and back of your ID, you have ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} left before this needs a quick manual review from your host.`
           : rejected
             ? "Your previous upload couldn't be verified. Please upload clear photos of the front and back of your national ID or passport."
-            : "Upload clear photos of the front and back of your national ID or passport — your host will review it shortly."}
+            : "Upload clear photos of the front and back of your national ID or passport, your host will review it shortly."}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">

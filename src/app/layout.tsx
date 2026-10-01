@@ -40,14 +40,14 @@ const cormorant = Cormorant({
 });
 
 const DEFAULT_DESCRIPTION =
-  "Boutique stays near Thika Road Mall, Nairobi. Warm, welcoming rooms with free WiFi, parking, and a personal touch — book directly, no middlemen.";
+  "Boutique stays near Thika Road Mall, Nairobi. Warm, welcoming rooms with free WiFi, parking, and a personal touch. Book directly, no middlemen.";
 
 export const metadata: Metadata = {
   // Resolves every relative canonical/OG/Twitter URL declared on individual
   // pages (via alternates.canonical, openGraph.images, etc.) against the
   // real site origin instead of Next.js's http://localhost default.
   metadataBase: new URL(SITE.url),
-  title: `${SITE.name} — A Home Away From Home in Nairobi`,
+  title: `${SITE.name} - A Home Away From Home in Nairobi`,
   description: DEFAULT_DESCRIPTION,
   // Sitewide fallback — any page that doesn't declare its own openGraph/
   // twitter block (about, amenities, neighborhood, contact, rooms listing)
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     type: "website",
     siteName: SITE.name,
     locale: "en_US",
-    title: `${SITE.name} — A Home Away From Home in Nairobi`,
+    title: `${SITE.name} - A Home Away From Home in Nairobi`,
     description: DEFAULT_DESCRIPTION,
     // Real dimensions of the current logo asset (703x700, roughly square) —
     // not the 1200x630 landscape shape most link-preview UIs prefer, which
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} — A Home Away From Home in Nairobi`,
+    title: `${SITE.name} - A Home Away From Home in Nairobi`,
     description: DEFAULT_DESCRIPTION,
     images: [SITE.logoLockupUrl],
   },

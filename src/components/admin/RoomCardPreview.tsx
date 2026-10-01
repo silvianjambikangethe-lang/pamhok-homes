@@ -57,7 +57,7 @@ export default function RoomCardPreview({
           </div>
           <div className="mt-4 flex items-baseline justify-between border-t border-taupe/20 pt-4">
             <span className="font-serif text-price text-terracotta-600">
-              {Number.isFinite(pricePerNight) ? formatCurrency(pricePerNight, currency) : "—"}
+              {Number.isFinite(pricePerNight) ? formatCurrency(pricePerNight, currency) : "-"}
               <span className="text-small font-normal text-ink/65"> / night</span>
             </span>
             <span className="text-btn text-terracotta-600">View →</span>

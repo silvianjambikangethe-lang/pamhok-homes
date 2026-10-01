@@ -13,7 +13,7 @@ const CYCLES: { value: BillingCycle; label: string }[] = [
 ];
 
 function formatAmount(amount: number | null, currency: string) {
-  if (amount === null) return "—";
+  if (amount === null) return "-";
   try {
     return new Intl.NumberFormat("en-KE", {
       style: "currency",
@@ -158,7 +158,7 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
                         step="0.01"
                         defaultValue={expense.amount ?? ""}
                         disabled={busy}
-                        placeholder="—"
+                        placeholder="-"
                         onBlur={(e) => {
                           const val = e.target.value.trim() ? Number(e.target.value) : null;
                           if (val !== expense.amount) {

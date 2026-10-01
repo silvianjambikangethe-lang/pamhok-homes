@@ -11,7 +11,7 @@ import { buildDirectionsFromCurrentLocationUrl } from "@/lib/maps";
 export const metadata: Metadata = {
   title: pageTitle("Contact & Location"),
   description:
-    "Get in touch with Pamhok Homes — WhatsApp, phone, email, or send us a message directly.",
+    "Get in touch with Pamhok Homes, WhatsApp, phone, email, or send us a message directly.",
   alternates: { canonical: `${SITE.url}/contact` },
 };
 

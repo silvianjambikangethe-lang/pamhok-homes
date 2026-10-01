@@ -177,7 +177,7 @@ export default function ExtendStaySection({
             You requested {pendingExtensionNights} extra night
             {pendingExtensionNights === 1 ? "" : "s"}, extending your stay to{" "}
             <strong>{format(parseISO(pendingExtensionCheckOut), "EEE, d MMM yyyy")}</strong>.
-            These nights are held for you, but not confirmed yet — complete payment above
+            These nights are held for you, but not confirmed yet. Complete payment above
             {deadline
               ? ` by ${format(deadline, "h:mm a")} on ${format(deadline, "d MMM")}`
               : ` within ${HOLD_HOURS} hours`}{" "}
@@ -280,7 +280,7 @@ export default function ExtendStaySection({
                         className="flex items-center justify-between gap-3 rounded-lg border border-taupe/20 bg-surface px-3 py-2 text-sm"
                       >
                         <span className="text-ink/80">
-                          {r.name} — {formatMoney(r.additionalCost, r.currency)}
+                          {r.name} - {formatMoney(r.additionalCost, r.currency)}
                         </span>
                         <button
                           type="button"
@@ -294,7 +294,7 @@ export default function ExtendStaySection({
                     ))}
                   </ul>
                   <p className="text-xs text-ink/55">
-                    Booking a different room starts a fresh check-in for those dates — its own door
+                    Booking a different room starts a fresh check-in for those dates, its own door
                     code and WiFi, separate from your current room.
                   </p>
                 </div>

@@ -87,7 +87,7 @@ export default function UnlockedSection({
       <div className="flex items-center gap-2">
         <CheckCircle size={22} weight="fill" className="text-success" />
         <h2 className="font-serif text-h3 text-ink">
-          You&apos;re verified — welcome!
+          You&apos;re verified. Welcome!
         </h2>
       </div>
 
@@ -104,7 +104,7 @@ export default function UnlockedSection({
               Door code
             </div>
             <p className="mt-1 font-mono text-2xl tracking-widest text-ink">
-              {doorCode ?? "—"}
+              {doorCode ?? "-"}
             </p>
           </div>
           <div className="rounded-xl border-2 border-terracotta-500 bg-page p-4">
@@ -118,7 +118,7 @@ export default function UnlockedSection({
               </p>
             )}
             <p className="mt-1 font-mono text-2xl tracking-widest text-ink">
-              {wifiPassword ?? "—"}
+              {wifiPassword ?? "-"}
             </p>
           </div>
         </div>

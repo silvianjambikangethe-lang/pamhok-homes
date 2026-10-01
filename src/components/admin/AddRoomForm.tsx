@@ -121,7 +121,7 @@ export default function AddRoomForm() {
         <div>
           <h2 className="font-serif text-lg font-semibold text-ink">Add a New Room</h2>
           <p className="mt-1 text-xs text-ink/65">
-            It&apos;ll appear below once created — photos can be added now or later.
+            It&apos;ll appear below once created, photos can be added now or later.
           </p>
         </div>
         <button

@@ -71,7 +71,7 @@ export default function PaymentNavigationGuard({ token }: { token: string }) {
           Complete your payment?
         </h2>
         <p className="mt-2 text-sm text-ink/70">
-          You haven&apos;t finished paying yet — your room is still held for you.
+          You haven&apos;t finished paying yet, your room is still held for you.
           Head back to complete it now.
         </p>
 
@@ -99,7 +99,7 @@ export default function PaymentNavigationGuard({ token }: { token: string }) {
             className="focus-ring flex w-full items-center justify-center gap-2 rounded-full border border-taupe/30 px-6 py-3 text-sm font-semibold text-ink/70 transition-colors hover:border-terracotta-300 hover:text-ink disabled:opacity-60"
           >
             {cancelling && <SpinnerGap size={16} className="animate-spin" />}
-            Cancel — change rooms
+            Cancel - change rooms
           </button>
         </div>
       </div>

@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "The booking system isn't connected yet — please check back soon, or message us on WhatsApp to book directly.",
+          "The booking system isn't connected yet, please check back soon, or message us on WhatsApp to book directly.",
       },
       { status: 503 },
     );

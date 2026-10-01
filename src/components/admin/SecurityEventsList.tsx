@@ -16,7 +16,7 @@ const EVENT_LABELS: Record<string, string> = {
   mark_booking_payment_failed: "Booking payment failed",
   mark_laundry_paid: "Laundry marked paid",
   mark_laundry_payment_failed: "Laundry payment failed",
-  double_booking_conflict: "Double booking — two guests paid for the same dates, refund one",
+  double_booking_conflict: "Double booking, two guests paid for the same dates, refund one",
 };
 
 export default function SecurityEventsList({ events }: { events: SecurityEventRow[] }) {
@@ -57,17 +57,17 @@ export default function SecurityEventsList({ events }: { events: SecurityEventRo
                       <ShieldCheck size={14} className="shrink-0 text-forest-600 dark:text-sage-300" />
                     )}
                     {paidTwice
-                      ? "Paid twice — check whether a refund is owed"
+                      ? "Paid twice, check whether a refund is owed"
                       : (EVENT_LABELS[e.event_type] ?? e.event_type)}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-ink/80">{e.bookingReference ?? "—"}</td>
+                <td className="px-4 py-3 text-ink/80">{e.bookingReference ?? "-"}</td>
                 <td className="px-4 py-3 text-ink/65">
                   {e.detail
                     ? Object.entries(e.detail)
                         .map(([k, v]) => `${k}: ${v}`)
                         .join(", ")
-                    : "—"}
+                    : "-"}
                 </td>
                 <td className="px-4 py-3 text-ink/65">{formatShiftDateTime(e.created_at)}</td>
               </tr>

@@ -57,7 +57,7 @@ export async function POST(
 
   if (booking.pending_extension_check_out) {
     return NextResponse.json(
-      { error: "You already have an extension awaiting payment — complete that payment before requesting more nights." },
+      { error: "You already have an extension awaiting payment, complete that payment before requesting more nights." },
       { status: 409 },
     );
   }
@@ -130,7 +130,7 @@ export async function POST(
   await supabase.from("guest_requests").insert({
     booking_id: booking.id,
     request_type: "extension",
-    message: `Requested ${additionalNights} extra night${additionalNights === 1 ? "" : "s"} (new check-out ${newCheckOut}) — additional ${new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", maximumFractionDigits: 0 }).format(additionalCost)}, awaiting payment.`,
+    message: `Requested ${additionalNights} extra night${additionalNights === 1 ? "" : "s"} (new check-out ${newCheckOut}), additional ${new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", maximumFractionDigits: 0 }).format(additionalCost)}, awaiting payment.`,
     status: "Open",
   });
 

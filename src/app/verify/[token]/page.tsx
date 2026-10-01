@@ -51,7 +51,7 @@ export default async function VerifyPassPage({
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-ink/55">Room</dt>
-                <dd className="font-semibold text-ink">{booking.room?.name ?? "—"}</dd>
+                <dd className="font-semibold text-ink">{booking.room?.name ?? "-"}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-ink/55">Stay dates</dt>
@@ -63,7 +63,7 @@ export default async function VerifyPassPage({
               <div>
                 <dt className="text-xs uppercase tracking-wide text-ink/55">Reference</dt>
                 <dd className="font-mono font-semibold text-ink">
-                  {booking.booking_reference ?? "—"}
+                  {booking.booking_reference ?? "-"}
                 </dd>
               </div>
             </dl>

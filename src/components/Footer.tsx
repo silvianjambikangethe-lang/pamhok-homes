@@ -19,7 +19,7 @@ export default async function Footer() {
             <img src={SITE.logoIconUrl} alt={SITE.name} className="h-8 w-8 rounded-full" />
           </Link>
           <p className="mt-3 text-sm leading-relaxed text-pk-on-dark-muted dark:text-white/70">
-            {SITE.tagline}. Come stay with us — it&apos;ll feel like home
+            {SITE.tagline}. Come stay with us, it&apos;ll feel like home
             before you&apos;ve even unpacked.
           </p>
         </div>

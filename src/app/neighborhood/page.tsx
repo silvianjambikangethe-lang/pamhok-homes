@@ -31,7 +31,7 @@ function NeighborhoodGrid({
   if (items.length === 0) {
     return (
       <p className="mt-6 text-body-sm text-ink/65">
-        Recommendations coming soon — check back shortly.
+        Recommendations coming soon. Check back shortly.
       </p>
     );
   }

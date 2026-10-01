@@ -114,7 +114,7 @@ export default function StaffMembersForm({ initial }: { initial: StaffMember[] }
       setNotice("Worker deleted permanently.");
     } else {
       setMembers(members.map((m) => (m.id === id ? { ...m, active: false, pin_hash: null } : m)));
-      setNotice("This worker has shift history, so their record was kept, but deactivated and their PIN permanently cleared — the same practical result.");
+      setNotice("This worker has shift history, so their record was kept, but deactivated and their PIN permanently cleared, the same practical result.");
     }
   }
 
@@ -123,7 +123,7 @@ export default function StaffMembersForm({ initial }: { initial: StaffMember[] }
       <h2 className="font-serif text-lg font-semibold text-ink">Staff Members</h2>
       <p className="mt-1 text-xs text-ink/65">
         Names shown on the tap-in screen at /staff. Each worker taps their name and enters their own
-        PIN — Remove takes them off the list (reversible), Delete Permanently kills their PIN for
+        PIN. Remove takes them off the list (reversible); Delete Permanently kills their PIN for
         good. Note: everyone still signs into the same shared staff login first; change its password
         under Staff Login below if you need to cut off someone who knows that.
       </p>

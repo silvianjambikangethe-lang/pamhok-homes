@@ -146,7 +146,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
             seed={room.slug}
           />
           <p className="mt-3 text-xs text-ink/55">
-            Reflects your unsaved edits below — save to make them real for
+            Reflects your unsaved edits below, save to make them real for
             guests.
           </p>
         </div>
@@ -280,7 +280,7 @@ function RoomRow({ room }: { room: RoomSetting }) {
         </button>
         {saved && (
           <span className="flex items-center gap-1.5 text-sm font-medium text-success">
-            <CheckCircle size={16} weight="fill" /> Saved — applies to all future verified guests
+            <CheckCircle size={16} weight="fill" /> Saved, applies to all future verified guests
           </span>
         )}
       </div>

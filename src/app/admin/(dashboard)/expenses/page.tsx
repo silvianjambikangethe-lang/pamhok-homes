@@ -20,7 +20,7 @@ export default async function AdminExpensesPage() {
     <div>
       <h1 className="font-serif text-h2 text-ink">Expenses</h1>
       <p className="mt-1 text-sm text-ink/80">
-        Track your own recurring service bills — domain, hosting, and anything else. Update the
+        Track your own recurring service bills, domain, hosting, and anything else. Update the
         due date yourself after each renewal; this doesn&apos;t detect payment automatically.
       </p>
 

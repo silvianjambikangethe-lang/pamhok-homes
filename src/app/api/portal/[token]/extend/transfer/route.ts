@@ -122,7 +122,7 @@ export async function POST(
   await supabase.from("guest_requests").insert({
     booking_id: booking.id,
     request_type: "extension",
-    message: `Guest moved to ${room.name} for extra nights (their current room wasn't free) — new booking ${newBooking.booking_reference}, ${booking.check_out} to ${checkOut}, awaiting payment.`,
+    message: `Guest moved to ${room.name} for extra nights (their current room wasn't free), new booking ${newBooking.booking_reference}, ${booking.check_out} to ${checkOut}, awaiting payment.`,
     status: "Open",
   });
 

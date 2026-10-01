@@ -410,7 +410,7 @@ export default function PortalClient({
           <>
             <div className="rounded-2xl border border-forest-500/30 bg-forest-500/10 p-6 shadow-card">
               <p className="font-serif text-h2 text-ink">
-                Thanks for staying with {SITE.name} — hope to host you again!
+                Thanks for staying with {SITE.name}, hope to host you again!
               </p>
               {booking.payment_status === "Paid" && (
                 <a

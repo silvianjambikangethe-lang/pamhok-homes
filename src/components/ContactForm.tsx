@@ -37,7 +37,7 @@ export default function ContactForm() {
           Message sent
         </p>
         <p className="text-sm text-ink/80">
-          Thank you — we&apos;ll get back to you shortly.
+          Thank you, we&apos;ll get back to you shortly.
         </p>
       </div>
     );
@@ -96,7 +96,7 @@ export default function ContactForm() {
 
       {status === "error" && (
         <p role="alert" className="text-sm text-danger">
-          Something went wrong — please try again, or message us on
+          Something went wrong. Please try again, or message us on
           WhatsApp instead.
         </p>
       )}

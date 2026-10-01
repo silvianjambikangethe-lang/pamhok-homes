@@ -97,7 +97,7 @@ export default function ContactContentForm({ initial }: { initial: ContactConten
           />
         </div>
         <VideoUploadField
-          label="Directions video (optional — shown next to the Get Directions button)"
+          label="Directions video (optional, shown next to the Get Directions button)"
           currentUrl={value.directions_video_url}
           path="contact/directions"
           onUploaded={(url) => {

@@ -93,7 +93,7 @@ async function sendPaymentSucceededEmail(supabase: any, bookingId: string): Prom
       body: JSON.stringify({
         from: fromAddress(),
         to: guest.email,
-        subject: `Payment confirmed — ${roomName}, ${booking.check_in} to ${booking.check_out}`,
+        subject: `Payment confirmed - ${roomName}, ${booking.check_in} to ${booking.check_out}`,
         html,
         reply_to: SITE.contactEmail,
       }),

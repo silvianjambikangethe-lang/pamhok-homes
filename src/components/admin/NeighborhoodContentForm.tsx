@@ -81,7 +81,7 @@ function CategoryEditor({
                 Adds a &quot;Get Directions from {SITE.name}&quot; button for
                 this place on the public page. Paste either the place&apos;s
                 own Google Maps pin, or a &quot;Directions from {SITE.name}
-                &quot; link shared straight from Maps — both work.
+                &quot; link shared straight from Maps, both work.
               </p>
             </div>
             <div className="mt-3 flex items-end justify-between gap-3">
@@ -156,7 +156,7 @@ export default function NeighborhoodContentForm({
     >
       <h2 className="font-serif text-lg font-semibold text-ink">Neighborhood</h2>
       <p className="mt-1 text-xs text-ink/65">
-        Suggested places to eat and things to do near {SITE.name} — shown on
+        Suggested places to eat and things to do near {SITE.name}, shown on
         the public Neighborhood page.
       </p>
 

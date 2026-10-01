@@ -91,7 +91,7 @@ export function bookingConfirmationEmail({
   }).format(amountPaid);
 
   return {
-    subject: `Payment confirmed — ${roomName}, ${checkIn} to ${checkOut}`,
+    subject: `Payment confirmed - ${roomName}, ${checkIn} to ${checkOut}`,
     html: wrapper(`
       <p>Hi ${guestName},</p>
       <p>Your payment is confirmed and your stay is booked. Here's your summary:</p>
@@ -134,7 +134,7 @@ export function stayExtensionConfirmationEmail({
   }).format(totalPaid);
 
   return {
-    subject: `Stay extended — new checkout ${newCheckOut}`,
+    subject: `Stay extended - new checkout ${newCheckOut}`,
     html: wrapper(`
       <p>Hi ${guestName},</p>
       <p>Your extension is confirmed! We've updated your stay in ${roomName}.</p>
@@ -165,7 +165,7 @@ export function idVerificationResultEmail({
       subject: "You're verified!",
       html: wrapper(`
         <p>Hi ${guestName},</p>
-        <p>Good news — your ID has been verified for your stay in ${roomName}. If you haven't paid yet, you're clear to complete payment now; your door code and WiFi will appear on your booking page right after.</p>
+        <p>Good news, your ID has been verified for your stay in ${roomName}. If you haven't paid yet, you're clear to complete payment now; your door code and WiFi will appear on your booking page right after.</p>
         ${button(portalUrl, "View my booking")}
       `),
     };
@@ -198,7 +198,7 @@ export function checkoutReminderEmail({
       subject: "Checkout is tomorrow",
       html: wrapper(`
         <p>Hi ${guestName},</p>
-        <p>Just a heads-up — your stay in ${roomName} wraps up tomorrow.</p>
+        <p>Just a heads-up, your stay in ${roomName} wraps up tomorrow.</p>
         <p>Loving it here? You can extend your stay right from your booking page.</p>
         ${button(portalUrl, "Extend my stay")}
       `),
@@ -209,7 +209,7 @@ export function checkoutReminderEmail({
     subject: "Checkout is today",
     html: wrapper(`
       <p>Hi ${guestName},</p>
-      <p><strong>Checkout is today.</strong> Please confirm your checkout on your booking page whenever you're ready to head out — our cleaning team will be by shortly after.</p>
+      <p><strong>Checkout is today.</strong> Please confirm your checkout on your booking page whenever you're ready to head out, our cleaning team will be by shortly after.</p>
       ${button(portalUrl, "Confirm checkout")}
     `),
   };
@@ -258,7 +258,7 @@ export function laundryStatusEmail({
 }) {
   const message =
     stage === "Awaiting Payment" && amount != null
-      ? `Your laundry is ready. A charge of ${new Intl.NumberFormat("en-KE", { style: "currency", currency: currency ?? "KES", maximumFractionDigits: 0 }).format(amount)} is due before it's returned to your room — pay from your stay page.`
+      ? `Your laundry is ready. A charge of ${new Intl.NumberFormat("en-KE", { style: "currency", currency: currency ?? "KES", maximumFractionDigits: 0 }).format(amount)} is due before it's returned to your room, pay from your stay page.`
       : LAUNDRY_MESSAGES[stage];
 
   return {
@@ -284,7 +284,7 @@ export function checkoutCompleteEmail({
     subject: "Thanks for staying with us!",
     html: wrapper(`
       <p>Hi ${guestName},</p>
-      <p>Thanks for staying with us in ${roomName} — we hope it felt like home. If you have a minute, we'd love to hear how it went.</p>
+      <p>Thanks for staying with us in ${roomName}, we hope it felt like home. If you have a minute, we'd love to hear how it went.</p>
       ${button(portalUrl, "Leave a review")}
     `),
   };

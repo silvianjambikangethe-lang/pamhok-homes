@@ -81,12 +81,12 @@ export default function BookingsTable({ bookings }: { bookings: AdminBookingRow[
           {bookings.map((b) => (
             <tr key={b.id} className="border-b border-taupe/10 last:border-0">
               <td className="px-5 py-4 font-mono text-xs text-ink/65">
-                {b.booking_reference ?? "—"}
+                {b.booking_reference ?? "-"}
               </td>
               <td className="px-5 py-4 text-ink/80">
                 {b.guestName ?? <span className="text-ink/65">Blocked dates</span>}
               </td>
-              <td className="px-5 py-4 text-ink/80">{b.roomName ?? "—"}</td>
+              <td className="px-5 py-4 text-ink/80">{b.roomName ?? "-"}</td>
               <td className="px-5 py-4 whitespace-nowrap text-ink/80">
                 {format(parseISO(b.check_in), "d MMM")} → {format(parseISO(b.check_out), "d MMM yyyy")}
               </td>

@@ -198,7 +198,7 @@ export async function POST(request: Request) {
       } else if (bookingError?.code !== "23505") {
         await rollback();
         return NextResponse.json(
-          { error: "Could not create booking — dates may already be taken." },
+          { error: "Could not create booking, dates may already be taken." },
           { status: 409 },
         );
       }

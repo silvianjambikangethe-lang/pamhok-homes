@@ -20,7 +20,7 @@ export default async function AdminRoomsPage() {
         <h1 className="font-serif text-h2 text-ink">Room Settings</h1>
         <p className="mt-1 text-sm text-ink/80">
           Edit each room&apos;s public details and photos, plus its door
-          code, WiFi network name, and WiFi password — property details, not
+          code, WiFi network name, and WiFi password, property details, not
           tied to any one booking, so a change here applies to every future
           verified guest immediately. Room order controls where each room
           appears on the site and in this list.

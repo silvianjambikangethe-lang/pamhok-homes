@@ -126,7 +126,7 @@ export default function VerificationCard({ row }: { row: VerificationRow }) {
       {row.verificationResult2 && <AttemptResult label="Attempt 2" result={row.verificationResult2} />}
       {!row.verificationResult && !row.verificationResult2 && (
         <p className="mt-4 text-sm text-ink/65">
-          No automated result on file — this upload came straight to manual review.
+          No automated result on file, this upload came straight to manual review.
         </p>
       )}
 

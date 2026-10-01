@@ -10,7 +10,7 @@ import { SITE, pageTitle } from "@/lib/site";
 export const metadata: Metadata = {
   title: pageTitle("About Us"),
   description:
-    "The story behind Pamhok Homes — a boutique, host-run stay near Thika Road Mall, Nairobi.",
+    "The story behind Pamhok Homes, a boutique, host-run stay near Thika Road Mall, Nairobi.",
   alternates: { canonical: `${SITE.url}/about` },
 };
 

@@ -61,7 +61,7 @@ const SAMPLE_ROOMS: Room[] = [
     name: "The Garden Room",
     slug: "garden-room",
     description:
-      "A cozy double room with soft natural light and garden views — perfect for solo travelers or couples who want a quiet retreat close to everything Thika Road Mall has to offer.",
+      "A cozy double room with soft natural light and garden views, perfect for solo travelers or couples who want a quiet retreat close to everything Thika Road Mall has to offer.",
     price_per_night: 4500,
     currency: "KES",
     max_guests: 2,
@@ -87,7 +87,7 @@ const SAMPLE_ROOMS: Room[] = [
     name: "The Family Suite",
     slug: "family-suite",
     description:
-      "Two connected bedrooms with a shared living area — spacious enough for families or small groups, without losing the warm, personal Pamhok touch.",
+      "Two connected bedrooms with a shared living area, spacious enough for families or small groups, without losing the warm, personal Pamhok touch.",
     price_per_night: 8500,
     currency: "KES",
     max_guests: 4,
@@ -113,7 +113,7 @@ const SAMPLE_ROOMS: Room[] = [
     name: "The Studio Loft",
     slug: "studio-loft",
     description:
-      "A bright, modern studio with its own kitchenette — ideal for remote workers or short business trips near TRM.",
+      "A bright, modern studio with its own kitchenette, ideal for remote workers or short business trips near TRM.",
     price_per_night: 5500,
     currency: "KES",
     max_guests: 2,
@@ -246,7 +246,7 @@ const SAMPLE_REVIEWS: Review[] = [
     booking_id: "sample",
     rating: 5,
     comment:
-      "Perfect base for a TRM trip — five minutes from everything, and the host was incredibly responsive.",
+      "Perfect base for a TRM trip, five minutes from everything, and the host was incredibly responsive.",
     guest_display_name: "David K.",
     featured: true,
     created_at: new Date().toISOString(),
@@ -314,7 +314,7 @@ const DEFAULT_HOMEPAGE_CONTENT: HomepageContent = {
   eyebrow: "Nairobi · Near Thika Road Mall",
   headline: "A home away from home, waiting for you",
   subtext:
-    "Warm, welcoming rooms with a personal touch — steps from Thika Road Mall. Book directly with us, no middlemen, no surprises.",
+    "Warm, welcoming rooms with a personal touch, steps from Thika Road Mall. Book directly with us, no middlemen, no surprises.",
   hero_image_url: null,
   living_room_image_url: null,
   bedroom_image_url: null,
@@ -323,7 +323,7 @@ const DEFAULT_HOMEPAGE_CONTENT: HomepageContent = {
 };
 
 const DEFAULT_ABOUT_CONTENT: AboutContent = {
-  body: "Pamhok Homes began as a single spare room offered to a friend passing through Nairobi. What started as a favor turned into something we couldn't stop doing — welcoming travelers, families, and remote workers into a space that actually feels lived-in and cared for.\n\nWe're not a hotel chain, and we don't want to be. Every room is personally prepared, every check-in is guided by a real person, and every guest gets our WhatsApp number, not a call center. Being just minutes from Thika Road Mall means you're close to everything, but coming home to Pamhok still feels quiet, warm, and yours.\n\nOur promise is simple: treat every stay the way we'd want a friend to be treated in our own home.",
+  body: "Pamhok Homes began as a single spare room offered to a friend passing through Nairobi. What started as a favor turned into something we couldn't stop doing, welcoming travelers, families, and remote workers into a space that actually feels lived-in and cared for.\n\nWe're not a hotel chain, and we don't want to be. Every room is personally prepared, every check-in is guided by a real person, and every guest gets our WhatsApp number, not a call center. Being just minutes from Thika Road Mall means you're close to everything, but coming home to Pamhok still feels quiet, warm, and yours.\n\nOur promise is simple: treat every stay the way we'd want a friend to be treated in our own home.",
   image_url: null,
   coffee_corner_image_url: null,
   reading_nook_image_url: null,
@@ -335,7 +335,7 @@ const DEFAULT_AMENITIES_CONTENT: AmenityItem[] = [
     icon: "WifiHigh",
     title: "Free WiFi",
     description:
-      "Fast, reliable internet throughout the property — ready for work calls or streaming.",
+      "Fast, reliable internet throughout the property, ready for work calls or streaming.",
   },
   {
     icon: "Car",
@@ -396,7 +396,7 @@ const DEFAULT_TERMS_CONTENT: TermsContent = {
     },
     {
       title: "7. House Rules",
-      body: "- **Maximum occupancy: 2 people per room.** A group of more than 2 can book more than one room.\n- **No parties or events of any kind.**\n- **No pets allowed.**\n- **No smoking inside the property** — this includes, but is not limited to, tobacco and bangi (marijuana). Any smoking of any substance inside the property is strictly prohibited.\n- Guests found in violation of these house rules may have their booking cancelled without refund, at the host's discretion.",
+      body: "- **Maximum occupancy: 2 people per room.** A group of more than 2 can book more than one room.\n- **No parties or events of any kind.**\n- **No pets allowed.**\n- **No smoking inside the property.** This includes, but is not limited to, tobacco and bangi (marijuana). Any smoking of any substance inside the property is strictly prohibited.\n- Guests found in violation of these house rules may have their booking cancelled without refund, at the host's discretion.",
     },
     {
       title: "8. Damage, Loss & Liability",
@@ -413,7 +413,7 @@ const DEFAULT_CONTACT_CONTENT: ContactContent = {
   address_text: "Near Thika Road Mall (TRM), Nairobi, Kenya",
   address_note: "Exact address shared after booking confirmation",
   intro_line:
-    "Questions about a stay, or need something during your trip? Reach us directly — a real person always answers.",
+    "Questions about a stay, or need something during your trip? Reach us directly, a real person always answers.",
   maps_url: null,
   maps_lat: null,
   maps_lng: null,
