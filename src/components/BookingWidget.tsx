@@ -72,6 +72,7 @@ export default function BookingWidget({
   rates,
   initialCheckIn,
   initialCheckOut,
+  changeFrom,
 }: {
   room: Room;
   availability: AvailabilityRow[];
