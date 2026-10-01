@@ -20,6 +20,32 @@ export default function Header() {
   const pathname = usePathname();
   const darkHeader = pathname === "/" || pathname.startsWith("/rooms/");
 
+  // Staff shouldn't be able to wander off into the public site (rooms,
+  // amenities, neighborhood, etc.) from their own dashboard — the sitewide
+  // nav and "Check Availability" CTA are a guest-facing distraction, not a
+  // tool they need while clocked in. Swap the whole header for a plain
+  // staff-branded bar instead of just hiding bits of the guest one.
+  if (pathname?.startsWith("/staff")) {
+    return (
+      <header className="sticky top-0 z-40 border-b border-taupe/25 bg-page/90 backdrop-blur">
+        <div className="container-page flex h-16 items-center justify-between sm:h-20">
+          <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={SITE.logoIconUrl}
+              alt=""
+              className="h-11 w-11 rounded-full sm:h-12 sm:w-12"
+            />
+            <span className="font-serif text-xl font-semibold text-forest-700 dark:text-ivory-dark sm:text-2xl">
+              {SITE.name} Staff
+            </span>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header
       className={`sticky top-0 z-40 border-b backdrop-blur ${
