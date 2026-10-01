@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
 import { CalendarPlus, Clock, DoorOpen, Phone, Warning, WhatsappLogo } from "@phosphor-icons/react";
 import { whatsappLink } from "@/lib/site";
+import PaymentSection from "@/components/portal/PaymentSection";
+import type { PaymentStatus } from "@/lib/supabase/types";
+import type { DisplayCurrency } from "@/lib/currency";
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("en-KE", {
@@ -40,6 +43,9 @@ export default function ExtendStaySection({
   pendingExtensionRequestedAt,
   adminPhone,
   bookingReference,
+  totalAmount,
+  paymentStatus,
+  rates,
 }: {
   token: string;
   checkOut: string;
@@ -48,6 +54,12 @@ export default function ExtendStaySection({
   pendingExtensionRequestedAt: string | null;
   adminPhone: string | null;
   bookingReference: string | null;
+  // Needed to render payment for the extension right here, in the same
+  // card, instead of the guest having to go find a separate payment
+  // section elsewhere on the page.
+  totalAmount: number;
+  paymentStatus: PaymentStatus;
+  rates: Record<DisplayCurrency, number>;
 }) {
   const router = useRouter();
   const daysUntilCheckout = differenceInCalendarDays(startOfDay(parseISO(checkOut)), startOfDay(new Date()));
@@ -177,7 +189,7 @@ export default function ExtendStaySection({
             You requested {pendingExtensionNights} extra night
             {pendingExtensionNights === 1 ? "" : "s"}, extending your stay to{" "}
             <strong>{format(parseISO(pendingExtensionCheckOut), "EEE, d MMM yyyy")}</strong>.
-            These nights are held for you, but not confirmed yet. Complete payment above
+            These nights are held for you, but not confirmed yet. Complete payment below
             {deadline
               ? ` by ${format(deadline, "h:mm a")} on ${format(deadline, "d MMM")}`
               : ` within ${HOLD_HOURS} hours`}{" "}
@@ -185,6 +197,17 @@ export default function ExtendStaySection({
           </p>
         </div>
         {contactBlock && <div className="mt-3">{contactBlock}</div>}
+        {/* Extension payment happens right here in the same card, rather
+            than in a separate payment section elsewhere on the page — one
+            continuous flow from "extend" to "pay". */}
+        <div className="mt-4">
+          <PaymentSection
+            token={token}
+            totalAmount={totalAmount}
+            paymentStatus={paymentStatus}
+            rates={rates}
+          />
+        </div>
       </div>
     );
   }

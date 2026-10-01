@@ -173,6 +173,22 @@ export default function UnlockedSection({
               <Phone size={18} weight="fill" />
               Call {adminPhone}
             </a>
+          ) : requestType === "cleaning" ? (
+            // No free-text box here on purpose: a cleaning request doesn't
+            // need a message, and calling the admin already covers
+            // anything that needs explaining — "Other" below is where a
+            // guest types out something specific.
+            <>
+              <RoomPicker rooms={rooms} value={targetToken} onChange={setTargetToken} />
+              {error && <p className="text-sm text-danger">{error}</p>}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
+              >
+                {submitting ? "Sending…" : SUBMIT_LABEL[requestType]}
+              </button>
+            </>
           ) : (
             <>
               <RoomPicker rooms={rooms} value={targetToken} onChange={setTargetToken} />

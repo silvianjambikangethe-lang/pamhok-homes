@@ -104,6 +104,8 @@ export function bookingConfirmationEmail({
       </ul>
       <p>Your door code and WiFi details will be ready on your booking page once your ID is verified (if it isn't already):</p>
       ${button(portalUrl, "View my booking")}
+      <p style="margin-top: 20px; font-size: 13px; color: #8a7d6e;">Want to save this for later? Copy the link below into your notes app, or send it to yourself on WhatsApp, so you can get back to your stay page anytime:</p>
+      ${link(portalUrl)}
     `),
   };
 }
@@ -286,6 +288,18 @@ export function checkoutCompleteEmail({
       <p>Hi ${guestName},</p>
       <p>Thanks for staying with us in ${roomName}, we hope it felt like home. If you have a minute, we'd love to hear how it went.</p>
       ${button(portalUrl, "Leave a review")}
+    `),
+  };
+}
+
+export function guestRecognitionCodeEmail({ code, fullName }: { code: string; fullName: string }) {
+  return {
+    subject: `Your ${SITE.name} code: ${code}`,
+    html: wrapper(`
+      <p>Hi ${fullName},</p>
+      <p>Use this code to confirm it's you and book again without re-uploading your ID:</p>
+      <p style="margin: 24px 0; font-family: monospace; font-size: 28px; font-weight: 600; letter-spacing: 4px;">${code}</p>
+      <p style="font-size:13px; color:#8a7d6e;">This code expires in 10 minutes. If you didn't request it, you can ignore this email.</p>
     `),
   };
 }

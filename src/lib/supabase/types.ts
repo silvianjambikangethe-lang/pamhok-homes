@@ -367,6 +367,29 @@ export type RateLimit = {
   window_started_at: string;
 };
 
+// See src/lib/guest-recognition.ts — a guest who opted in at checkout (see
+// completeCheckout in src/lib/checkout.ts) gets one row here, keyed by
+// email, pointing at their most recently Verified booking.
+export type RememberedGuest = {
+  email: string;
+  full_name: string;
+  last_booking_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// Short-lived one-time codes proving control of the email on a
+// RememberedGuest row before the booking flow trusts it. code_hash is
+// salted scrypt (see hashPin/verifyPin in src/lib/staff-pin.ts).
+export type GuestRecognitionCode = {
+  id: string;
+  email: string;
+  code_hash: string;
+  expires_at: string;
+  attempts: number;
+  created_at: string;
+};
+
 export type BillingCycle = "monthly" | "annual" | "one-time";
 
 export type BusinessExpense = {
@@ -510,6 +533,26 @@ export interface Database {
         Row: RateLimit;
         Insert: Partial<RateLimit>;
         Update: Partial<RateLimit>;
+        Relationships: [];
+      };
+      remembered_guests: {
+        Row: RememberedGuest;
+        Insert: Partial<RememberedGuest>;
+        Update: Partial<RememberedGuest>;
+        Relationships: [
+          {
+            foreignKeyName: "remembered_guests_last_booking_id_fkey";
+            columns: ["last_booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      guest_recognition_codes: {
+        Row: GuestRecognitionCode;
+        Insert: Partial<GuestRecognitionCode>;
+        Update: Partial<GuestRecognitionCode>;
         Relationships: [];
       };
       staff_users: {

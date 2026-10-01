@@ -5,8 +5,10 @@ import { isSupabaseConfigured } from "@/lib/data";
 import { generateBookingReference, generatePassReference } from "@/lib/booking-reference";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { isNameBlocked } from "@/lib/guest-blocklist";
+import { parseRecognitionToken } from "@/lib/guest-recognition";
 import { SITE } from "@/lib/site";
 import { EMAIL_RE, PHONE_RE } from "@/lib/validation";
+import type { IdVerificationMethod } from "@/lib/supabase/types";
 
 // One response for anything that stops a booking being created on our side,
 // including a name on the host's blocked list. A real hiccup and a blocked
@@ -34,6 +36,10 @@ interface BookingRequestBody {
   // "Change rooms" flow: access_token of the cancelled booking whose
   // id_verification_status should carry over to the new booking.
   changeFromToken?: string;
+  // Returning-guest "Remember Me" flow: proves control of a remembered
+  // email (see src/lib/guest-recognition.ts). Carries over verification
+  // the same way changeFromToken does.
+  recognitionToken?: string;
 }
 
 const MAX_EXTRA_ROOMS = 9;
@@ -45,6 +51,9 @@ function isValidBody(body: unknown): body is BookingRequestBody {
     return false;
   }
   if (typeof b.changeFromToken !== "undefined" && typeof b.changeFromToken !== "string") {
+    return false;
+  }
+  if (typeof b.recognitionToken !== "undefined" && typeof b.recognitionToken !== "string") {
     return false;
   }
   if (typeof b.extraRoomIds !== "undefined") {
@@ -189,7 +198,7 @@ export async function POST(request: Request) {
   // "Change rooms" carry-over: if the guest is replacing a cancelled, verified
   // booking, reuse their guest record and skip the ID step for the new one.
   // Mirrors the precedent set in portal/[token]/extend/transfer/route.ts.
-  let inheritedVerification: { status: "Verified"; method: string } | null = null;
+  let inheritedVerification: { status: "Verified"; method: IdVerificationMethod } | null = null;
   let inheritedGuestId: string | null = null;
   if (body.changeFromToken) {
     const { data: oldBooking } = await supabase
@@ -208,6 +217,40 @@ export async function POST(request: Request) {
         status: "Verified",
         method: oldBooking.id_verification_method ?? "manual_override",
       };
+    }
+  }
+
+  // Returning-guest "Remember Me" carry-over: the token (see
+  // src/lib/guest-recognition.ts) only exists because the guest proved
+  // control of the email with a one-time code, matching an email that
+  // opted into remembered_guests at a previous checkout (see
+  // completeCheckout in src/lib/checkout.ts). Still re-checks
+  // id_verification_status on the actual referenced booking rather than
+  // trusting the token alone — same defense-in-depth as changeFromToken
+  // above. Unlike changeFromToken, this isn't a room swap, so the old
+  // booking doesn't need to be Cancelled.
+  if (!inheritedVerification && body.recognitionToken) {
+    const email = parseRecognitionToken(body.recognitionToken);
+    if (email) {
+      const { data: remembered } = await supabase
+        .from("remembered_guests")
+        .select("last_booking_id")
+        .eq("email", email)
+        .maybeSingle();
+      if (remembered?.last_booking_id) {
+        const { data: lastBooking } = await supabase
+          .from("bookings")
+          .select("guest_id, id_verification_status, id_verification_method")
+          .eq("id", remembered.last_booking_id)
+          .maybeSingle();
+        if (lastBooking && lastBooking.id_verification_status === "Verified") {
+          inheritedGuestId = lastBooking.guest_id;
+          inheritedVerification = {
+            status: "Verified",
+            method: lastBooking.id_verification_method ?? "manual_override",
+          };
+        }
+      }
     }
   }
 

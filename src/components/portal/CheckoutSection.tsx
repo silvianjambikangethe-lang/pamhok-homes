@@ -21,6 +21,7 @@ export default function CheckoutSection({
 }) {
   const router = useRouter();
   const [checked, setChecked] = useState<boolean[]>(CHECKLIST.map(() => false));
+  const [rememberMe, setRememberMe] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +32,11 @@ export default function CheckoutSection({
     setError(null);
 
     try {
-      const res = await fetch(`/api/portal/${token}/checkout`, { method: "POST" });
+      const res = await fetch(`/api/portal/${token}/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rememberMe }),
+      });
       if (!res.ok) {
         const data = await res.json();
         setError(data.error ?? "Could not confirm check-out.");
@@ -85,12 +90,44 @@ export default function CheckoutSection({
         ))}
       </ul>
 
+      <div className="mt-5 rounded-xl border border-taupe/20 bg-page p-4">
+        <p className="text-sm font-semibold text-ink/80">
+          Save your name &amp; email for a faster, ID-free booking next time?
+        </p>
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setRememberMe(true)}
+            aria-pressed={rememberMe === true}
+            className={`focus-ring rounded-full border px-5 py-2 text-sm font-semibold transition-colors ${
+              rememberMe === true
+                ? "border-pk-primary bg-pk-primary text-pk-on-dark dark:border-terracotta-500 dark:bg-terracotta-500 dark:text-white"
+                : "border-taupe/25 bg-surface text-ink/80 hover:border-terracotta-300"
+            }`}
+          >
+            Yes, remember me
+          </button>
+          <button
+            type="button"
+            onClick={() => setRememberMe(false)}
+            aria-pressed={rememberMe === false}
+            className={`focus-ring rounded-full border px-5 py-2 text-sm font-semibold transition-colors ${
+              rememberMe === false
+                ? "border-pk-primary bg-pk-primary text-pk-on-dark dark:border-terracotta-500 dark:bg-terracotta-500 dark:text-white"
+                : "border-taupe/25 bg-surface text-ink/80 hover:border-terracotta-300"
+            }`}
+          >
+            No
+          </button>
+        </div>
+      </div>
+
       {error && <p className="mt-3 text-sm text-danger">{error}</p>}
 
       <button
         type="button"
         onClick={handleConfirm}
-        disabled={!allChecked || submitting}
+        disabled={!allChecked || rememberMe === null || submitting}
         className="focus-ring mt-5 inline-flex items-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <CheckCircle size={18} weight="fill" />

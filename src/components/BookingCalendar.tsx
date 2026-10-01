@@ -47,7 +47,10 @@ export default function BookingCalendar({
   bookedRanges,
   selection,
   onChange,
-  monthsToShow = 2,
+  // Always a single visible month with arrow toggles — showing more than
+  // one month at once read as confusing (multiple month grids stacked),
+  // so every caller now gets one month at a time regardless of viewport.
+  monthsToShow = 1,
 }: {
   bookedRanges: DateRange[];
   selection: DateSelection;

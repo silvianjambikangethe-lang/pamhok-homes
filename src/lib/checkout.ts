@@ -10,15 +10,26 @@ export type CheckoutOutcome =
   | { ok: false; status: 404 | 500; error: string };
 
 const BOOKING_SELECT =
-  "id, access_token, guest_id, checked_out_at, id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2, guest:guests(full_name, email), room:rooms(name)";
+  "id, access_token, guest_id, checked_out_at, id_verification_status, id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2, guest:guests(full_name, email), room:rooms(name)";
 
 // The one implementation of "this stay is over" — shared by the guest's own
 // check-out button (matched by portal token) and the admin Overview's
 // "Mark checked out" (matched by booking id), so a stay closed either way
 // ends in exactly the same state, privacy cleanup included.
+//
+// rememberMe only comes from the guest's own check-out flow (see
+// CheckoutSection.tsx / /api/portal/[token]/checkout) — it's left
+// undefined for the admin-triggered "Mark checked out" path, which has no
+// guest answer to act on and must not silently opt them in or revoke a
+// prior opt-in. true/false are both explicit guest answers: true stores
+// (or refreshes) a remembered_guests row for the "Remember Me" flow in
+// src/lib/guest-recognition.ts, provided this stay was actually ID
+// verified; false revokes any existing row, since consent should reflect
+// what the guest chose this time, not a sticky default.
 export async function completeCheckout(
   supabase: AdminClient,
   match: { accessToken: string } | { bookingId: string },
+  rememberMe?: boolean,
 ): Promise<CheckoutOutcome> {
   const base = supabase.from("bookings").select(BOOKING_SELECT);
   const { data: booking, error: bookingError } = await (
@@ -73,9 +84,25 @@ export async function completeCheckout(
       : Promise.resolve(),
   ]);
 
+  const guest = booking.guest as unknown as { full_name: string; email: string | null } | null;
+
+  if (rememberMe === true && guest?.email && booking.id_verification_status === "Verified") {
+    const email = guest.email.trim().toLowerCase();
+    await supabase.from("remembered_guests").upsert({
+      email,
+      full_name: guest.full_name,
+      last_booking_id: booking.id,
+      updated_at: new Date().toISOString(),
+    });
+  } else if (rememberMe === false && guest?.email) {
+    await supabase
+      .from("remembered_guests")
+      .delete()
+      .eq("email", guest.email.trim().toLowerCase());
+  }
+
   // Sent after the privacy cleanup above only wipes phone/ID files, not
   // email — the guest still needs this to find their way to the review form.
-  const guest = booking.guest as unknown as { full_name: string; email: string | null } | null;
   if (guest?.email) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
     const { subject, html } = checkoutCompleteEmail({

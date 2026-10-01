@@ -329,17 +329,23 @@ export default function PortalClient({
             </>
           )}
 
-        {booking.id_verification_status === "Verified" && booking.payment_status !== "Paid" && (
-          <>
-            <PaymentNavigationGuard token={token} />
-            <PaymentSection
-              token={token}
-              totalAmount={booking.total_amount}
-              paymentStatus={booking.payment_status}
-              rates={rates}
-            />
-          </>
-        )}
+        {booking.id_verification_status === "Verified" &&
+          booking.payment_status !== "Paid" &&
+          // An extension-driven payment is rendered inside ExtendStaySection
+          // itself below (one continuous "extend, then pay" card), not
+          // duplicated up here — this block is only ever the guest's
+          // original stay payment.
+          !booking.pending_extension_check_out && (
+            <>
+              <PaymentNavigationGuard token={token} />
+              <PaymentSection
+                token={token}
+                totalAmount={booking.total_amount}
+                paymentStatus={booking.payment_status}
+                rates={rates}
+              />
+            </>
+          )}
 
         {isVerifiedAndActive && (
           <UnlockedSection
@@ -377,6 +383,9 @@ export default function PortalClient({
             pendingExtensionRequestedAt={booking.pending_extension_requested_at}
             adminPhone={adminPhone}
             bookingReference={booking.booking_reference}
+            totalAmount={booking.total_amount}
+            paymentStatus={booking.payment_status}
+            rates={rates}
           />
         )}
 

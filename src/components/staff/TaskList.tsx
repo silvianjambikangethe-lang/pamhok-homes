@@ -10,6 +10,7 @@ import type {
   LaundryPaymentStatus,
   StaffCleaningLaundryFeedRow,
 } from "@/lib/supabase/types";
+import { usePollRefresh } from "@/lib/use-poll-refresh";
 
 // Forward-only next-step buttons rather than a <select> — large touch
 // targets for a phone browser, one tap advances to the next real stage.
@@ -65,6 +66,9 @@ export default function TaskList({
   requests: StaffCleaningLaundryFeedRow[];
 }) {
   const router = useRouter();
+  // Picks up an admin setting a laundry price, or a payment callback
+  // marking a charge paid, without staff refreshing the tab themselves.
+  usePollRefresh(`/api/staff/requests/status?type=${requestType}`);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   async function handleAdvance(id: string, status: GuestRequestStatus) {
@@ -99,6 +103,10 @@ export default function TaskList({
           requestType === "laundry" &&
           r.status === "Awaiting Payment" &&
           r.laundry_payment_status !== "Paid";
+        const paymentJustConfirmed =
+          requestType === "laundry" &&
+          r.status === "Awaiting Payment" &&
+          r.laundry_payment_status === "Paid";
         return (
           <div
             key={r.id}
@@ -129,6 +137,11 @@ export default function TaskList({
                 {r.laundry_amount != null
                   ? `Waiting on guest payment (${r.laundry_currency ?? "KES"} ${r.laundry_amount}) before this can be returned.`
                   : "Waiting on guest payment before this can be returned."}
+              </p>
+            )}
+            {paymentJustConfirmed && (
+              <p className="mt-3 text-sm font-semibold text-success">
+                Payment received. This laundry can now be returned to the guest.
               </p>
             )}
 

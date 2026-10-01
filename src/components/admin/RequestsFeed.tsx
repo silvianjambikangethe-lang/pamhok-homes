@@ -6,6 +6,7 @@ import { format, parseISO } from "date-fns";
 import { CheckCircle } from "@phosphor-icons/react";
 import { formatMoney } from "@/lib/currency-format";
 import type { LaundryPaymentStatus } from "@/lib/supabase/types";
+import { usePollRefresh } from "@/lib/use-poll-refresh";
 
 export interface RequestRow {
   id: string;
@@ -47,6 +48,9 @@ const LAUNDRY_STAGES = [
 
 export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
   const router = useRouter();
+  // Picks up a staff member advancing a stage, or a payment callback
+  // marking a laundry charge paid, without the admin refreshing the tab.
+  usePollRefresh("/api/admin/requests/status");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rowError, setRowError] = useState<Record<string, string>>({});
   const [priceInput, setPriceInput] = useState<Record<string, string>>({});

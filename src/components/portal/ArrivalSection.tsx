@@ -92,7 +92,11 @@ export default function ArrivalSection({
           aria-label="Directions video"
           className="fixed inset-0 z-50 flex items-center justify-center bg-espresso/80 p-4"
         >
-          <div className="relative w-full max-w-2xl">
+          {/* A centered portrait pop-up, sized well under full-screen but
+              still comfortably watchable — this is a short walking/driving
+              directions clip, not something that needs to dominate the
+              screen, but still needs to be easy to actually see. */}
+          <div className="relative w-[46vw] min-w-[200px] max-w-[300px]">
             <button
               type="button"
               onClick={() => setShowVideo(false)}
@@ -103,19 +107,18 @@ export default function ArrivalSection({
             </button>
             <div className="overflow-hidden rounded-2xl bg-espresso shadow-warm">
               {/\.(mp4|webm|ogg)(\?|$)/i.test(directionsVideoUrl) ? (
-                // eslint-disable-next-line jsx-a11y/media-has-caption
                 <video
                   src={directionsVideoUrl}
                   controls
                   autoPlay
-                  className="aspect-video w-full"
+                  className="aspect-[9/16] w-full object-cover"
                 />
               ) : (
                 <iframe
                   src={toEmbedUrl(directionsVideoUrl)}
                   allow="autoplay; fullscreen; picture-in-picture"
                   allowFullScreen
-                  className="aspect-video w-full border-0"
+                  className="aspect-[9/16] w-full border-0"
                   title="Directions video"
                 />
               )}

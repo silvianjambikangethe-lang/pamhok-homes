@@ -3,11 +3,14 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { completeCheckout } from "@/lib/checkout";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params;
-  const result = await completeCheckout(createAdminSupabaseClient(), { accessToken: token });
+  const body = await request.json().catch(() => null);
+  const rememberMe = typeof body?.rememberMe === "boolean" ? body.rememberMe : undefined;
+
+  const result = await completeCheckout(createAdminSupabaseClient(), { accessToken: token }, rememberMe);
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });

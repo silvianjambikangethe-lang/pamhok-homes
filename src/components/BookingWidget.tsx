@@ -12,6 +12,7 @@ import BookingCalendar, {
 import type { AvailabilityRow, Room } from "@/lib/supabase/types";
 import type { DisplayCurrency } from "@/lib/currency";
 import CurrencySelector from "@/components/CurrencySelector";
+import { readStoredRecognition, type StoredRecognition } from "@/lib/guest-recognition-storage";
 
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat("en-KE", {
@@ -62,11 +63,6 @@ export interface OtherRoom {
   max_guests: number;
   bed_config: string;
 }
-
-// Guests re-book often enough that re-typing name/email/phone every time is
-// real friction; storing it is opt-in via the "remember me" checkbox below
-// and never includes anything the guest didn't already type into this form.
-const REMEMBERED_GUEST_KEY = "pamhok_remembered_guest";
 
 export default function BookingWidget({
   room,
@@ -119,27 +115,21 @@ export default function BookingWidget({
     initialExtraIds.length > 0 ? "other" : null,
   );
   const [guest, setGuest] = useState({ fullName: "", email: "", phone: "" });
-  const [rememberMe, setRememberMe] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recognition, setRecognition] = useState<StoredRecognition | null>(null);
 
-  // Prefill from a previous booking on this device, if the guest opted in then.
+  // A verified "Remember Me" recognition (see /rooms) prefills name/email
+  // and drives the ID-check skip at submit time. No other client-side
+  // storage of guest details exists — nothing is cached beyond this
+  // proven, expiring recognition.
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(REMEMBERED_GUEST_KEY);
-      if (!saved) return;
-      const parsed = JSON.parse(saved);
-      if (parsed && typeof parsed.fullName === "string") {
-        setGuest({
-          fullName: parsed.fullName ?? "",
-          email: parsed.email ?? "",
-          phone: parsed.phone ?? "",
-        });
-        setRememberMe(true);
-      }
-    } catch {
-      // Ignore malformed/blocked storage — guest just types their details again.
+    const stored = readStoredRecognition();
+    if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sessionStorage read, not a render sync
+      setRecognition(stored);
+      setGuest((g) => ({ ...g, fullName: stored.fullName, email: stored.email }));
     }
   }, []);
 
@@ -203,16 +193,6 @@ export default function BookingWidget({
     setError(null);
 
     try {
-      try {
-        if (rememberMe) {
-          localStorage.setItem(REMEMBERED_GUEST_KEY, JSON.stringify(guest));
-        } else {
-          localStorage.removeItem(REMEMBERED_GUEST_KEY);
-        }
-      } catch {
-        // Storage may be unavailable (private mode, blocked); booking still proceeds.
-      }
-
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -223,6 +203,7 @@ export default function BookingWidget({
           checkOut: format(selection.checkOut, "yyyy-MM-dd"),
           guest,
           ...(changeFrom ? { changeFromToken: changeFrom } : {}),
+          ...(recognition ? { recognitionToken: recognition.recognitionToken } : {}),
         }),
       });
 
@@ -256,10 +237,14 @@ export default function BookingWidget({
         </p>
       </div>
 
-      {changeFrom && (
+      {(changeFrom || recognition) && (
         <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-forest-500/30 bg-forest-500/10 p-3.5 text-sm text-ink/80">
           <CheckCircle size={18} weight="fill" className="mt-0.5 shrink-0 text-forest-600 dark:text-sage-400" />
-          <p>Your ID is already verified, no re-upload needed for this booking.</p>
+          <p>
+            {recognition
+              ? `Welcome back, ${recognition.fullName}! Your ID is already verified, no re-upload needed.`
+              : "Your ID is already verified, no re-upload needed for this booking."}
+          </p>
         </div>
       )}
 
@@ -431,8 +416,9 @@ export default function BookingWidget({
               required
               maxLength={100}
               value={guest.fullName}
+              readOnly={Boolean(recognition)}
               onChange={(e) => setGuest((g) => ({ ...g, fullName: e.target.value }))}
-              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+              className={`focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink ${recognition ? "cursor-not-allowed opacity-70" : ""}`}
               autoComplete="name"
             />
           </div>
@@ -446,8 +432,9 @@ export default function BookingWidget({
               required
               maxLength={254}
               value={guest.email}
+              readOnly={Boolean(recognition)}
               onChange={(e) => setGuest((g) => ({ ...g, email: e.target.value }))}
-              className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink"
+              className={`focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3.5 py-2.5 text-sm text-ink ${recognition ? "cursor-not-allowed opacity-70" : ""}`}
               autoComplete="email"
             />
           </div>
@@ -467,17 +454,6 @@ export default function BookingWidget({
             />
           </div>
         </div>
-
-        <label htmlFor="rememberMe" className="flex items-start gap-2.5 text-sm text-ink/80">
-          <input
-            id="rememberMe"
-            type="checkbox"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 accent-terracotta-500 focus:ring-terracotta-500"
-          />
-          <span>Remember my details for next time, on this device</span>
-        </label>
 
         {nights > 0 && (
           <div className="rounded-xl bg-page px-4 py-3">

@@ -14,7 +14,9 @@ export default async function StaffLaundryPage() {
 
   const { data } = await supabase
     .from("staff_cleaning_laundry_feed")
-    .select("id, request_type, status, message, created_at, completed_by, room_id, room_name")
+    .select(
+      "id, request_type, status, message, created_at, completed_by, room_id, room_name, laundry_amount, laundry_currency, laundry_payment_status, updated_at",
+    )
     .eq("request_type", "laundry")
     .order("created_at", { ascending: false });
 

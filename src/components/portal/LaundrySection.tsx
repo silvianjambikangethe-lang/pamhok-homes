@@ -9,6 +9,7 @@ import type { LaundryPaymentStatus } from "@/lib/supabase/types";
 import { formatMoney } from "@/lib/currency-format";
 import LaundryPaymentSection from "@/components/portal/LaundryPaymentSection";
 import RoomPicker, { type RequestRoom } from "@/components/portal/RoomPicker";
+import { usePollRefresh } from "@/lib/use-poll-refresh";
 
 const GUEST_LABELS: Record<string, string> = {
   Open: "Pickup Requested",
@@ -51,6 +52,10 @@ export default function LaundrySection({
   const router = useRouter();
   const today = startOfDay(new Date());
   const isActiveStay = today >= startOfDay(parseISO(checkIn)) && today < startOfDay(parseISO(checkOut));
+
+  // Picks up staff/admin laundry updates (stage changes, a price being
+  // set, payment being confirmed) without the guest reloading the page.
+  usePollRefresh(`/api/portal/${token}/laundry-status`, { enabled: isActiveStay });
 
   const [status, setStatus] = useState(initialStatus);
   const [showForm, setShowForm] = useState(false);
@@ -145,10 +150,11 @@ export default function LaundrySection({
           <RoomPicker rooms={rooms} value={targetToken} onChange={setTargetToken} />
           <div>
             <label htmlFor="itemCount" className="text-sm font-medium text-ink/80">
-              Roughly how many items or bags? (optional)
+              Roughly how many items or bags?
             </label>
             <input
               id="itemCount"
+              required
               value={itemCount}
               onChange={(e) => setItemCount(e.target.value)}
               placeholder="e.g. 1 bag"
@@ -178,8 +184,8 @@ export default function LaundrySection({
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={submitting}
-              className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-5 py-2 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:opacity-60"
+              disabled={submitting || !itemCount.trim()}
+              className="focus-ring rounded-full bg-mocha-500 dark:bg-terracotta-500 px-5 py-2 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Sending…" : "Request Pickup"}
             </button>
@@ -210,7 +216,7 @@ export default function LaundrySection({
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="focus-ring flex items-center gap-2 text-sm font-semibold text-terracotta-600 hover:text-terracotta-700"
+            className="focus-ring flex items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-5 py-2.5 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600"
           >
             <TShirt size={20} />
             Request Laundry Pickup

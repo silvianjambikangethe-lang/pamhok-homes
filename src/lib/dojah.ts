@@ -75,15 +75,18 @@ function normalizeNameTokens(name: string): string[] {
 // silent hard block -- a false mismatch just costs a retry attempt, so
 // erring conservative (fail on real mismatches, tolerate a missing
 // middle name or minor OCR spelling slip) is the safer failure mode.
-// Requiring only half the booking name's tokens keeps a single-token
-// OCR misread from failing an otherwise-genuine match.
+// Requiring just one shared token (rather than a majority of the booking
+// name's tokens) is intentional: OCR often only reliably reads a single
+// name field off the ID (e.g. given name clear, surname cut off/blurry),
+// and a Kenyan ID's name fields don't always cover every name a guest
+// typed at booking (no middle name field, etc.) -- one real shared name
+// is enough signal that this is the same person.
 function namesLikelyMatch(bookingName: string, idName: string): boolean {
   const bookingTokens = normalizeNameTokens(bookingName);
   const idTokens = new Set(normalizeNameTokens(idName));
   if (bookingTokens.length === 0 || idTokens.size === 0) return true;
 
-  const overlap = bookingTokens.filter((t) => idTokens.has(t)).length;
-  return overlap / bookingTokens.length >= 0.5;
+  return bookingTokens.some((t) => idTokens.has(t));
 }
 
 export type DocumentAnalysisOutcome =
