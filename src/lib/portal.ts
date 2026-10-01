@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { releaseExpiredExtensionHold } from "@/lib/extension-hold";
+import { expireStaleBookingPayment, expireStaleLaundryPayment } from "@/lib/pending-payment-expiry";
 import type { Booking, Guest, LaundryPaymentStatus, Room } from "@/lib/supabase/types";
 
 export interface LatestLaundryRequest {
@@ -57,6 +58,22 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     if (error || !data) return null;
   }
 
+  // Same self-healing idea as releaseExpiredExtensionHold above, for a
+  // first-time booking payment abandoned mid-Jenga-checkout: flips a stale
+  // "Pending" booking to "Failed" the moment anyone next loads this page,
+  // instead of waiting on the once-daily expire-pending-payments cron (a
+  // no-op unless the booking is genuinely Pending and unpaid).
+  if (await expireStaleBookingPayment(supabase, data)) {
+    ({ data, error } = await supabase
+      .from("bookings")
+      .select(
+        "*, room:rooms(id, name, slug, door_code, wifi_password, wifi_network_name), guest:guests(full_name)",
+      )
+      .eq("access_token", token)
+      .maybeSingle());
+    if (error || !data) return null;
+  }
+
   const [{ count }, { data: laundryRows }, siblingResult] = await Promise.all([
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("booking_id", data.id),
     supabase
@@ -78,6 +95,16 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
           .order("created_at", { ascending: true })
       : Promise.resolve({ data: [] as never[] }),
   ]);
+
+  // Same idea as the booking check above, for a laundry charge abandoned
+  // mid-Jenga-checkout. The row is already in hand, so just patch its status
+  // in memory instead of re-querying — nothing else in `laundryRows[0]`
+  // changes when this flips.
+  const latestLaundry = laundryRows?.[0] ?? null;
+  if (latestLaundry && (await expireStaleLaundryPayment(supabase, latestLaundry))) {
+    latestLaundry.laundry_payment_status = "Failed";
+  }
+
   const siblingBookings = (
     (siblingResult.data ?? []) as unknown as {
       access_token: string;
@@ -125,7 +152,7 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     id_verification_result_2: null,
     refund_reference: null,
     hasReview: (count ?? 0) > 0,
-    latestLaundryRequest: laundryRows?.[0] ?? null,
+    latestLaundryRequest: latestLaundry,
     siblingBookings,
   } as unknown as PortalBooking;
 }

@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { expireStaleBookingPayment, expireStaleLaundryPayment } from "@/lib/pending-payment-expiry";
+import {
+  expireStaleBookingPaymentsBatch,
+  expireStaleLaundryPaymentsBatch,
+} from "@/lib/pending-payment-expiry";
 
-// Backstop for a guest who opens Jenga's hosted checkout and never finishes
-// (closed tab, Jenga's own page errors before they submit, etc.) — Jenga
-// then never calls back, so the booking/laundry charge is stuck at
-// payment_status "Pending" with nothing to resolve it. The 15-minute date
-// hold already releases the room on its own (payment_window_hold
-// migration); this only cleans up the stale row. Runs once a day on this
-// project's current Vercel plan — same auth pattern as the other cron
-// routes, see checkout-reminders for details.
+// Backstop only, same reasoning as expire-extension-holds — the real
+// enforcement is lazy (expireStaleBookingPayment/expireStaleLaundryPayment
+// run on every portal booking read, see getBookingByToken in
+// src/lib/portal.ts), because Vercel's cron on this project's current plan
+// can only run once a day and can't reliably catch an abandoned Jenga
+// checkout (closed tab, Jenga's own page errors before the guest submits,
+// etc.) on its own. This exists only to eventually clean up a booking
+// nobody happens to reload. Same auth pattern as the other cron routes, see
+// checkout-reminders for details.
 
 function isAuthorized(request: Request): boolean {
   // Fail closed, not open — see checkout-reminders for why (2026-09-12).
@@ -32,10 +36,7 @@ export async function GET(request: Request) {
     .select("id, payment_status, paid_at, created_at")
     .eq("payment_status", "Pending");
 
-  let expiredBookings = 0;
-  for (const booking of pendingBookings ?? []) {
-    if (await expireStaleBookingPayment(supabase, booking, now)) expiredBookings++;
-  }
+  const expiredBookings = await expireStaleBookingPaymentsBatch(supabase, pendingBookings ?? [], now);
 
   const { data: pendingLaundry } = await supabase
     .from("guest_requests")
@@ -43,10 +44,7 @@ export async function GET(request: Request) {
     .eq("request_type", "laundry")
     .eq("laundry_payment_status", "Pending");
 
-  let expiredLaundry = 0;
-  for (const request_ of pendingLaundry ?? []) {
-    if (await expireStaleLaundryPayment(supabase, request_, now)) expiredLaundry++;
-  }
+  const expiredLaundry = await expireStaleLaundryPaymentsBatch(supabase, pendingLaundry ?? [], now);
 
   return NextResponse.json({
     ok: true,

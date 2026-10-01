@@ -25,7 +25,7 @@ export default function Header() {
   // nav and "Check Availability" CTA are a guest-facing distraction, not a
   // tool they need while clocked in. Swap the whole header for a plain
   // staff-branded bar instead of just hiding bits of the guest one.
-  if (pathname?.startsWith("/staff")) {
+  if (pathname.startsWith("/staff")) {
     return (
       <header className="sticky top-0 z-40 border-b border-taupe/25 bg-page/90 backdrop-blur">
         <div className="container-page flex h-16 items-center justify-between sm:h-20">
