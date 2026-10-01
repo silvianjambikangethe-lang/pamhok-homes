@@ -131,6 +131,17 @@ export type SecurityEvent = {
   created_at: string;
 };
 
+// One row per Jenga checkout attempt (jenga-pgw-initiate) — see the
+// payment_attempts migration. Service-role only, never exposed to anon/
+// authenticated.
+export type PaymentAttempt = {
+  id: string;
+  reference: string;
+  booking_id: string | null;
+  request_id: string | null;
+  created_at: string;
+};
+
 export type Booking = {
   id: string;
   room_id: string | null;
@@ -541,6 +552,27 @@ export interface Database {
           },
           {
             foreignKeyName: "security_events_request_id_fkey";
+            columns: ["request_id"];
+            isOneToOne: false;
+            referencedRelation: "guest_requests";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payment_attempts: {
+        Row: PaymentAttempt;
+        Insert: Partial<PaymentAttempt>;
+        Update: Partial<PaymentAttempt>;
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempts_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_attempts_request_id_fkey";
             columns: ["request_id"];
             isOneToOne: false;
             referencedRelation: "guest_requests";
