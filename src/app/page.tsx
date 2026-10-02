@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import SlideIn from "@/components/SlideIn";
-import LazyVideo from "@/components/LazyVideo";
+import TourVideoCarousel from "@/components/TourVideoCarousel";
 import StarRating from "@/components/StarRating";
 import Link from "next/link";
 import Image from "next/image";
@@ -144,22 +143,7 @@ export default async function HomePage() {
             <Eyebrow className="font-bold text-terracotta-600">See it for yourself</Eyebrow>
             <h2 className="font-serif text-h2 text-ink">Take a video tour</h2>
           </div>
-          {/* Phone: a swipeable carousel, one video at a time. sm: and up
-              revert to the plain wrapped, centred row. */}
-          <div className="no-scrollbar -mx-6 mt-8 flex snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-2 sm:mx-0 sm:flex-wrap sm:snap-none sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0">
-            {content.tour_videos.map((url, i) => (
-              <SlideIn
-                key={url}
-                className="w-[220px] shrink-0 snap-center sm:w-full sm:max-w-[220px] sm:shrink"
-                delayMs={i * 120}
-              >
-                <LazyVideo
-                  src={url}
-                  className="photo-frame photo-frame-glow aspect-[9/16] w-full rounded-2xl bg-black shadow-card"
-                />
-              </SlideIn>
-            ))}
-          </div>
+          <TourVideoCarousel urls={content.tour_videos} />
         </section>
       )}
 
