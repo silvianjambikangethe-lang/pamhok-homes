@@ -70,6 +70,12 @@ export default function PortalClient({
   // Read the clock in an effect, not during render, so the component stays
   // pure (server and first client render agree); the guest's page then
   // clears itself the moment the effect runs past the cutoff.
+  // Mirrors the Remember Me card so the welcome tag appears the instant the
+  // guest taps Yes, with no refresh. Starts from the saved answer.
+  const [rememberChoice, setRememberChoice] = useState<boolean | null>(booking.rememberMeAnswer);
+  const welcomeName =
+    booking.rememberedFirstName ??
+    (rememberChoice === true ? booking.guest?.full_name?.trim().split(/\s+/)[0] || null : null);
   const [pastCutoff, setPastCutoff] = useState(false);
   useEffect(() => {
     const cutoff = new Date(`${booking.check_out}T10:00:00Z`);
@@ -155,9 +161,9 @@ export default function PortalClient({
       />
 
       <div className="container-page max-w-3xl py-12 sm:py-16">
-        {booking.rememberedFirstName && (
+        {welcomeName && (
           <p className="mb-6 font-script text-h1 text-ink">
-            Welcome {booking.rememberedFirstName},
+            Welcome {welcomeName},
           </p>
         )}
       {!isCleared && (
@@ -425,6 +431,7 @@ export default function PortalClient({
             token={token}
             isCheckoutDay={isCheckoutDay}
             savedRememberMe={booking.rememberMeAnswer}
+            onRememberChoice={setRememberChoice}
           />
         )}
 

@@ -22,6 +22,7 @@ export default function CheckoutSection({
   token,
   isCheckoutDay,
   savedRememberMe,
+  onRememberChoice,
 }: {
   token: string;
   isCheckoutDay: boolean;
@@ -29,6 +30,9 @@ export default function CheckoutSection({
   // already remembered). Non-null means the question is settled and the card
   // is never shown, however many times the page reloads.
   savedRememberMe: boolean | null;
+  // Told the moment the guest picks Yes or No, so the page can react (the
+  // welcome tag) without waiting for a refresh.
+  onRememberChoice?: (choice: boolean) => void;
 }) {
   const router = useRouter();
   const [checked, setChecked] = useState<boolean[]>(CHECKLIST.map(() => false));
@@ -72,6 +76,7 @@ export default function CheckoutSection({
   // fails the choice is still kept locally and sent with the check-out.
   function chooseRememberMe(choice: boolean) {
     setRememberMe(choice);
+    onRememberChoice?.(choice);
     void fetch(`/api/portal/${token}/remember-me`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
