@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { token, requestId, termsAccepted } = await req.json();
+    const { token, requestId, termsAccepted, method } = await req.json();
 
     if (!token || typeof token !== "string" || token.length > 200) {
       return json({ error: "Missing token." }, 400);
@@ -316,26 +316,21 @@ Deno.serve(async (req) => {
       return res;
     };
 
-    // Jenga's exact amount-format requirement isn't published and has
-    // differed by payment channel in practice (channel isn't known until
-    // the guest picks one on Jenga's own page, after this request). Two
-    // formats, and only these two, are tried: whole amounts as a bare
-    // integer ("2500") first, falling back to always-decimal ("2500.00")
-    // if Jenga's checkout request itself doesn't accept the first. Rounded
-    // to 2 places first so float noise (e.g. 2500.2100000000001) never
-    // reaches the signature.
-    //
-    // TEMPORARY: while USE_LEGACY_AMOUNT_FORMAT is true, ONLY the original
-    // format from before the 2026-10-02 change is sent: the amount rounded to
-    // the whole shilling and always written with two decimals ("2500.00").
-    // Set it to false (and redeploy) to go back to the integer-first format.
-    const USE_LEGACY_AMOUNT_FORMAT = true;
-    const orderAmountCandidates = USE_LEGACY_AMOUNT_FORMAT
-      ? [Math.round(amountKes).toFixed(2)]
-      : [
-          String(Number(amountKes.toFixed(2))),
-          amountKes.toFixed(2),
-        ].filter((v, i, arr) => arr.indexOf(v) === i);
+    // Jenga wants a different orderAmount format per payment channel, so the
+    // site has two pay buttons and sends which one was pressed as `method`:
+    //   "mpesa" -> the newer format: a whole amount as a bare integer ("2500"),
+    //              exact decimals when fractional ("2500.21").
+    //   "card"  -> the original format: rounded to the whole shilling and always
+    //              two decimals ("2500.00").
+    // Exactly one format is sent per channel (no fallback to the other), as
+    // asked. A request with no/unknown method gets the original format, which is
+    // what every payment used before the two buttons existed. Rounded to 2
+    // places first so float noise (e.g. 2500.2100000000001) never reaches the
+    // signature.
+    const orderAmountCandidates =
+      method === "mpesa"
+        ? [String(Number(amountKes.toFixed(2)))]
+        : [Math.round(amountKes).toFixed(2)];
 
     let pgwRes: Response | null = null;
     for (const candidate of orderAmountCandidates) {

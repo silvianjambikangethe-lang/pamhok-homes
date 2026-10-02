@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CreditCard, Warning } from "@phosphor-icons/react";
+import { CreditCard, DeviceMobile, Warning } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import type { PaymentStatus } from "@/lib/supabase/types";
 import type { DisplayCurrency } from "@/lib/currency";
@@ -28,15 +28,16 @@ export default function PaymentSection({
   // card (returning guest), so payment is one tap with no second tick.
   termsAlreadyAccepted?: boolean;
 }) {
-  const [loading, setLoading] = useState(false);
+  // Which button was pressed ("mpesa" | "card") while the request is in flight.
+  const [loading, setLoading] = useState<"mpesa" | "card" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(termsAlreadyAccepted);
 
   if (paymentStatus === "Paid") return null;
 
-  async function handlePay() {
+  async function handlePay(method: "mpesa" | "card") {
     if (!agreedToTerms) return;
-    setLoading(true);
+    setLoading(method);
     setError(null);
 
     try {
@@ -48,7 +49,7 @@ export default function PaymentSection({
       let data, fnError;
       try {
         ({ data, error: fnError } = await supabase.functions.invoke("jenga-pgw-initiate", {
-          body: { token, termsAccepted: agreedToTerms },
+          body: { token, termsAccepted: agreedToTerms, method },
           signal: controller.signal,
         }));
       } finally {
@@ -57,7 +58,7 @@ export default function PaymentSection({
 
       if (fnError || data?.error || !data?.redirectUrl) {
         setError(data?.error ?? "Could not start payment. Please try again.");
-        setLoading(false);
+        setLoading(null);
         return;
       }
 
@@ -68,7 +69,7 @@ export default function PaymentSection({
       } else {
         setError("Could not reach the payment service.");
       }
-      setLoading(false);
+      setLoading(null);
     }
   }
 
@@ -81,7 +82,7 @@ export default function PaymentSection({
         <CurrencySelector amountKes={totalAmount} rates={rates} />
       </div>
       <p className="mt-1 text-sm text-ink/80">
-        Pay with M-Pesa or card on Jenga&apos;s secure page. Jenga may add a
+        Choose M-Pesa or card, then finish on Jenga&apos;s secure page. Jenga may add a
         small processing fee, shown before you pay. Your dates are secured once payment is complete.
       </p>
 
@@ -116,15 +117,26 @@ export default function PaymentSection({
         </span>
       </label>
 
-      <button
-        type="button"
-        onClick={handlePay}
-        disabled={loading || !agreedToTerms}
-        className="focus-ring mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <CreditCard size={18} />
-        {loading ? "Starting…" : "Pay with M-Pesa or card"}
-      </button>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => handlePay("mpesa")}
+          disabled={loading !== null || !agreedToTerms}
+          className="focus-ring flex w-full items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <DeviceMobile size={18} />
+          {loading === "mpesa" ? "Starting…" : "Pay with M-Pesa"}
+        </button>
+        <button
+          type="button"
+          onClick={() => handlePay("card")}
+          disabled={loading !== null || !agreedToTerms}
+          className="focus-ring flex w-full items-center justify-center gap-2 rounded-full border-2 border-mocha-500 dark:border-terracotta-500 bg-transparent px-6 py-3 text-sm font-semibold text-mocha-500 dark:text-terracotta-400 transition-colors hover:bg-mocha-500/10 dark:hover:bg-terracotta-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <CreditCard size={18} />
+          {loading === "card" ? "Starting…" : "Pay with card"}
+        </button>
+      </div>
       <PaymentNotes />
       {error && (
         <p role="alert" className="mt-3 flex items-center gap-2 text-sm text-danger">

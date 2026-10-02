@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, Warning } from "@phosphor-icons/react";
+import { CreditCard, DeviceMobile, Warning } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import type { DisplayCurrency } from "@/lib/currency";
 import CurrencySelector from "@/components/CurrencySelector";
@@ -22,29 +22,29 @@ export default function LaundryPaymentSection({
   amount: number;
   rates: Record<DisplayCurrency, number>;
 }) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<"mpesa" | "card" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handlePay() {
-    setLoading(true);
+  async function handlePay(method: "mpesa" | "card") {
+    setLoading(method);
     setError(null);
 
     try {
       const supabase = createClient();
       const { data, error: fnError } = await supabase.functions.invoke("jenga-pgw-initiate", {
-        body: { token, requestId },
+        body: { token, requestId, method },
       });
 
       if (fnError || data?.error || !data?.redirectUrl) {
         setError(data?.error ?? "Could not start payment. Please try again.");
-        setLoading(false);
+        setLoading(null);
         return;
       }
 
       window.location.href = data.redirectUrl;
     } catch {
       setError("Could not reach the payment service.");
-      setLoading(false);
+      setLoading(null);
     }
   }
 
@@ -55,15 +55,26 @@ export default function LaundryPaymentSection({
         <CurrencySelector amountKes={amount} rates={rates} />
       </div>
 
-      <button
-        type="button"
-        onClick={handlePay}
-        disabled={loading}
-        className="focus-ring mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <CreditCard size={18} />
-        {loading ? "Starting…" : "Pay with M-Pesa or card"}
-      </button>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => handlePay("mpesa")}
+          disabled={loading !== null}
+          className="focus-ring flex w-full items-center justify-center gap-2 rounded-full bg-mocha-500 dark:bg-terracotta-500 px-6 py-3 text-sm font-semibold text-mousse dark:text-white transition-colors hover:bg-mocha-600 dark:hover:bg-terracotta-600 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <DeviceMobile size={18} />
+          {loading === "mpesa" ? "Starting…" : "Pay with M-Pesa"}
+        </button>
+        <button
+          type="button"
+          onClick={() => handlePay("card")}
+          disabled={loading !== null}
+          className="focus-ring flex w-full items-center justify-center gap-2 rounded-full border-2 border-mocha-500 dark:border-terracotta-500 bg-transparent px-6 py-3 text-sm font-semibold text-mocha-500 dark:text-terracotta-400 transition-colors hover:bg-mocha-500/10 dark:hover:bg-terracotta-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <CreditCard size={18} />
+          {loading === "card" ? "Starting…" : "Pay with card"}
+        </button>
+      </div>
       <PaymentNotes />
       {error && (
         <p role="alert" className="mt-2 flex items-center gap-2 text-sm text-danger">
