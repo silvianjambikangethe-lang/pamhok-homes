@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireStaff, getActiveWorkerId } from "@/lib/staff";
 import StaffNav from "@/components/staff/StaffNav";
+import LivePulse from "@/components/LivePulse";
 
 export default async function StaffDashboardLayout({
   children,
@@ -33,6 +34,7 @@ export default async function StaffDashboardLayout({
 
   return (
     <div className="flex min-h-[calc(100vh-5rem)] flex-col lg:flex-row">
+      <LivePulse endpoint="/api/staff/pulse" />
       <aside className="w-full bg-forest-700 dark:bg-[#130C08] lg:w-64 lg:shrink-0">
         <StaffNav workerName={worker.name} openCount={count ?? 0} />
       </aside>

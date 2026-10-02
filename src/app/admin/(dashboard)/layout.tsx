@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import AdminNav from "@/components/admin/AdminNav";
 import { AdminTextSizeProvider } from "@/components/admin/AdminTextSizeContext";
+import LivePulse from "@/components/LivePulse";
 
 export default async function AdminDashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default async function AdminDashboardLayout({
 
   return (
     <AdminTextSizeProvider>
+      <LivePulse endpoint="/api/admin/pulse" />
       <div className="flex min-h-[calc(100vh-5rem)] flex-col lg:flex-row">
         <aside className="w-full bg-pk-footer dark:bg-[#130C08] lg:w-64 lg:shrink-0">
           <AdminNav email={admin.email} />

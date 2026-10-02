@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { startOfDay } from "date-fns";
+import { isLaundryOpen } from "@/lib/stay-expiry";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { resolveRequestTarget } from "@/lib/portal-target";
 
@@ -25,10 +25,7 @@ export async function POST(
   // Same gating as the rest of the unlocked portal, plus the guide's
   // extra rule: laundry only during the active stay window, not before
   // check-in and not after checkout is confirmed.
-  const today = startOfDay(new Date());
-  const checkIn = startOfDay(new Date(booking.check_in));
-  const checkOut = startOfDay(new Date(booking.check_out));
-  const isActiveStay = today >= checkIn && today < checkOut;
+  const isActiveStay = isLaundryOpen(booking);
 
   if (
     booking.booking_status !== "Confirmed" ||

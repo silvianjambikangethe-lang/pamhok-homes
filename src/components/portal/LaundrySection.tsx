@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { parseISO, startOfDay } from "date-fns";
 import { TShirt, Warning } from "@phosphor-icons/react";
 import type { DisplayCurrency } from "@/lib/currency";
 import type { LaundryPaymentStatus } from "@/lib/supabase/types";
@@ -10,6 +9,7 @@ import { formatMoney } from "@/lib/currency-format";
 import LaundryPaymentSection from "@/components/portal/LaundryPaymentSection";
 import RoomPicker, { type RequestRoom } from "@/components/portal/RoomPicker";
 import { usePollRefresh } from "@/lib/use-poll-refresh";
+import { isLaundryOpen } from "@/lib/stay-expiry";
 
 const GUEST_LABELS: Record<string, string> = {
   Open: "Pickup Requested",
@@ -50,8 +50,9 @@ export default function LaundrySection({
   rooms?: RequestRoom[];
 }) {
   const router = useRouter();
-  const today = startOfDay(new Date());
-  const isActiveStay = today >= startOfDay(parseISO(checkIn)) && today < startOfDay(parseISO(checkOut));
+  // Open from the start of check-in day until 5 hours before check-out (see
+  // laundryClosesAt), so the button disappears ahead of departure.
+  const isActiveStay = isLaundryOpen({ check_in: checkIn, check_out: checkOut });
 
   // Picks up staff/admin laundry updates (stage changes, a price being
   // set, payment being confirmed) without the guest reloading the page.
@@ -81,7 +82,7 @@ export default function LaundrySection({
     return (
       <div className="flex items-center gap-3 rounded-xl border border-taupe/20 bg-page px-4 py-3 text-sm text-ink/65">
         <TShirt size={20} className="shrink-0 opacity-60" />
-        Request Laundry Pickup - available once your stay begins.
+        Request Laundry Pickup - available during your stay, until 5 hours before check-out.
       </div>
     );
   }

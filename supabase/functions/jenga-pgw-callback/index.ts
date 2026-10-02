@@ -217,7 +217,9 @@ Deno.serve(async (req) => {
 
   let bookingQuery = supabase
     .from("bookings")
-    .select("id, room_id, check_in, check_out, access_token, total_amount, payment_status, paid_at");
+    .select(
+      "id, room_id, check_in, check_out, access_token, total_amount, payment_status, paid_at, pending_extension_check_out, pending_extension_amount",
+    );
   bookingQuery = attempt
     ? bookingQuery.eq("id", attempt.booking_id)
     : bookingQuery.eq("payment_reference", orderReference);
@@ -231,7 +233,15 @@ Deno.serve(async (req) => {
   const portalBase = `${siteUrl}/portal/${booking.access_token}`;
 
   // Jenga may add its own fee on top, so only underpayment is rejected.
-  if (success && paidAmount + 1 >= Number(booking.total_amount)) {
+  // What this payment was actually for: a stay-extension top-up only charges
+  // the extra nights (jenga-pgw-initiate), while total_amount already includes
+  // them, so comparing against the total made every extension payment look
+  // "too small" and the extra nights were never applied.
+  const isExtensionTopUp = booking.paid_at != null && booking.pending_extension_check_out != null;
+  const expectedAmount = isExtensionTopUp
+    ? Number(booking.pending_extension_amount)
+    : Number(booking.total_amount);
+  if (success && paidAmount + 1 >= expectedAmount) {
     // mark_booking_paid is the single source of truth for this write (see
     // the guest_payment_rpc_functions migration).
     const { data: result, error: rpcError } = await supabase.rpc("mark_booking_paid", {
