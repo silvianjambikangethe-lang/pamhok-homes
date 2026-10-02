@@ -238,19 +238,9 @@ Deno.serve(async (req) => {
     const { accessToken } = await authRes.json();
 
     const currency = "KES";
-    // Whole amounts go out as an integer ("2500", not "2500.00"); amounts with
-    // fractional cents keep their exact value ("2500.21"). Rounded to 2 places
-    // first so float noise (e.g. 2500.2100000000001) never reaches the
-    // signature. This exact string is what gets signed AND posted.
-    const orderAmount = String(Number(amountKes.toFixed(2)));
     const callbackUrl =
       Deno.env.get("JENGA_PGW_CALLBACK_URL") ??
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/jenga-pgw-callback`;
-
-    const signature = await signJenga(
-      `${merchantCode}${orderReference}${currency}${orderAmount}${callbackUrl}`,
-      privateKeyPem,
-    );
 
     // Jenga's checkout form rejects last names with spaces/special characters.
     const guest = Array.isArray(booking.guest) ? booking.guest[0] : booking.guest;
@@ -263,7 +253,7 @@ Deno.serve(async (req) => {
     // has to match the card exactly, so pre-filled names caused mismatches).
     // Jenga lists these fields as required, so they are sent BLANK first; only
     // if Jenga refuses blanks do we fall back to the booking's own details.
-    const postToPgw = (details: {
+    const postToPgw = (orderAmount: string, signature: string, details: {
       firstName: string;
       lastName: string;
       email: string;
@@ -296,31 +286,60 @@ Deno.serve(async (req) => {
         redirect: "manual",
       });
 
-    let pgwRes = await postToPgw({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      address: "",
-      postalCode: "",
-    });
-
-    if (pgwRes.status !== 302 || !pgwRes.headers.get("location")) {
-      console.error("Jenga rejected blank customer details; retrying with the booking's details", pgwRes.status);
-      pgwRes = await postToPgw({
-        firstName,
-        lastName,
-        email: guest?.email || "guest@pamhokhomes.com",
-        phone: guest?.phone || "254700000000",
-        address: "Nairobi",
-        postalCode: "00100",
+    // Tries blank customer details first, then the booking's own, for one
+    // orderAmount string — the signature is recomputed for each, since it's
+    // part of the signed payload.
+    const attemptCheckout = async (orderAmount: string) => {
+      const signature = await signJenga(
+        `${merchantCode}${orderReference}${currency}${orderAmount}${callbackUrl}`,
+        privateKeyPem,
+      );
+      let res = await postToPgw(orderAmount, signature, {
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        postalCode: "",
       });
+      if (res.status !== 302 || !res.headers.get("location")) {
+        console.error("Jenga rejected blank customer details; retrying with the booking's details", res.status);
+        res = await postToPgw(orderAmount, signature, {
+          firstName,
+          lastName,
+          email: guest?.email || "guest@pamhokhomes.com",
+          phone: guest?.phone || "254700000000",
+          address: "Nairobi",
+          postalCode: "00100",
+        });
+      }
+      return res;
+    };
+
+    // Jenga's exact amount-format requirement isn't published and has
+    // differed by payment channel in practice (channel isn't known until
+    // the guest picks one on Jenga's own page, after this request). Two
+    // formats, and only these two, are tried: whole amounts as a bare
+    // integer ("2500") first, falling back to always-decimal ("2500.00")
+    // if Jenga's checkout request itself doesn't accept the first. Rounded
+    // to 2 places first so float noise (e.g. 2500.2100000000001) never
+    // reaches the signature.
+    const orderAmountCandidates = [
+      String(Number(amountKes.toFixed(2))),
+      amountKes.toFixed(2),
+    ].filter((v, i, arr) => arr.indexOf(v) === i);
+
+    let pgwRes: Response | null = null;
+    for (const candidate of orderAmountCandidates) {
+      pgwRes = await attemptCheckout(candidate);
+      if (pgwRes.status === 302 && pgwRes.headers.get("location")) break;
+      console.error("Jenga rejected orderAmount format", candidate, pgwRes.status);
     }
 
-    const redirectUrl = pgwRes.headers.get("location");
-    if (pgwRes.status !== 302 || !redirectUrl) {
-      const pgwBody = await pgwRes.text().catch(() => "");
-      console.error("Jenga PGW checkout failed", pgwRes.status, pgwBody.slice(0, 1000));
+    const redirectUrl = pgwRes?.headers.get("location");
+    if (!pgwRes || pgwRes.status !== 302 || !redirectUrl) {
+      const pgwBody = await pgwRes?.text().catch(() => "") ?? "";
+      console.error("Jenga PGW checkout failed", pgwRes?.status, pgwBody.slice(0, 1000));
       await releaseClaim();
       return json({ error: "Could not start payment." }, 502);
     }
