@@ -108,14 +108,12 @@ export async function completeCheckout(
       .eq("email", guest.email.trim().toLowerCase());
   }
 
-  // Sent after the privacy cleanup above only wipes phone/ID files, not
-  // email — the guest still needs this to find their way to the review form.
+  // The cleanup above only wipes phone/ID files, not email, so the guest
+  // still gets their thank-you note.
   if (guest?.email) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
     const { subject, html } = checkoutCompleteEmail({
       guestName: guest.full_name,
       roomName: (booking.room as unknown as { name?: string } | null)?.name ?? "your room",
-      portalUrl: `${siteUrl}/portal/${booking.access_token}`,
     });
     await sendEmail({ to: guest.email, subject, html });
   }

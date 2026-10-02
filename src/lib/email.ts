@@ -275,18 +275,17 @@ export function laundryStatusEmail({
 export function checkoutCompleteEmail({
   guestName,
   roomName,
-  portalUrl,
 }: {
   guestName: string;
   roomName: string;
-  portalUrl: string;
 }) {
   return {
-    subject: "Thanks for staying with us!",
+    subject: "Thank you for staying with us",
     html: wrapper(`
-      <p>Hi ${escapeHtml(guestName)},</p>
-      <p>Thanks for staying with us in ${roomName}, we hope it felt like home. If you have a minute, we'd love to hear how it went.</p>
-      ${button(portalUrl, "Leave a review")}
+      <p>Dear ${escapeHtml(guestName)},</p>
+      <p>Thank you for staying with us in ${escapeHtml(roomName)}. It was a real pleasure having you, and we hope every moment felt like home.</p>
+      <p>Safe travels wherever the road takes you next. Your room will always be waiting, and we look forward to welcoming you back on your next visit.</p>
+      <p>With warmth,<br/>The ${SITE.name} Team</p>
     `),
   };
 }
