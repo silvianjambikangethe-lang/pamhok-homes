@@ -52,6 +52,28 @@ export async function POST(
     return NextResponse.json({ error: target.error }, { status: target.status });
   }
 
+  // The guest-facing form already hides "Request Pickup" while one is in
+  // progress (see LaundrySection's hasActiveRequest/ACTIVE_STAGES), but
+  // nothing enforced that server-side — a stale tab or a direct POST could
+  // otherwise create a second, overlapping request that the guest's own
+  // portal (which only ever shows the newest one) would then make
+  // invisible to them, even though it's still live in the admin/staff
+  // feeds. Mirrors LaundrySection's ACTIVE_STAGES exactly.
+  const { data: activeExisting } = await supabase
+    .from("guest_requests")
+    .select("id")
+    .eq("booking_id", target.bookingId)
+    .eq("request_type", "laundry")
+    .in("status", ["Open", "Picked Up", "Cleaning", "Ready", "Awaiting Payment"])
+    .maybeSingle();
+
+  if (activeExisting) {
+    return NextResponse.json(
+      { error: "You already have a laundry pickup in progress." },
+      { status: 409 },
+    );
+  }
+
   const { error: insertError } = await supabase.from("guest_requests").insert({
     booking_id: target.bookingId,
     request_type: "laundry",
