@@ -21,13 +21,18 @@ const CHECKLIST = [
 export default function CheckoutSection({
   token,
   isCheckoutDay,
+  savedRememberMe,
 }: {
   token: string;
   isCheckoutDay: boolean;
+  // The answer already on file (saved earlier this stay, or the guest is
+  // already remembered). Non-null means the question is settled and the card
+  // is never shown, however many times the page reloads.
+  savedRememberMe: boolean | null;
 }) {
   const router = useRouter();
   const [checked, setChecked] = useState<boolean[]>(CHECKLIST.map(() => false));
-  const [rememberMe, setRememberMe] = useState<boolean | null>(null);
+  const [rememberMe, setRememberMe] = useState<boolean | null>(savedRememberMe);
   const [submitting, setSubmitting] = useState(false);
   const [checkedOut, setCheckedOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +67,18 @@ export default function CheckoutSection({
     }
   }
 
+  // Save the answer straight away (not just at check-out) so the card stays
+  // gone after any reload, e.g. coming back from a laundry payment. If saving
+  // fails the choice is still kept locally and sent with the check-out.
+  function chooseRememberMe(choice: boolean) {
+    setRememberMe(choice);
+    void fetch(`/api/portal/${token}/remember-me`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ choice }),
+    }).catch(() => {});
+  }
+
   const choiceClass = (selected: boolean) =>
     `focus-ring rounded-full border px-5 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
       selected
@@ -80,7 +97,7 @@ export default function CheckoutSection({
           <div className="mt-3 flex gap-2">
             <button
               type="button"
-              onClick={() => setRememberMe(true)}
+              onClick={() => chooseRememberMe(true)}
               aria-pressed={false}
               className={choiceClass(false)}
             >
@@ -88,7 +105,7 @@ export default function CheckoutSection({
             </button>
             <button
               type="button"
-              onClick={() => setRememberMe(false)}
+              onClick={() => chooseRememberMe(false)}
               aria-pressed={false}
               className={choiceClass(false)}
             >

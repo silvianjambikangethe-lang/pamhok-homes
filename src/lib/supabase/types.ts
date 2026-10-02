@@ -180,6 +180,7 @@ export type Booking = {
   pending_extension_amount: number | null;
   pending_extension_requested_at: string | null;
   extension_confirmed_at: string | null;
+  remember_me_choice: boolean | null;
 };
 
 export type LaundryPaymentStatus = "Pending" | "Paid" | "Failed";

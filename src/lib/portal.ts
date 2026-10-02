@@ -24,6 +24,13 @@ export interface PortalBooking extends Booking {
   // the guest sees "your extension payment has been received" exactly
   // once instead of it lingering on every reload for the rest of the stay.
   extensionJustConfirmed: boolean;
+  // What the "remember me" card should start as: the guest's saved answer for
+  // this stay, or true when this guest is already remembered from an earlier
+  // stay. null means the question has never been answered, so the card shows.
+  rememberMeAnswer: boolean | null;
+  // First name for the "Welcome" tag when this guest is on the remembered
+  // list, otherwise null.
+  rememberedFirstName: string | null;
   latestLaundryRequest: LatestLaundryRequest | null;
   // Other rooms booked together with this one (same guest, same dates), so
   // a group can reach each room's own page to pay and verify ID.
@@ -179,6 +186,31 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     data.id_verification_status === "Verified" && !!data.paid_at && !isStayOver(data);
   const room = data.room as unknown as PortalBooking["room"];
 
+  // Already-remembered guests are never asked again, and get a welcome tag.
+  // Looked up by the guest's email here on the server, so the email itself
+  // never reaches the browser.
+  let rememberMeAnswer: boolean | null = data.remember_me_choice;
+  let rememberedFirstName: string | null = null;
+  if (data.guest_id) {
+    const { data: guestRow } = await supabase
+      .from("guests")
+      .select("email")
+      .eq("id", data.guest_id)
+      .maybeSingle();
+    const email = guestRow?.email?.trim().toLowerCase();
+    if (email) {
+      const { data: remembered } = await supabase
+        .from("remembered_guests")
+        .select("full_name")
+        .eq("email", email)
+        .maybeSingle();
+      if (remembered) {
+        if (rememberMeAnswer === null) rememberMeAnswer = true;
+        rememberedFirstName = remembered.full_name?.trim().split(/\s+/)[0] || null;
+      }
+    }
+  }
+
   return {
     ...data,
     room: room && !unlocked
@@ -197,6 +229,8 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     id_verification_result_2: null,
     refund_reference: null,
     extensionJustConfirmed,
+    rememberMeAnswer,
+    rememberedFirstName,
     hasReview: (count ?? 0) > 0,
     latestLaundryRequest: latestLaundry,
     siblingBookings,

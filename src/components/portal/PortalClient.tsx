@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format, isPast, parseISO, startOfDay } from "date-fns";
-import { Broom, CalendarBlank, ClockCountdown, Info, Phone, Receipt as ReceiptIcon, WhatsappLogo } from "@phosphor-icons/react";
+import { Broom, CalendarBlank, ClockCountdown, HandWaving, Info, Phone, Receipt as ReceiptIcon, WhatsappLogo } from "@phosphor-icons/react";
 import type { PortalBooking } from "@/lib/portal";
 import type { DisplayCurrency } from "@/lib/currency";
 import { SITE, whatsappLink } from "@/lib/site";
@@ -155,6 +155,12 @@ export default function PortalClient({
       />
 
       <div className="container-page max-w-3xl py-12 sm:py-16">
+        {booking.rememberedFirstName && (
+          <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#5A3825] px-4 py-2 text-sm font-semibold text-[#FFFBF5] shadow-card dark:bg-terracotta-500 dark:text-white">
+            <HandWaving size={18} weight="fill" />
+            Welcome, {booking.rememberedFirstName}
+          </p>
+        )}
       {!isCleared && (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
           <div className="flex items-center gap-2 text-sm text-ink/80">
@@ -416,7 +422,11 @@ export default function PortalClient({
           ))}
 
         {isVerifiedAndActive && (
-          <CheckoutSection token={token} isCheckoutDay={isCheckoutDay} />
+          <CheckoutSection
+            token={token}
+            isCheckoutDay={isCheckoutDay}
+            savedRememberMe={booking.rememberMeAnswer}
+          />
         )}
 
         {isCleared && (

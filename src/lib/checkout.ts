@@ -10,7 +10,7 @@ export type CheckoutOutcome =
   | { ok: false; status: 404 | 500; error: string };
 
 const BOOKING_SELECT =
-  "id, access_token, guest_id, checked_out_at, id_verification_status, id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2, guest:guests(full_name, email, phone), room:rooms(name)";
+  "id, access_token, guest_id, checked_out_at, remember_me_choice, id_verification_status, id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2, guest:guests(full_name, email, phone), room:rooms(name)";
 
 // The one implementation of "this stay is over" — shared by the guest's own
 // check-out button (matched by portal token) and the admin Overview's
@@ -91,8 +91,12 @@ export async function completeCheckout(
     email: string | null;
     phone: string | null;
   } | null;
+  // The guest's own answer: the one sent with this check-out, else the one they
+  // saved earlier on the portal card (so a stay checked out for them, by the
+  // admin or automatically, still honours what they chose).
+  const choice = rememberMe ?? booking.remember_me_choice ?? undefined;
 
-  if (rememberMe === true && guest?.email && booking.id_verification_status === "Verified") {
+  if (choice === true && guest?.email && booking.id_verification_status === "Verified") {
     const email = guest.email.trim().toLowerCase();
     await supabase.from("remembered_guests").upsert({
       email,
@@ -101,7 +105,7 @@ export async function completeCheckout(
       last_booking_id: booking.id,
       updated_at: new Date().toISOString(),
     });
-  } else if (rememberMe === false && guest?.email) {
+  } else if (choice === false && guest?.email) {
     await supabase
       .from("remembered_guests")
       .delete()
