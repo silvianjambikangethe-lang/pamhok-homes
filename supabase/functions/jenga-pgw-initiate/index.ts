@@ -229,7 +229,11 @@ Deno.serve(async (req) => {
     const { accessToken } = await authRes.json();
 
     const currency = "KES";
-    const orderAmount = Math.round(amountKes).toFixed(2);
+    // Whole amounts go out as an integer ("2500", not "2500.00"); amounts with
+    // fractional cents keep their exact value ("2500.21"). Rounded to 2 places
+    // first so float noise (e.g. 2500.2100000000001) never reaches the
+    // signature. This exact string is what gets signed AND posted.
+    const orderAmount = String(Number(amountKes.toFixed(2)));
     const callbackUrl =
       Deno.env.get("JENGA_PGW_CALLBACK_URL") ??
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/jenga-pgw-callback`;
