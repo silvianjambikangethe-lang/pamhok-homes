@@ -28,7 +28,7 @@ export default function ReviewPrompt({
   token: string;
   // Called after the X is tapped, once the choice has been remembered.
   onClose?: () => void;
-  onSubmitted?: () => void;
+  onSubmitted?: (rating: number) => void;
 }) {
   // Hidden until we know they haven't already skipped it, so a guest who
   // closed it earlier never sees it flash back.

@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle } from "@phosphor-icons/react";
+import { useRef, useState } from "react";
+import { ArrowClockwise, CheckCircle } from "@phosphor-icons/react";
 import StarRating from "@/components/StarRating";
+import ThankYouGift, { type ThankYouGiftHandle } from "@/components/portal/ThankYouGift";
+
+// A gift this warm is reserved for guests who loved their stay enough to say
+// so — 4.8 and 5.0 are the only ratings the 0.1-step slider can reach in
+// that top sliver. Exported so CheckoutSection can keep its post-review
+// refresh delay in sync with whether the gift animation is about to play.
+export const GIFT_THRESHOLD = 4.8;
 
 // The form itself, without any card around it: ReviewPrompt supplies the
 // card, the pop-up animation and the X to skip it.
@@ -11,13 +18,21 @@ export default function ReviewForm({
   onSubmitted,
 }: {
   token: string;
-  onSubmitted?: () => void;
+  // Receives the submitted rating so a caller that refreshes the page
+  // shortly after can wait out the thank-you gift animation instead of
+  // cutting it off.
+  onSubmitted?: (rating: number) => void;
 }) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // The replay button only makes sense once the gift has actually played
+  // through and left the screen — showing it earlier would let a guest
+  // "replay" something that hasn't happened yet.
+  const [showReplay, setShowReplay] = useState(false);
+  const giftRef = useRef<ThankYouGiftHandle>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +52,7 @@ export default function ReviewForm({
         return;
       }
       setDone(true);
-      onSubmitted?.();
+      onSubmitted?.(rating);
     } catch {
       setError("Could not save your review.");
       setSubmitting(false);
@@ -45,10 +60,28 @@ export default function ReviewForm({
   }
 
   if (done) {
+    const giftEarned = rating >= GIFT_THRESHOLD;
     return (
-      <div className="flex items-center gap-2 pr-8 text-sm font-medium text-ink">
-        <CheckCircle size={20} weight="fill" className="text-success" />
-        Thank you for your review!
+      <div className="flex flex-col gap-2 pr-8 text-sm font-medium text-ink">
+        <div className="flex items-center gap-2">
+          <CheckCircle size={20} weight="fill" className="text-success" />
+          Thank you for your review!
+        </div>
+        {giftEarned && (
+          <>
+            <ThankYouGift ref={giftRef} onFinished={() => setShowReplay(true)} />
+            {showReplay && (
+              <button
+                type="button"
+                onClick={() => giftRef.current?.play()}
+                className="focus-ring mt-1 flex w-fit items-center gap-1.5 rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-medium text-ink/75 transition-colors hover:bg-page hover:text-ink"
+              >
+                <ArrowClockwise size={14} />
+                Gift Replay
+              </button>
+            )}
+          </>
+        )}
       </div>
     );
   }
