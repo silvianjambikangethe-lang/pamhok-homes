@@ -169,9 +169,16 @@ export default function BookingWidget({
       ? openOtherRooms.filter((r) => extraRoomIds.includes(r.id))
       : [];
   const roomCount = 1 + selectedExtras.length;
-  const total =
-    nights *
-    (room.price_per_night + selectedExtras.reduce((sum, r) => sum + r.price_per_night, 0));
+  // Every room is KES today (no admin UI can set a room to anything else),
+  // but this combined total only makes sense if that stays true — adding
+  // raw price_per_night across rooms priced in different currencies would
+  // silently produce a meaningless number. Guard it rather than trust that
+  // invariant forever.
+  const selectedRooms = [room, ...selectedExtras];
+  const allSameCurrency = selectedRooms.every((r) => r.currency === room.currency);
+  const total = allSameCurrency
+    ? nights * selectedRooms.reduce((sum, r) => sum + r.price_per_night, 0)
+    : null;
 
   function toggleExtraRoom(id: string) {
     setExtraRoomIds((ids) =>
@@ -464,7 +471,7 @@ export default function BookingWidget({
 
         {nights > 0 && (
           <div className="rounded-xl bg-page px-4 py-3">
-            {[room, ...selectedExtras].map((r) => (
+            {selectedRooms.map((r) => (
               <div key={r.id} className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-ink/80">
                   {roomCount > 1 && <span className="font-semibold">{r.name}: </span>}
@@ -473,7 +480,14 @@ export default function BookingWidget({
                 </span>
               </div>
             ))}
-            <CurrencySelector amountKes={total} rates={rates} className="mt-1" />
+            {total !== null ? (
+              <CurrencySelector amountKes={total} rates={rates} className="mt-1" />
+            ) : (
+              <p className="mt-1 text-xs text-ink/65">
+                These rooms are priced in different currencies — each is charged separately, as
+                shown above.
+              </p>
+            )}
           </div>
         )}
 
