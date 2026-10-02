@@ -58,6 +58,15 @@ export default function LaundrySection({
   usePollRefresh(`/api/portal/${token}/laundry-status`, { enabled: isActiveStay });
 
   const [status, setStatus] = useState(initialStatus);
+  // The poll above re-fetches this page when staff or admin change the request
+  // (stage, price, payment), which hands a new initialStatus down. Local state
+  // alone would ignore it and keep showing the old stage, so follow the prop
+  // whenever it changes (React's "adjust state when a prop changes" pattern).
+  const [seenInitialStatus, setSeenInitialStatus] = useState(initialStatus);
+  if (initialStatus !== seenInitialStatus) {
+    setSeenInitialStatus(initialStatus);
+    setStatus(initialStatus);
+  }
   const [showForm, setShowForm] = useState(false);
   const [itemCount, setItemCount] = useState("");
   const [notes, setNotes] = useState("");
