@@ -324,10 +324,18 @@ Deno.serve(async (req) => {
     // if Jenga's checkout request itself doesn't accept the first. Rounded
     // to 2 places first so float noise (e.g. 2500.2100000000001) never
     // reaches the signature.
-    const orderAmountCandidates = [
-      String(Number(amountKes.toFixed(2))),
-      amountKes.toFixed(2),
-    ].filter((v, i, arr) => arr.indexOf(v) === i);
+    //
+    // TEMPORARY: while USE_LEGACY_AMOUNT_FORMAT is true, ONLY the original
+    // format from before the 2026-10-02 change is sent: the amount rounded to
+    // the whole shilling and always written with two decimals ("2500.00").
+    // Set it to false (and redeploy) to go back to the integer-first format.
+    const USE_LEGACY_AMOUNT_FORMAT = true;
+    const orderAmountCandidates = USE_LEGACY_AMOUNT_FORMAT
+      ? [Math.round(amountKes).toFixed(2)]
+      : [
+          String(Number(amountKes.toFixed(2))),
+          amountKes.toFixed(2),
+        ].filter((v, i, arr) => arr.indexOf(v) === i);
 
     let pgwRes: Response | null = null;
     for (const candidate of orderAmountCandidates) {
