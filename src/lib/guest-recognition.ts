@@ -133,7 +133,14 @@ export async function requestRecognitionCode(
   // checkout), not whatever name was just typed into the "Remember Me"
   // form - that field isn't verified yet at this point in the flow.
   const { subject, html } = guestRecognitionCodeEmail({ code, fullName: remembered.full_name });
-  await sendEmail({ to: normalized, subject, html });
+  const sent = await sendEmail({ to: normalized, subject, html });
+  // The guest-facing response must stay generic either way (anti-
+  // enumeration), but a failed send used to vanish into sendEmail's own
+  // console.error with nothing tying it back to "this guest never got
+  // their code" — this is the one place that can say so clearly.
+  if (!sent) {
+    console.error("guest-recognition: code generated but email failed to send", normalized);
+  }
 
   return { allowed: true };
 }
