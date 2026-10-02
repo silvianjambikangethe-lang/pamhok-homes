@@ -157,7 +157,7 @@ export default function PortalClient({
       <div className="container-page max-w-3xl py-12 sm:py-16">
         {booking.rememberedFirstName && (
           <p className="mb-6 font-script text-h1 text-ink">
-            Welcome, {booking.rememberedFirstName}
+            Welcome {booking.rememberedFirstName},
           </p>
         )}
       {!isCleared && (
