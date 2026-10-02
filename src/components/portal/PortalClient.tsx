@@ -21,6 +21,7 @@ import ReviewPrompt from "@/components/portal/ReviewPrompt";
 import VerificationPassSection from "@/components/portal/VerificationPassSection";
 import ArrivalSection from "@/components/portal/ArrivalSection";
 import CheckInConfirmationMessage from "@/components/portal/CheckInConfirmationMessage";
+import ExtensionConfirmedMessage from "@/components/portal/ExtensionConfirmedMessage";
 import PaymentNavigationGuard from "@/components/portal/PaymentNavigationGuard";
 import { firstNameLastInitial } from "@/lib/guest-display-name";
 
@@ -216,7 +217,11 @@ export default function PortalClient({
 
       {isPassReady && !isCleared && (
         <div className="mt-6">
-          <CheckInConfirmationMessage checkIn={booking.check_in} />
+          {booking.extensionJustConfirmed ? (
+            <ExtensionConfirmedMessage />
+          ) : (
+            <CheckInConfirmationMessage checkIn={booking.check_in} />
+          )}
         </div>
       )}
 
@@ -297,10 +302,10 @@ export default function PortalClient({
         {booking.id_verification_status === "Pending" &&
           booking.booking_status === "Pending Verification" && (
             <>
-              <div className="flex items-start gap-3 rounded-2xl border border-gold-500/40 bg-gold-500/15 p-5 text-sm text-cocoa dark:text-espresso shadow-card dark:bg-gold-500/20">
-                <Info size={20} className="mt-0.5 shrink-0 text-cocoa dark:text-espresso" />
+              <div className="flex items-start gap-3 rounded-2xl border border-gold-500/40 bg-gold-500/15 p-5 text-sm text-cocoa dark:text-gold-100 shadow-card dark:bg-gold-500/20">
+                <Info size={20} className="mt-0.5 shrink-0 text-cocoa dark:text-gold-100" />
                 <div>
-                  <p className="font-semibold text-cocoa dark:text-espresso">Your ID is under review</p>
+                  <p className="font-semibold text-cocoa dark:text-gold-100">Your ID is under review</p>
                   <p className="mt-1">
                     We weren&apos;t able to verify your ID automatically, so your
                     host will review it manually and confirm shortly. Your dates
@@ -403,7 +408,7 @@ export default function PortalClient({
           checkoutNotices.map((notice) => (
             <div
               key={notice.id}
-              className="flex items-start gap-3 rounded-2xl border border-gold-500/50 bg-gold-500/15 p-5 text-sm text-cocoa shadow-card dark:text-espresso"
+              className="flex items-start gap-3 rounded-2xl border border-gold-500/50 bg-gold-500/15 p-5 text-sm text-cocoa shadow-card dark:text-gold-100"
             >
               <ClockCountdown size={20} className="mt-0.5 shrink-0 text-gold-700 dark:text-gold-300" />
               <p>{notice.message}</p>

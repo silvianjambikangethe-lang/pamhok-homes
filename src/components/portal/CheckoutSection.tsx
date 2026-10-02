@@ -14,9 +14,10 @@ const CHECKLIST = [
   "Keys placed in the keybox",
 ];
 
-// Two separate cards: the always-visible "remember me" question first, then
-// the check-out checklist and button. The answer to the first is sent with
-// the check-out, so both live in this one component.
+// Two separate cards: the "remember me" question first (it dismisses itself
+// the moment the guest picks Yes or No), then the check-out checklist and
+// button. The answer to the first is sent with the check-out, so both live
+// in this one component.
 export default function CheckoutSection({
   token,
   isCheckoutDay,
@@ -70,32 +71,32 @@ export default function CheckoutSection({
 
   return (
     <>
-      <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
-        <h2 className="font-serif text-h3 text-ink">Faster next time</h2>
-        <p className="mt-1 text-sm text-ink/80">
-          Save your name, email &amp; phone number for a faster, ID-free booking next time?
-        </p>
-        <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            onClick={() => setRememberMe(true)}
-            disabled={checkedOut}
-            aria-pressed={rememberMe === true}
-            className={choiceClass(rememberMe === true)}
-          >
-            Yes, remember me
-          </button>
-          <button
-            type="button"
-            onClick={() => setRememberMe(false)}
-            disabled={checkedOut}
-            aria-pressed={rememberMe === false}
-            className={choiceClass(rememberMe === false)}
-          >
-            No
-          </button>
+      {rememberMe === null && (
+        <div className="rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card">
+          <h2 className="font-serif text-h3 text-ink">Faster next time</h2>
+          <p className="mt-1 text-sm text-ink/80">
+            Save your name, email &amp; phone number for a faster, ID-free booking next time?
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setRememberMe(true)}
+              aria-pressed={false}
+              className={choiceClass(false)}
+            >
+              Yes, remember me
+            </button>
+            <button
+              type="button"
+              onClick={() => setRememberMe(false)}
+              aria-pressed={false}
+              className={choiceClass(false)}
+            >
+              No
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div
         className={`rounded-2xl border p-6 shadow-card ${

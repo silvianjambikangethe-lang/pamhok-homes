@@ -179,6 +179,7 @@ export type Booking = {
   pending_extension_nights: number | null;
   pending_extension_amount: number | null;
   pending_extension_requested_at: string | null;
+  extension_confirmed_at: string | null;
 };
 
 export type LaundryPaymentStatus = "Pending" | "Paid" | "Failed";

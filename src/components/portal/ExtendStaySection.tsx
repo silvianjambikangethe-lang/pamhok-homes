@@ -182,7 +182,7 @@ export default function ExtendStaySection({
       ? new Date(new Date(pendingExtensionRequestedAt).getTime() + HOLD_HOURS * 60 * 60 * 1000)
       : null;
     return (
-      <div className="rounded-2xl border border-gold-500/40 bg-gold-500/15 p-5 text-sm text-cocoa shadow-card dark:bg-gold-500/20 dark:text-espresso">
+      <div className="rounded-2xl border border-gold-500/40 bg-gold-500/15 p-5 text-sm text-cocoa shadow-card dark:bg-gold-500/20 dark:text-gold-100">
         <div className="flex items-start gap-3">
           <Clock size={20} className="mt-0.5 shrink-0" />
           <p>

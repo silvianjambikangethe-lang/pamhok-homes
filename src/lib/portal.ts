@@ -19,6 +19,11 @@ export interface PortalBooking extends Booking {
   room: Pick<Room, "id" | "name" | "slug" | "door_code" | "wifi_password" | "wifi_network_name"> | null;
   guest: Pick<Guest, "full_name"> | null;
   hasReview: boolean;
+  // True for exactly one page load: the one right after a stay-extension
+  // payment resolved. Read once here and cleared in the same request, so
+  // the guest sees "your extension payment has been received" exactly
+  // once instead of it lingering on every reload for the rest of the stay.
+  extensionJustConfirmed: boolean;
   latestLaundryRequest: LatestLaundryRequest | null;
   // Other rooms booked together with this one (same guest, same dates), so
   // a group can reach each room's own page to pay and verify ID.
@@ -82,6 +87,15 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
   if (needsAutoCheckout(data)) {
     const outcome = await completeCheckout(supabase, { bookingId: data.id });
     if (outcome.ok) data = { ...data, checked_out_at: new Date().toISOString() };
+  }
+
+  // Read-and-clear: this is the one page load where the guest should see
+  // "your extension payment has been received" instead of the ordinary
+  // check-in confirmation card. Cleared immediately so a later reload
+  // doesn't keep showing it.
+  const extensionJustConfirmed = !!data.extension_confirmed_at;
+  if (extensionJustConfirmed) {
+    await supabase.from("bookings").update({ extension_confirmed_at: null }).eq("id", data.id);
   }
 
   const [{ count }, { data: laundryRows }, siblingResult] = await Promise.all([
@@ -162,6 +176,7 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     id_verification_result: null,
     id_verification_result_2: null,
     refund_reference: null,
+    extensionJustConfirmed,
     hasReview: (count ?? 0) > 0,
     latestLaundryRequest: latestLaundry,
     siblingBookings,

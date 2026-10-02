@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .select(
-        "id, room_id, check_in, check_out, paid_at, total_amount, payment_status, id_verification_status, terms_accepted_at, guest:guests(full_name, email, phone)",
+        "id, room_id, check_in, check_out, paid_at, total_amount, payment_status, id_verification_status, terms_accepted_at, pending_extension_check_out, pending_extension_amount, guest:guests(full_name, email, phone)",
       )
       .eq("access_token", token)
       .maybeSingle();
@@ -168,9 +168,18 @@ Deno.serve(async (req) => {
           .update({ terms_accepted_at: new Date().toISOString() })
           .eq("id", booking.id);
       }
-      amountKes = Number(booking.total_amount);
+      // total_amount already includes the original stay once it's been
+      // paid (see extend/confirm/route.ts) — charging that whole field
+      // again for a stay-extension top-up would re-bill nights the guest
+      // already paid for. Only charge the extension's own delta then.
+      const isExtensionTopUp = !!booking.paid_at && !!booking.pending_extension_check_out;
+      amountKes = isExtensionTopUp
+        ? Number(booking.pending_extension_amount)
+        : Number(booking.total_amount);
       orderReference = randomReference("PGW");
-      description = "Pamhok Homes booking payment";
+      description = isExtensionTopUp
+        ? "Pamhok Homes stay extension payment"
+        : "Pamhok Homes booking payment";
 
       // A booking only takes its dates once PAID, plus a 15-minute hold while
       // its payment session is open (payment_window_hold migration; 15 min =

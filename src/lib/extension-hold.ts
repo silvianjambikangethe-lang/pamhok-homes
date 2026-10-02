@@ -159,6 +159,10 @@ export async function resolvePendingExtensionAfterPayment(
       pending_extension_nights: null,
       pending_extension_amount: null,
       pending_extension_requested_at: null,
+      // Read once (and cleared) by getBookingByToken, so the guest's next
+      // portal load shows "your extension payment has been received"
+      // instead of the ordinary first-check-in confirmation card.
+      extension_confirmed_at: new Date().toISOString(),
     })
     .eq("id", booking.id);
 
