@@ -60,9 +60,9 @@ export default async function AdminOverviewPage() {
 
   const [
     { data: monthBookings },
-    { data: pendingVerifications },
-    { data: openRequests },
-    { data: refundsNeeded },
+    { data: pendingVerifications, count: pendingVerificationsCount },
+    { data: openRequests, count: openRequestsCount },
+    { data: refundsNeeded, count: refundsNeededCount },
     { data: renewalsDueSoon },
     { data: checkoutsDueData },
   ] = await Promise.all([
@@ -71,9 +71,12 @@ export default async function AdminOverviewPage() {
       .select("id, total_amount, payment_status, booking_status, created_at")
       .gte("created_at", monthStart)
       .lte("created_at", `${monthEnd}T23:59:59`),
+    // count: "exact" alongside the preview rows, so the badge below reflects
+    // the true total even once there are more than the 5 shown — it used to
+    // read `.length` on the same limited page, silently capping at 5.
     supabase
       .from("bookings")
-      .select("id, guest:guests(full_name), room:rooms(name), created_at")
+      .select("id, guest:guests(full_name), room:rooms(name), created_at", { count: "exact" })
       .eq("id_verification_status", "Pending")
       // Only escalated (retries exhausted) — matches /admin/verifications.
       .eq("booking_status", "Pending Verification")
@@ -81,7 +84,9 @@ export default async function AdminOverviewPage() {
       .limit(5),
     supabase
       .from("guest_requests")
-      .select("id, request_type, message, created_at, booking:bookings(room:rooms(name))")
+      .select("id, request_type, message, created_at, booking:bookings(room:rooms(name))", {
+        count: "exact",
+      })
       // Not just status = "Open": "In Progress" (cleaning) and every
       // laundry stage before "Closed" (Picked Up/Cleaning/Ready/Returned)
       // are still open too — this used to undercount those.
@@ -90,7 +95,7 @@ export default async function AdminOverviewPage() {
       .limit(5),
     supabase
       .from("bookings")
-      .select("id, booking_reference, refund_status, guest:guests(full_name)")
+      .select("id, booking_reference, refund_status, guest:guests(full_name)", { count: "exact" })
       .not("refund_status", "is", null)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -286,7 +291,7 @@ export default async function AdminOverviewPage() {
             </h2>
             {pendingVerifications && pendingVerifications.length > 0 && (
               <span className="rounded-full bg-danger px-2.5 py-0.5 text-xs font-semibold text-white">
-                {pendingVerifications.length}
+                {pendingVerificationsCount ?? pendingVerifications.length}
               </span>
             )}
           </div>
@@ -326,7 +331,7 @@ export default async function AdminOverviewPage() {
             </h2>
             {openRequests && openRequests.length > 0 && (
               <span className="rounded-full bg-terracotta-500 px-2.5 py-0.5 text-xs font-semibold text-white">
-                {openRequests.length}
+                {openRequestsCount ?? openRequests.length}
               </span>
             )}
           </div>
@@ -363,7 +368,7 @@ export default async function AdminOverviewPage() {
             </h2>
             {refundsNeeded && refundsNeeded.length > 0 && (
               <span className="rounded-full bg-danger px-2.5 py-0.5 text-xs font-semibold text-white">
-                {refundsNeeded.length}
+                {refundsNeededCount ?? refundsNeeded.length}
               </span>
             )}
           </div>
