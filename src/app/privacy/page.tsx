@@ -22,7 +22,7 @@ export default function PrivacyPage() {
       <PageBanner color="espresso" eyebrow="Legal" title="Privacy Policy" />
 
       <div className="container-page max-w-2xl py-12 sm:py-16">
-        <p className="text-sm text-ink/55">Last updated: 4 August 2026</p>
+        <p className="text-sm text-ink/55">Last updated: 2 October 2026</p>
 
         <Section title="What We Collect">
           <ul className="list-disc space-y-1.5 pl-5">
@@ -76,7 +76,14 @@ export default function PrivacyPage() {
               </strong>{" "}
               We do not retain a copy of your ID after checkout.
             </li>
-            <li>Your phone number is also deleted after checkout.</li>
+            <li>
+              Your phone number is also deleted after checkout, unless you
+              choose &quot;Yes, remember me&quot; when checking out. In that
+              case we keep your name, email and phone number so we can fill in
+              your details next time. You confirm it is you with a code sent
+              to your email, and you can say &quot;No&quot; at any later
+              checkout, or contact us, to have them removed.
+            </li>
             <li>
               Your name, email, and booking history are retained for our
               business records (accounting, recognizing returning guests, and

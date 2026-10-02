@@ -373,6 +373,9 @@ export type RateLimit = {
 export type RememberedGuest = {
   email: string;
   full_name: string;
+  // Copied from the guest at opt-in time, because guests.phone is wiped at
+  // checkout; lets the booking form autofill for a verified returning guest.
+  phone: string | null;
   last_booking_id: string | null;
   created_at: string;
   updated_at: string;

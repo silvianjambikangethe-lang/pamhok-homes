@@ -107,7 +107,11 @@ export async function requestRecognitionCode(
   // Nothing on file: pretend we sent it. No row, no email.
   if (!remembered) return { allowed: true };
 
+  // randomInt is Node's cryptographically secure generator, so each code
+  // is unpredictable and independent of the last. Any older pending code
+  // for this email is removed first, so only the newest one ever works.
   const code = String(randomInt(100000, 1000000));
+  await supabase.from("guest_recognition_codes").delete().eq("email", normalized);
   await supabase.from("guest_recognition_codes").insert({
     email: normalized,
     code_hash: hashCode(code),
@@ -128,7 +132,7 @@ export async function verifyRecognitionCode(
   code: string,
   ip: string,
 ): Promise<
-  | { ok: true; fullName: string; recognitionToken: string }
+  | { ok: true; fullName: string; phone: string | null; recognitionToken: string }
   | { ok: false; error: string; status: number }
 > {
   const normalized = normalizeEmail(email);
@@ -171,7 +175,7 @@ export async function verifyRecognitionCode(
 
   const { data: remembered } = await supabase
     .from("remembered_guests")
-    .select("full_name")
+    .select("full_name, phone")
     .eq("email", normalized)
     .maybeSingle();
 
@@ -182,6 +186,7 @@ export async function verifyRecognitionCode(
   return {
     ok: true,
     fullName: remembered.full_name,
+    phone: remembered.phone,
     recognitionToken: makeRecognitionToken(normalized),
   };
 }

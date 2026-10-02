@@ -144,6 +144,18 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
+            {/* Opens the returning-guest code card on /rooms. */}
+            <Link
+              href="/rooms?remember=1"
+              onClick={() => setOpen(false)}
+              className={`focus-ring rounded-md px-2 py-3 text-base font-semibold ${
+                darkHeader
+                  ? "text-pk-on-dark hover:bg-pk-primary dark:text-ink dark:hover:bg-surface"
+                  : "text-ink hover:bg-surface"
+              }`}
+            >
+              Remember Me
+            </Link>
             <Link
               href="/rooms"
               onClick={() => setOpen(false)}

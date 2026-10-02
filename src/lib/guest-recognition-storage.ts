@@ -15,6 +15,8 @@ export type StoredRecognition = {
   recognitionToken: string;
   fullName: string;
   email: string;
+  // null when no number was kept (older opt-ins, or none on file).
+  phone: string | null;
   issuedAt: number;
 };
 
@@ -35,7 +37,7 @@ export function readStoredRecognition(): StoredRecognition | null {
       sessionStorage.removeItem(RECOGNITION_STORAGE_KEY);
       return null;
     }
-    return parsed as StoredRecognition;
+    return { ...(parsed as StoredRecognition), phone: typeof parsed.phone === "string" ? parsed.phone : null };
   } catch {
     return null;
   }

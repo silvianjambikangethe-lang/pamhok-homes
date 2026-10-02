@@ -10,7 +10,7 @@ export type CheckoutOutcome =
   | { ok: false; status: 404 | 500; error: string };
 
 const BOOKING_SELECT =
-  "id, access_token, guest_id, checked_out_at, id_verification_status, id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2, guest:guests(full_name, email), room:rooms(name)";
+  "id, access_token, guest_id, checked_out_at, id_verification_status, id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2, guest:guests(full_name, email, phone), room:rooms(name)";
 
 // The one implementation of "this stay is over" — shared by the guest's own
 // check-out button (matched by portal token) and the admin Overview's
@@ -84,13 +84,20 @@ export async function completeCheckout(
       : Promise.resolve(),
   ]);
 
-  const guest = booking.guest as unknown as { full_name: string; email: string | null } | null;
+  // Read from the booking fetched above, i.e. before the cleanup wiped
+  // guests.phone, so the opt-in can keep the number the guest gave.
+  const guest = booking.guest as unknown as {
+    full_name: string;
+    email: string | null;
+    phone: string | null;
+  } | null;
 
   if (rememberMe === true && guest?.email && booking.id_verification_status === "Verified") {
     const email = guest.email.trim().toLowerCase();
     await supabase.from("remembered_guests").upsert({
       email,
       full_name: guest.full_name,
+      phone: guest.phone,
       last_booking_id: booking.id,
       updated_at: new Date().toISOString(),
     });

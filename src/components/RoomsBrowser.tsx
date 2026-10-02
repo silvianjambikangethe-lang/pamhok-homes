@@ -84,6 +84,19 @@ export default function RoomsBrowser({
     setRecognized(readStoredRecognition());
   }, []);
 
+  // The "Remember Me" link in the header menu lands here as
+  // /rooms?remember=1: open the code card, then drop the param so a refresh
+  // or the back button doesn't reopen it.
+  const rememberParam = searchParams.get("remember");
+  useEffect(() => {
+    if (rememberParam !== "1") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- opens the card in response to the menu link
+    setRecognitionOpen(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("remember");
+    window.history.replaceState(null, "", url.pathname + url.search);
+  }, [rememberParam]);
+
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault();
     if (!recognitionName.trim() || !recognitionEmail.trim()) return;
@@ -131,6 +144,7 @@ export default function RoomsBrowser({
         recognitionToken: data.recognitionToken,
         fullName: data.fullName,
         email: recognitionEmail.trim(),
+        phone: typeof data.phone === "string" ? data.phone : null,
         issuedAt: Date.now(),
       };
       writeStoredRecognition(stored);
@@ -190,16 +204,21 @@ export default function RoomsBrowser({
           </p>
         </div>
       )}
-      <div className="mx-auto mb-4 max-w-md">
+      {/* The Remember Me button goes away as soon as the guest starts using
+          the calendar (picks a check-in), so the two routes don't compete. */}
+      <div className={`mx-auto max-w-md ${recognized || !selection.checkIn ? "mb-4" : ""}`}>
         {recognized ? (
           // clay is static hex (not the brown-light-theme CSS variables the
           // rest of this page's accents use — see globals.css), so this
-          // card stays a vivid warm orange in both light and dark mode
+          // card stays a warm caramel wash in both light and dark mode
           // instead of collapsing into the same muted brown as the
-          // terracotta/mocha/gold buttons elsewhere on the page.
-          <div className="rounded-2xl border border-clay-500/40 bg-clay-500/15 p-5 text-ink shadow-card">
+          // terracotta/mocha/gold buttons elsewhere on the page. Uses the
+          // literal --pk-caramel hex (not the token name) because Tailwind
+          // can't statically alpha-blend a CSS custom property for the
+          // /15, /40 opacity modifiers below.
+          <div className="rounded-2xl border border-[#B8814F]/40 bg-[#B8814F]/15 p-5 text-ink shadow-card">
             <div className="flex items-start gap-3">
-              <CheckCircle size={22} weight="fill" className="mt-0.5 shrink-0 text-clay-600" />
+              <CheckCircle size={22} weight="fill" className="mt-0.5 shrink-0 text-[#B8814F]" />
               <div className="flex-1">
                 <p className="font-serif text-h3">Welcome back, {recognized.fullName}!</p>
                 <p className="mt-1 text-sm text-ink/80">
@@ -208,16 +227,23 @@ export default function RoomsBrowser({
               </div>
             </div>
           </div>
-        ) : (
+        ) : !selection.checkIn ? (
           <button
             type="button"
             onClick={() => setRecognitionOpen(true)}
-            className="focus-ring flex w-full items-center justify-center gap-2 rounded-full bg-clay-500 px-6 py-3 text-sm font-semibold text-white shadow-card transition-colors hover:bg-clay-600"
+            // Deep roast brown in light mode (same hue as the site's own
+            // link color, #8C5A2E) for strong contrast against the cream
+            // background; pk-caramel in dark mode. Both are static hex, not
+            // part of the brown-collapsing light-theme scale, so this stays
+            // visibly distinct from the standard terracotta buttons in
+            // both themes rather than blending in (the old clay-500 button
+            // matched terracotta-500's dark value exactly).
+            className="focus-ring flex w-full items-center justify-center gap-2 rounded-full bg-[#8C5A2E] px-6 py-3 text-sm font-semibold text-white shadow-card transition-colors hover:brightness-110 dark:bg-pk-caramel dark:text-cocoa dark:hover:brightness-95"
           >
             <IdentificationBadge size={18} weight="fill" />
             Remember Me
           </button>
-        )}
+        ) : null}
       </div>
 
       <div ref={calendarRef} className="mx-auto max-w-md scroll-mt-24 rounded-2xl border border-taupe/20 bg-pk-surface p-6 glow-gold dark:bg-surface">

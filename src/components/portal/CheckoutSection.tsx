@@ -92,7 +92,7 @@ export default function CheckoutSection({
 
       <div className="mt-5 rounded-xl border border-taupe/20 bg-page p-4">
         <p className="text-sm font-semibold text-ink/80">
-          Save your name &amp; email for a faster, ID-free booking next time?
+          Save your name, email &amp; phone number for a faster, ID-free booking next time?
         </p>
         <div className="mt-3 flex gap-2">
           <button

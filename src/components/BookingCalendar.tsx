@@ -101,7 +101,7 @@ export default function BookingCalendar({
           onClick={() => setVisibleMonth((m) => addMonths(m, -1))}
           disabled={isSameMonth(visibleMonth, today)}
           aria-label="Previous month"
-          className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-taupe/25 text-ink disabled:cursor-not-allowed disabled:opacity-30"
+          className="focus-ring flex h-11 w-11 items-center justify-center rounded-full border border-taupe/25 text-ink disabled:cursor-not-allowed disabled:opacity-30"
         >
           <CaretLeft size={16} />
         </button>
@@ -112,7 +112,7 @@ export default function BookingCalendar({
           type="button"
           onClick={() => setVisibleMonth((m) => addMonths(m, 1))}
           aria-label="Next month"
-          className="focus-ring flex h-9 w-9 items-center justify-center rounded-full border border-taupe/25 text-ink"
+          className="focus-ring flex h-11 w-11 items-center justify-center rounded-full border border-taupe/25 text-ink"
         >
           <CaretRight size={16} />
         </button>
@@ -186,7 +186,7 @@ function MonthGrid({
               aria-label={format(day, "PPPP")}
               aria-pressed={Boolean(isCheckIn || isCheckOut)}
               className={[
-                "focus-ring flex h-9 w-full items-center justify-center rounded-full text-sm transition-colors",
+                "focus-ring flex h-11 w-full items-center justify-center rounded-full text-sm transition-colors",
                 !inMonth ? "invisible" : "",
                 disabled && inMonth
                   ? "cursor-not-allowed text-ink/30 line-through"

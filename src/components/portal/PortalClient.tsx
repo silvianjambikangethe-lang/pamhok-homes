@@ -343,6 +343,7 @@ export default function PortalClient({
                 totalAmount={booking.total_amount}
                 paymentStatus={booking.payment_status}
                 rates={rates}
+                termsAlreadyAccepted={Boolean(booking.terms_accepted_at)}
               />
             </>
           )}

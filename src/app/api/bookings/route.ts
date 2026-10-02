@@ -40,6 +40,10 @@ interface BookingRequestBody {
   // email (see src/lib/guest-recognition.ts). Carries over verification
   // the same way changeFromToken does.
   recognitionToken?: string;
+  // The Terms and Privacy Policy tick from the booking card. Only honored
+  // for a recognized returning guest, whose payment step then skips the
+  // second tick; everyone else still accepts at payment as before.
+  termsAccepted?: boolean;
 }
 
 const MAX_EXTRA_ROOMS = 9;
@@ -54,6 +58,9 @@ function isValidBody(body: unknown): body is BookingRequestBody {
     return false;
   }
   if (typeof b.recognitionToken !== "undefined" && typeof b.recognitionToken !== "string") {
+    return false;
+  }
+  if (typeof b.termsAccepted !== "undefined" && typeof b.termsAccepted !== "boolean") {
     return false;
   }
   if (typeof b.extraRoomIds !== "undefined") {
@@ -200,6 +207,7 @@ export async function POST(request: Request) {
   // Mirrors the precedent set in portal/[token]/extend/transfer/route.ts.
   let inheritedVerification: { status: "Verified"; method: IdVerificationMethod } | null = null;
   let inheritedGuestId: string | null = null;
+  let viaRecognition = false;
   if (body.changeFromToken) {
     const { data: oldBooking } = await supabase
       .from("bookings")
@@ -244,6 +252,7 @@ export async function POST(request: Request) {
           .eq("id", remembered.last_booking_id)
           .maybeSingle();
         if (lastBooking && lastBooking.id_verification_status === "Verified") {
+          viaRecognition = true;
           inheritedGuestId = lastBooking.guest_id;
           inheritedVerification = {
             status: "Verified",
@@ -257,6 +266,11 @@ export async function POST(request: Request) {
   let guestId: string;
   if (inheritedGuestId) {
     guestId = inheritedGuestId;
+    // The carried-over guest row had its phone wiped at their last
+    // checkout, so record the number they confirmed on this booking.
+    if (viaRecognition) {
+      await supabase.from("guests").update({ phone: body.guest.phone.trim() }).eq("id", guestId);
+    }
   } else {
     const { data: guestRow, error: guestError } = await supabase
       .from("guests")
@@ -315,6 +329,9 @@ export async function POST(request: Request) {
                 id_verification_status: inheritedVerification.status,
                 id_verification_method: inheritedVerification.method,
               }
+            : {}),
+          ...(viaRecognition && body.termsAccepted === true
+            ? { terms_accepted_at: new Date().toISOString() }
             : {}),
         })
         .select("id, access_token, booking_reference")

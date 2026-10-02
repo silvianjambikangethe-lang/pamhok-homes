@@ -129,7 +129,12 @@ export default function BookingWidget({
     if (stored) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sessionStorage read, not a render sync
       setRecognition(stored);
-      setGuest((g) => ({ ...g, fullName: stored.fullName, email: stored.email }));
+      setGuest((g) => ({
+        ...g,
+        fullName: stored.fullName,
+        email: stored.email,
+        phone: stored.phone ?? g.phone,
+      }));
     }
   }, []);
 
@@ -203,7 +208,9 @@ export default function BookingWidget({
           checkOut: format(selection.checkOut, "yyyy-MM-dd"),
           guest,
           ...(changeFrom ? { changeFromToken: changeFrom } : {}),
-          ...(recognition ? { recognitionToken: recognition.recognitionToken } : {}),
+          ...(recognition
+            ? { recognitionToken: recognition.recognitionToken, termsAccepted: agreedToTerms }
+            : {}),
         }),
       });
 
@@ -488,6 +495,15 @@ export default function BookingWidget({
               className="focus-ring rounded font-medium text-terracotta-600 underline hover:text-terracotta-700"
             >
               Terms &amp; Conditions
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus-ring rounded font-medium text-terracotta-600 underline hover:text-terracotta-700"
+            >
+              Privacy Policy
             </Link>
           </span>
         </label>

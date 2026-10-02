@@ -18,15 +18,19 @@ export default function PaymentSection({
   totalAmount,
   paymentStatus,
   rates,
+  termsAlreadyAccepted = false,
 }: {
   token: string;
   totalAmount: number;
   paymentStatus: PaymentStatus;
   rates: Record<DisplayCurrency, number>;
+  // True when the guest already ticked Terms and Privacy on the booking
+  // card (returning guest), so payment is one tap with no second tick.
+  termsAlreadyAccepted?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(termsAlreadyAccepted);
 
   if (paymentStatus === "Paid") return null;
 
@@ -81,7 +85,9 @@ export default function PaymentSection({
         small processing fee, shown before you pay. Your dates are secured once payment is complete.
       </p>
 
-      <label className="mt-5 flex items-start gap-2.5 text-sm text-ink/80">
+      <label
+        className={`mt-5 items-start gap-2.5 text-sm text-ink/80 ${termsAlreadyAccepted ? "hidden" : "flex"}`}
+      >
         <input
           type="checkbox"
           checked={agreedToTerms}
