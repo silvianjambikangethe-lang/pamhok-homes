@@ -12,7 +12,10 @@
 // marked Paid. The full raw query is logged so the hash formula can be
 // worked out later.
 //
-// Duplicates sendPaymentSucceededEmail from src/lib/email.ts (Edge Functions
+// The confirmation email is sent by the website itself (POST /api/internal/payment-email,
+// see src/lib/booking-emails.ts) so there is ONE current template with the receipt
+// attached. The simple inline copy below is only a fallback if that call fails.
+// (It duplicates sendPaymentSucceededEmail from src/lib/email.ts: Edge Functions
 // deployed by hand can't import it) — keep in sync if the copy changes.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -104,6 +107,31 @@ async function sendPaymentSucceededEmail(supabase: any, bookingId: string): Prom
   }
 }
 
+
+// Asks the website to send the full confirmation (receipt + saveable link).
+// Falls back to the simple inline email above if the site is unreachable, so a
+// paying guest always gets something. Never throws: the payment is already
+// recorded and the guest must still reach their booking page.
+// deno-lint-ignore no-explicit-any
+async function sendConfirmationEmail(supabase: any, bookingId: string, wasAlreadyPaid: boolean): Promise<void> {
+  const siteUrl = Deno.env.get("NEXT_PUBLIC_SITE_URL") ?? "https://www.pamhokhomes.com";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  try {
+    if (!serviceKey) throw new Error("no service key");
+    const res = await fetch(`${siteUrl}/api/internal/payment-email`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId, wasAlreadyPaid }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (res.ok) return;
+    console.error("payment-email route failed", res.status);
+  } catch (err) {
+    console.error("payment-email route unreachable", err);
+  }
+  if (!wasAlreadyPaid) await sendPaymentSucceededEmail(supabase, bookingId);
+}
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   const params = url.searchParams;
@@ -189,7 +217,7 @@ Deno.serve(async (req) => {
 
   let bookingQuery = supabase
     .from("bookings")
-    .select("id, room_id, check_in, check_out, access_token, total_amount, payment_status");
+    .select("id, room_id, check_in, check_out, access_token, total_amount, payment_status, paid_at");
   bookingQuery = attempt
     ? bookingQuery.eq("id", attempt.booking_id)
     : bookingQuery.eq("payment_reference", orderReference);
@@ -244,7 +272,7 @@ Deno.serve(async (req) => {
         }
       }
       if (!result?.extension_reverted) {
-        await sendPaymentSucceededEmail(supabase, booking.id);
+        await sendConfirmationEmail(supabase, booking.id, booking.paid_at != null);
       }
     }
     return Response.redirect(`${portalBase}?payment=success`, 302);
