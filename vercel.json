@@ -6,6 +6,7 @@
     { "path": "/api/cron/expense-reminders", "schedule": "0 6 * * *" },
     { "path": "/api/cron/expire-extension-holds", "schedule": "0 8 * * *" },
     { "path": "/api/cron/expire-pending-payments", "schedule": "0 9 * * *" },
-    { "path": "/api/cron/purge-remembered-guests", "schedule": "0 10 * * 0" }
+    { "path": "/api/cron/purge-remembered-guests", "schedule": "0 10 * * 0" },
+    { "path": "/api/cron/purge-id-documents", "schedule": "30 3 * * *" }
   ]
 }

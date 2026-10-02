@@ -74,7 +74,9 @@ export default function PrivacyPage() {
                 Once your stay is complete, your ID document is automatically
                 and permanently deleted from our systems.
               </strong>{" "}
-              We do not retain a copy of your ID after checkout.
+              We do not retain a copy of your ID after checkout. If you do not
+              check out through the site, it is deleted automatically about a
+              day after your stay ends.
             </li>
             <li>
               Your phone number is also deleted after checkout, unless you

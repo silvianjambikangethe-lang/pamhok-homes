@@ -59,7 +59,7 @@ export async function POST(
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
     .select(
-      "id, booking_status, id_verification_status, id_verification_attempts, guest:guests(full_name)",
+      "id, booking_status, id_verification_status, id_verification_attempts, id_document_path, id_document_back_path, id_document_path_2, id_document_back_path_2, guest:guests(full_name)",
     )
     .eq("access_token", token)
     .maybeSingle();
@@ -126,6 +126,13 @@ export async function POST(
   ]);
 
   if (frontUpload.error || backUpload.error) {
+    // Don't leave the half that did upload behind: nothing will ever
+    // reference it, and it is an ID photo.
+    const stray = [
+      ...(frontUpload.error ? [] : [frontPath]),
+      ...(backUpload.error ? [] : [backPath]),
+    ];
+    if (stray.length > 0) await supabase.storage.from("id-documents").remove(stray);
     return NextResponse.json({ error: "Upload failed. Please try again." }, { status: 500 });
   }
 
@@ -147,6 +154,27 @@ export async function POST(
     isFreshCycle
       ? { id_document_path_2: null, id_document_back_path_2: null, id_verification_result_2: null }
       : {};
+
+  // The booking row only ever points at the newest files, so any older file
+  // this upload replaces or clears (a fresh cycle after a rejection, or the
+  // stale attempt-2 pair) would be orphaned: still stored, referenced by
+  // nothing. Once the new paths are saved, delete those old files.
+  const oldPaths = [
+    booking.id_document_path,
+    booking.id_document_back_path,
+    booking.id_document_path_2,
+    booking.id_document_back_path_2,
+  ].filter((p): p is string => !!p);
+  const keptPaths = new Set<string>([
+    ...(attemptSlot === 2
+      ? [booking.id_document_path, booking.id_document_back_path, frontPath, backPath]
+      : [frontPath, backPath, ...(isFreshCycle ? [] : [booking.id_document_path_2, booking.id_document_back_path_2])]
+    ).filter((p): p is string => !!p),
+  ]);
+  async function dropReplacedFiles() {
+    const replaced = oldPaths.filter((p) => !keptPaths.has(p));
+    if (replaced.length > 0) await supabase.storage.from("id-documents").remove(replaced);
+  }
 
   if (!outcome.ok) {
     // Provider-side/config problem (unfunded sandbox wallet, bad
@@ -180,6 +208,7 @@ export async function POST(
     if (updateError) {
       return NextResponse.json({ error: "Could not save upload." }, { status: 500 });
     }
+    await dropReplacedFiles();
     return NextResponse.json({ ok: true });
   }
 
@@ -202,6 +231,7 @@ export async function POST(
     if (updateError) {
       return NextResponse.json({ error: "Could not save upload." }, { status: 500 });
     }
+    await dropReplacedFiles();
     return NextResponse.json({ ok: true });
   }
 
@@ -224,5 +254,6 @@ export async function POST(
     return NextResponse.json({ error: "Could not save upload." }, { status: 500 });
   }
 
+  await dropReplacedFiles();
   return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,8 @@
 import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { releaseExpiredExtensionHold } from "@/lib/extension-hold";
+import { isStayOver } from "@/lib/stay-expiry";
+import { completeCheckout } from "@/lib/checkout";
 import { expireStaleBookingPayment, expireStaleLaundryPayment } from "@/lib/pending-payment-expiry";
 import type { Booking, Guest, LaundryPaymentStatus, Room } from "@/lib/supabase/types";
 
@@ -74,6 +76,14 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     if (error || !data) return null;
   }
 
+  // Auto check-out: once the stay is over, close it out (ID photos and phone
+  // deleted) even if the guest never tapped Check Out. Skipped while an
+  // extension is awaiting payment.
+  if (needsAutoCheckout(data)) {
+    const outcome = await completeCheckout(supabase, { bookingId: data.id });
+    if (outcome.ok) data = { ...data, checked_out_at: new Date().toISOString() };
+  }
+
   const [{ count }, { data: laundryRows }, siblingResult] = await Promise.all([
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("booking_id", data.id),
     supabase
@@ -129,9 +139,10 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
   // withheld HERE — hiding them in the UI alone left the door code and WiFi
   // password readable in View Source before a guest had paid or been
   // verified. Server-side mirror of the portal UI's own "unlocked" rule:
-  // ID-verified, paid at least once, and not yet checked out.
+  // ID-verified, paid at least once, and the stay not over (checked out, or
+  // past the check-out cutoff for a guest who never tapped Check Out).
   const unlocked =
-    data.id_verification_status === "Verified" && !!data.paid_at && !data.checked_out_at;
+    data.id_verification_status === "Verified" && !!data.paid_at && !isStayOver(data);
   const room = data.room as unknown as PortalBooking["room"];
 
   return {
@@ -163,6 +174,8 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
 export interface VerificationSummary {
   payment_status: string;
   id_verification_status: string;
+  booking_status: string;
+  checked_out_at: string | null;
   check_in: string;
   check_out: string;
   booking_reference: string | null;
@@ -175,9 +188,33 @@ export async function getVerificationSummary(bookingId: string): Promise<Verific
   const { data } = await supabase
     .from("bookings")
     .select(
-      "payment_status, id_verification_status, check_in, check_out, booking_reference, room:rooms(name), guest:guests(full_name)",
+      "id, pending_extension_check_out, payment_status, id_verification_status, booking_status, checked_out_at, check_in, check_out, booking_reference, room:rooms(name), guest:guests(full_name)",
     )
     .eq("id", bookingId)
     .maybeSingle();
-  return (data as unknown as VerificationSummary | null) ?? null;
+  if (!data) return null;
+  // Same auto check-out as the portal, for a pass scanned before anyone
+  // opened the guest's page.
+  if (needsAutoCheckout(data)) {
+    await completeCheckout(supabase, { bookingId: data.id });
+  }
+  return data as unknown as VerificationSummary;
+}
+
+// Only a paid, live stay is auto-checked-out: a cancelled or never-paid
+// booking has no guest to thank and nothing to close out.
+function needsAutoCheckout(b: {
+  checked_out_at: string | null;
+  pending_extension_check_out: string | null;
+  payment_status: string;
+  booking_status: string;
+  check_out: string;
+}): boolean {
+  return (
+    !b.checked_out_at &&
+    !b.pending_extension_check_out &&
+    b.payment_status === "Paid" &&
+    b.booking_status !== "Cancelled" &&
+    isStayOver(b)
+  );
 }

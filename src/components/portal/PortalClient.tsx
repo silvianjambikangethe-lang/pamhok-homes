@@ -61,19 +61,17 @@ export default function PortalClient({
   const isCheckoutDay = isPast(checkOutDate) || format(checkOutDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
   // The page clears itself — door code/WiFi, requests, and the booking
   // summary all stop showing — the moment either happens: the guest taps
-  // "Confirm Check-Out", or 2pm Nairobi time arrives on the check-out
-  // date, whichever is first. The 2pm cutoff is a backstop for a guest
-  // who's already left but never tapped the button; it doesn't touch the
-  // database (no auto-checkout privacy cleanup runs), it only stops the
-  // page from showing anything once the room should reasonably be free.
-  // Kenya is a fixed UTC+3 with no daylight saving, so 2pm Nairobi is
-  // always 11:00 UTC — no timezone library needed for this comparison.
+  // "Confirm Check-Out", or the cutoff passes on the check-out
+  // date, whichever is first. The cutoff is 1pm Nairobi time (3 hours after
+  // check-out); the server also auto-checks-out the stay at that point
+  // (see stay-expiry.ts and getBookingByToken). Kenya is a fixed UTC+3
+  // with no daylight saving, so 1pm Nairobi is always 10:00 UTC — no timezone library needed for this comparison.
   // Read the clock in an effect, not during render, so the component stays
   // pure (server and first client render agree); the guest's page then
   // clears itself the moment the effect runs past the cutoff.
   const [pastCutoff, setPastCutoff] = useState(false);
   useEffect(() => {
-    const cutoff = new Date(`${booking.check_out}T11:00:00Z`);
+    const cutoff = new Date(`${booking.check_out}T10:00:00Z`);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time clock read, not a render sync
     setPastCutoff(Date.now() >= cutoff.getTime());
   }, [booking.check_out]);

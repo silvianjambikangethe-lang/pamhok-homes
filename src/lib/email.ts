@@ -49,13 +49,12 @@ function link(url: string): string {
   return `<p style="margin: 8px 0;"><a href="${url}" style="color:#8C4A23;">${url}</a></p>`;
 }
 
-// Every other template's interpolated values (guest names, room names,
-// dates) come from the database, already constrained by their own input
-// validation at write time. The contact form is different — it's raw,
-// open-ended visitor text with no such constraint — so escape it before
-// it goes into an HTML email body, or a submitted "<script>..." or
-// similarly crafted message would render as live HTML in whatever mail
-// client opens it.
+// Guest names and the contact form are raw visitor text, and anyone can
+// book using someone else's email address, so a crafted name like
+// `<a href="https://evil">` would otherwise land as a live link in a
+// branded email sent to that other person. Every name (and the contact
+// message) is escaped before it goes into an HTML email body. Room names,
+// dates and references come from the admin or the server, not visitors.
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -93,7 +92,7 @@ export function bookingConfirmationEmail({
   return {
     subject: `Payment confirmed - ${roomName}, ${checkIn} to ${checkOut}`,
     html: wrapper(`
-      <p>Hi ${guestName},</p>
+      <p>Hi ${escapeHtml(guestName)},</p>
       <p>Your payment is confirmed and your stay is booked. Here's your summary:</p>
       <ul style="padding-left: 18px;">
         <li><strong>Room:</strong> ${roomName}</li>
@@ -138,7 +137,7 @@ export function stayExtensionConfirmationEmail({
   return {
     subject: `Stay extended - new checkout ${newCheckOut}`,
     html: wrapper(`
-      <p>Hi ${guestName},</p>
+      <p>Hi ${escapeHtml(guestName)},</p>
       <p>Your extension is confirmed! We've updated your stay in ${roomName}.</p>
       <ul style="padding-left: 18px;">
         <li><strong>New checkout date:</strong> ${newCheckOut}</li>
@@ -166,7 +165,7 @@ export function idVerificationResultEmail({
     return {
       subject: "You're verified!",
       html: wrapper(`
-        <p>Hi ${guestName},</p>
+        <p>Hi ${escapeHtml(guestName)},</p>
         <p>Good news, your ID has been verified for your stay in ${roomName}. If you haven't paid yet, you're clear to complete payment now; your door code and WiFi will appear on your booking page right after.</p>
         ${button(portalUrl, "View my booking")}
       `),
@@ -176,7 +175,7 @@ export function idVerificationResultEmail({
   return {
     subject: "We couldn't verify your ID",
     html: wrapper(`
-      <p>Hi ${guestName},</p>
+      <p>Hi ${escapeHtml(guestName)},</p>
       <p>We weren't able to verify the ID you uploaded for your stay in ${roomName}. Please upload clearer photos of the front and back of your ID to try again.</p>
       ${refundNote ? `<p>${refundNote}</p>` : ""}
       ${button(portalUrl, "Re-upload my ID")}
@@ -199,7 +198,7 @@ export function checkoutReminderEmail({
     return {
       subject: "Checkout is tomorrow",
       html: wrapper(`
-        <p>Hi ${guestName},</p>
+        <p>Hi ${escapeHtml(guestName)},</p>
         <p>Just a heads-up, your stay in ${roomName} wraps up tomorrow.</p>
         <p>Loving it here? You can extend your stay right from your booking page.</p>
         ${button(portalUrl, "Extend my stay")}
@@ -210,7 +209,7 @@ export function checkoutReminderEmail({
   return {
     subject: "Checkout is today",
     html: wrapper(`
-      <p>Hi ${guestName},</p>
+      <p>Hi ${escapeHtml(guestName)},</p>
       <p><strong>Checkout is today.</strong> Please confirm your checkout on your booking page whenever you're ready to head out, our cleaning team will be by shortly after.</p>
       ${button(portalUrl, "Confirm checkout")}
     `),
@@ -229,7 +228,7 @@ export function cleaningNoticeEmail({
   return {
     subject: "Cleaning today",
     html: wrapper(`
-      <p>Hi ${guestName},</p>
+      <p>Hi ${escapeHtml(guestName)},</p>
       <p>Our cleaning team will visit your room, ${roomName}, today.</p>
       ${link(portalUrl)}
     `),
@@ -266,7 +265,7 @@ export function laundryStatusEmail({
   return {
     subject: `Laundry update: ${stage}`,
     html: wrapper(`
-      <p>Hi ${guestName},</p>
+      <p>Hi ${escapeHtml(guestName)},</p>
       <p>${message}</p>
       ${link(portalUrl)}
     `),
@@ -285,7 +284,7 @@ export function checkoutCompleteEmail({
   return {
     subject: "Thanks for staying with us!",
     html: wrapper(`
-      <p>Hi ${guestName},</p>
+      <p>Hi ${escapeHtml(guestName)},</p>
       <p>Thanks for staying with us in ${roomName}, we hope it felt like home. If you have a minute, we'd love to hear how it went.</p>
       ${button(portalUrl, "Leave a review")}
     `),
@@ -296,7 +295,7 @@ export function guestRecognitionCodeEmail({ code, fullName }: { code: string; fu
   return {
     subject: `Your ${SITE.name} code: ${code}`,
     html: wrapper(`
-      <p>Hi ${fullName},</p>
+      <p>Hi ${escapeHtml(fullName)},</p>
       <p>Use this code to confirm it's you and book again without re-uploading your ID:</p>
       <p style="margin: 24px 0; font-family: monospace; font-size: 28px; font-weight: 600; letter-spacing: 4px;">${code}</p>
       <p style="font-size:13px; color:#8a7d6e;">This code expires in 10 minutes. If you didn't request it, you can ignore this email.</p>

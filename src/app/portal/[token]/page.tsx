@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getBookingByToken } from "@/lib/portal";
 import { getExchangeRates } from "@/lib/currency";
 import { generateQrDataUrl } from "@/lib/qrcode";
+import { isStayOver } from "@/lib/stay-expiry";
 import { makeVerifyToken } from "@/lib/verify-token";
 import { getAdminContactPhone, getContactContent } from "@/lib/data";
 import PortalClient from "@/components/portal/PortalClient";
@@ -25,7 +26,9 @@ export default async function GuestPortalPage({
   if (!booking) notFound();
 
   const isPassReady =
-    booking.payment_status === "Paid" && booking.id_verification_status === "Verified";
+    booking.payment_status === "Paid" &&
+    booking.id_verification_status === "Verified" &&
+    !isStayOver(booking);
 
   const [rates, qrDataUrl, adminPhone, contactContent] = await Promise.all([
     getExchangeRates(),

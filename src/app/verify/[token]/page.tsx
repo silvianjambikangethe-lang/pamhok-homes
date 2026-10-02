@@ -4,6 +4,7 @@ import { SealCheck, Warning } from "@phosphor-icons/react/dist/ssr";
 import PageBanner from "@/components/PageBanner";
 import { getVerificationSummary } from "@/lib/portal";
 import { parseVerifyToken } from "@/lib/verify-token";
+import { isStayOver } from "@/lib/stay-expiry";
 import { firstNameLastInitial } from "@/lib/guest-display-name";
 import { SITE, pageTitle } from "@/lib/site";
 
@@ -26,7 +27,17 @@ export default async function VerifyPassPage({
   const isValid =
     !!booking &&
     booking.payment_status === "Paid" &&
-    booking.id_verification_status === "Verified";
+    booking.id_verification_status === "Verified" &&
+    booking.booking_status !== "Cancelled" &&
+    !isStayOver(booking);
+  // A real pass for a stay that has ended gets its own message, so a guard
+  // or host scanning an old card sees "expired", not a generic error.
+  const isExpired =
+    !isValid &&
+    !!booking &&
+    booking.payment_status === "Paid" &&
+    booking.id_verification_status === "Verified" &&
+    isStayOver(booking);
 
   return (
     <div>
@@ -75,7 +86,11 @@ export default async function VerifyPassPage({
         ) : (
           <div className="flex items-start gap-3 rounded-2xl border border-taupe/25 bg-page p-5 text-sm text-ink/80 shadow-card">
             <Warning size={20} className="mt-0.5 shrink-0 text-danger" />
-            <p>This pass isn&apos;t valid, or hasn&apos;t been activated yet.</p>
+            <p>
+              {isExpired
+                ? "This guest pass has expired. The stay has ended and the pass can no longer be used."
+                : "This pass isn't valid, or hasn't been activated yet."}
+            </p>
           </div>
         )}
       </div>
