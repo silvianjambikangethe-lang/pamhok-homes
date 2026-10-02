@@ -333,7 +333,9 @@ Deno.serve(async (req) => {
         : [Math.round(amountKes).toFixed(2)];
 
     let pgwRes: Response | null = null;
+    let sentAmount = "";
     for (const candidate of orderAmountCandidates) {
+      sentAmount = candidate;
       pgwRes = await attemptCheckout(candidate);
       if (pgwRes.status === 302 && pgwRes.headers.get("location")) break;
       console.error("Jenga rejected orderAmount format", candidate, pgwRes.status);
@@ -375,7 +377,8 @@ Deno.serve(async (req) => {
         .eq("id", booking.id);
     }
 
-    return json({ ok: true, redirectUrl });
+    // orderAmount is echoed so the exact string posted to Jenga can be checked.
+    return json({ ok: true, redirectUrl, orderAmount: sentAmount });
   } catch (err) {
     console.error("jenga-pgw-initiate failed", err);
     return json({ error: "Could not start payment. Please try again." }, 500);
