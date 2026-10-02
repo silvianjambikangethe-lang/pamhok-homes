@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { EnvelopeSimple, MapPin, Phone, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
 import { NAV_LINKS, SITE, whatsappLink } from "@/lib/site";
 import { getAdminContactPhone, getSocialLinks } from "@/lib/data";
@@ -15,8 +16,13 @@ export default async function Footer() {
       <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Link href="/" className="focus-ring inline-block rounded-md">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={SITE.logoIconUrl} alt={SITE.name} className="h-8 w-8 rounded-full" />
+            <Image
+              src={SITE.logoIconUrl}
+              alt={SITE.name}
+              width={64}
+              height={64}
+              className="h-8 w-8 rounded-full"
+            />
           </Link>
           <p className="mt-3 text-sm leading-relaxed text-pk-on-dark-muted dark:text-white/70">
             {SITE.tagline}. Come stay with us, it&apos;ll feel like home

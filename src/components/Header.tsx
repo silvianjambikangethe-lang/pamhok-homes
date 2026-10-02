@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { List, X } from "@phosphor-icons/react";
@@ -30,10 +31,11 @@ export default function Header() {
       <header className="sticky top-0 z-40 border-b border-taupe/25 bg-page/90 backdrop-blur">
         <div className="container-page flex h-16 items-center justify-between sm:h-20">
           <div className="flex items-center gap-2.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={SITE.logoIconUrl}
               alt=""
+              width={96}
+              height={96}
               className="h-11 w-11 rounded-full sm:h-12 sm:w-12"
             />
             <span className="font-serif text-xl font-semibold text-forest-700 dark:text-ivory-dark sm:text-2xl">
@@ -60,10 +62,14 @@ export default function Header() {
           className="focus-ring flex items-center gap-2.5 rounded-md"
           onClick={() => setOpen(false)}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          {/* The source file is a 1.4 MB image shown at 48px, so it goes
+              through next/image (resized, WebP, cached) instead of a raw img. */}
+          <Image
             src={SITE.logoIconUrl}
             alt=""
+            width={96}
+            height={96}
+            priority
             className="h-11 w-11 rounded-full sm:h-12 sm:w-12"
           />
           <span

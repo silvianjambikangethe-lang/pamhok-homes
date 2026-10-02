@@ -4,15 +4,10 @@ import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Star, Trash, Warning } from "@phosphor-icons/react";
 import type { Review } from "@/lib/supabase/types";
+import StarRating from "@/components/StarRating";
 
 function StarRow({ rating }: { rating: number }) {
-  return (
-    <div className="flex gap-0.5 text-gold-500" aria-hidden="true">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star key={i} size={14} weight={i < rating ? "fill" : "regular"} />
-      ))}
-    </div>
-  );
+  return <StarRating rating={rating} size={14} />;
 }
 
 function ReviewRow({

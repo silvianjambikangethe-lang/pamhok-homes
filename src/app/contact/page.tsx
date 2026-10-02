@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SlideIn from "@/components/SlideIn";
+import LazyVideo from "@/components/LazyVideo";
 import { EnvelopeSimple, MapPin, Phone, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
 import { SITE, pageTitle, whatsappLink } from "@/lib/site";
 import { getAdminContactPhone, getContactContent } from "@/lib/data";
@@ -104,11 +105,8 @@ export default async function ContactPage() {
                 Watch: driving directions to {SITE.name}
               </p>
               <SlideIn className="mx-auto mt-3 w-full max-w-[220px]">
-                <video
+                <LazyVideo
                   src={content.directions_video_url}
-                  controls
-                  controlsList="nodownload"
-                  preload="metadata"
                   className="photo-frame photo-frame-glow aspect-[9/16] w-full rounded-xl bg-black"
                 />
               </SlideIn>

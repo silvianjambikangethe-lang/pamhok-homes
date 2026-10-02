@@ -17,7 +17,7 @@ import LaundrySection from "@/components/portal/LaundrySection";
 import ExtendStaySection from "@/components/portal/ExtendStaySection";
 import CheckoutSection from "@/components/portal/CheckoutSection";
 import { getCheckoutNotices, getCleaningNotices } from "@/lib/guest-notices";
-import ReviewForm from "@/components/portal/ReviewForm";
+import ReviewPrompt from "@/components/portal/ReviewPrompt";
 import VerificationPassSection from "@/components/portal/VerificationPassSection";
 import ArrivalSection from "@/components/portal/ArrivalSection";
 import CheckInConfirmationMessage from "@/components/portal/CheckInConfirmationMessage";
@@ -433,7 +433,7 @@ export default function PortalClient({
                 </a>
               )}
             </div>
-            {!booking.hasReview && <ReviewForm token={token} />}
+            {!booking.hasReview && <ReviewPrompt token={token} />}
           </>
         )}
       </div>

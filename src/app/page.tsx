@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import SlideIn from "@/components/SlideIn";
+import LazyVideo from "@/components/LazyVideo";
+import StarRating from "@/components/StarRating";
 import Link from "next/link";
-import { Star } from "@phosphor-icons/react/dist/ssr";
+import Image from "next/image";
 import PhotoCard from "@/components/PhotoCard";
 import Eyebrow from "@/components/Eyebrow";
 import { getAmenitiesContent, getFeaturedReviews, getHomepageContent } from "@/lib/data";
@@ -44,16 +46,25 @@ export default async function HomePage() {
       {/* Deep Forest #2A3428 — a distinct, richer tone than the standard
           #3B4A3A used on Neighborhood, unchanged between light/dark per
           master-color-scheme.md (already dark enough for both). */}
-      <section
-        className="relative overflow-hidden bg-pk-footer dark:bg-[#2A1D14] bg-cover bg-center"
-        style={
-          content.hero_image_url
-            ? {
-                backgroundImage: `linear-gradient(rgba(20,22,17,0.55), rgba(20,22,17,0.55)), url(${content.hero_image_url})`,
-              }
-            : undefined
-        }
-      >
+      <section className="relative overflow-hidden bg-pk-footer dark:bg-[#2A1D14]">
+        {/* Through next/image (resized, WebP/AVIF, cached, preloaded) rather
+            than a raw CSS background: the original upload is a 1.6 MB PNG
+            with no-cache headers, which made this the slowest thing on the
+            page. The fixed dark overlay keeps the same text contrast. */}
+        {content.hero_image_url && (
+          <>
+            <Image
+              src={content.hero_image_url}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              quality={70}
+              className="object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-[rgba(20,22,17,0.55)]" />
+          </>
+        )}
         <div className="container-page relative flex min-h-[560px] flex-col justify-end gap-6 py-16 sm:min-h-[640px] sm:py-24">
           <Eyebrow className={content.hero_image_url ? "text-ivory" : "text-gold-500"}>
             {content.eyebrow}
@@ -142,11 +153,8 @@ export default async function HomePage() {
                 className="w-[220px] shrink-0 snap-center sm:w-full sm:max-w-[220px] sm:shrink"
                 delayMs={i * 120}
               >
-                <video
+                <LazyVideo
                   src={url}
-                  controls
-                  controlsList="nodownload"
-                  preload="metadata"
                   className="photo-frame photo-frame-glow aspect-[9/16] w-full rounded-2xl bg-black shadow-card"
                 />
               </SlideIn>
@@ -208,11 +216,7 @@ export default async function HomePage() {
               key={review.id}
               className="flex w-[82%] shrink-0 snap-center flex-col gap-4 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card sm:w-auto sm:shrink"
             >
-              <div className="flex gap-1 text-gold-500" aria-hidden="true">
-                {Array.from({ length: review.rating }).map((_, i) => (
-                  <Star key={i} size={16} weight="fill" />
-                ))}
-              </div>
+              <StarRating rating={review.rating} size={16} showEmpty={false} className="gap-1" />
               {review.comment && (
                 <blockquote className="font-accent text-quote italic text-ink/80">
                   “{review.comment}”

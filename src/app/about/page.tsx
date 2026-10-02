@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SlideIn from "@/components/SlideIn";
+import LazyVideo from "@/components/LazyVideo";
 import Link from "next/link";
 import PhotoCard from "@/components/PhotoCard";
 import PageBanner from "@/components/PageBanner";
@@ -82,11 +83,8 @@ export default async function AboutPage() {
                 className="w-[220px] shrink-0 snap-center sm:w-full sm:max-w-[220px] sm:shrink"
                 delayMs={i * 120}
               >
-                <video
+                <LazyVideo
                   src={url}
-                  controls
-                  controlsList="nodownload"
-                  preload="metadata"
                   className="photo-frame photo-frame-glow aspect-[9/16] w-full rounded-2xl bg-black shadow-card"
                 />
               </SlideIn>

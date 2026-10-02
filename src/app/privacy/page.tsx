@@ -80,7 +80,8 @@ export default function PrivacyPage() {
               Your phone number is also deleted after checkout, unless you
               choose &quot;Yes, remember me&quot; when checking out. In that
               case we keep your name, email and phone number so we can fill in
-              your details next time. You confirm it is you with a code sent
+              your details next time, and remove them automatically if you have
+              not used it for 2 years. You confirm it is you with a code sent
               to your email, and you can say &quot;No&quot; at any later
               checkout, or contact us, to have them removed.
             </li>

@@ -21,8 +21,14 @@ export async function POST(
   const body = await request.json().catch(() => null);
   const rating = Number(body?.rating);
 
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return NextResponse.json({ error: "Rating must be 1-5." }, { status: 400 });
+  // 1.0 to 5.0 with at most one decimal place (4.3 is fine, 4.33 is not).
+  if (
+    !Number.isFinite(rating) ||
+    rating < 1 ||
+    rating > 5 ||
+    Math.abs(rating * 10 - Math.round(rating * 10)) > 1e-6
+  ) {
+    return NextResponse.json({ error: "Rating must be between 1 and 5." }, { status: 400 });
   }
 
   const supabase = createAdminSupabaseClient();

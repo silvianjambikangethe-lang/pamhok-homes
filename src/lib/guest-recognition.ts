@@ -13,6 +13,11 @@ import { sendEmail, guestRecognitionCodeEmail } from "@/lib/email";
 // src/app/api/bookings/route.ts) trusts it enough to skip ID verification
 // again. Name + email alone are never treated as identity.
 
+// A remembered guest unused for this long is removed by
+// /api/cron/purge-remembered-guests. "Used" means opting in again at
+// checkout or signing in with an emailed code (both refresh updated_at).
+export const REMEMBERED_GUEST_RETENTION_DAYS = 730;
+
 const CODE_TTL_MINUTES = 10;
 const MAX_VERIFY_ATTEMPTS = 2;
 const RECOGNITION_TOKEN_TTL_MS = 30 * 60 * 1000;
@@ -111,6 +116,12 @@ export async function requestRecognitionCode(
   // is unpredictable and independent of the last. Any older pending code
   // for this email is removed first, so only the newest one ever works.
   const code = String(randomInt(100000, 1000000));
+  // Also sweep every expired code, so unused codes from guests who never
+  // came back don't pile up in the table.
+  await supabase
+    .from("guest_recognition_codes")
+    .delete()
+    .lt("expires_at", new Date().toISOString());
   await supabase.from("guest_recognition_codes").delete().eq("email", normalized);
   await supabase.from("guest_recognition_codes").insert({
     email: normalized,
@@ -182,6 +193,12 @@ export async function verifyRecognitionCode(
   // The code only exists because requestRecognitionCode found a
   // remembered_guests row, so this should always be present.
   if (!remembered) return genericError;
+
+  // Signing in counts as using it, which restarts the retention clock.
+  await supabase
+    .from("remembered_guests")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("email", normalized);
 
   return {
     ok: true,
