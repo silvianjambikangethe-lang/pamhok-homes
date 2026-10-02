@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format, isPast, parseISO, startOfDay } from "date-fns";
-import { Broom, CalendarBlank, ClockCountdown, HandWaving, Info, Phone, Receipt as ReceiptIcon, WhatsappLogo } from "@phosphor-icons/react";
+import { Broom, CalendarBlank, ClockCountdown, Info, Phone, Receipt as ReceiptIcon, WhatsappLogo } from "@phosphor-icons/react";
 import type { PortalBooking } from "@/lib/portal";
 import type { DisplayCurrency } from "@/lib/currency";
 import { SITE, whatsappLink } from "@/lib/site";
@@ -156,8 +156,7 @@ export default function PortalClient({
 
       <div className="container-page max-w-3xl py-12 sm:py-16">
         {booking.rememberedFirstName && (
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#5A3825] px-4 py-2 text-sm font-semibold text-[#FFFBF5] shadow-card dark:bg-terracotta-500 dark:text-white">
-            <HandWaving size={18} weight="fill" />
+          <p className="mb-6 font-script text-h1 text-ink">
             Welcome, {booking.rememberedFirstName}
           </p>
         )}

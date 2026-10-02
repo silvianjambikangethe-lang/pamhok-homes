@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant, Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Cormorant, Dancing_Script, Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -37,6 +37,15 @@ const cormorant = Cormorant({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
   style: ["italic"],
+});
+
+// Cursive script, used only for the remembered-guest welcome line on the
+// booking page. Not preloaded, so it costs nothing on pages that never use it.
+const dancingScript = Dancing_Script({
+  variable: "--font-script",
+  subsets: ["latin"],
+  weight: ["600"],
+  preload: false,
 });
 
 const DEFAULT_DESCRIPTION =
@@ -84,7 +93,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${plusJakartaSans.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${plusJakartaSans.variable} ${cormorant.variable} ${dancingScript.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-page text-ink">
         <ThemeProvider>

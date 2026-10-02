@@ -163,6 +163,8 @@ const config: Config = {
         // "Accent/detail" font — Cormorant italic only (eyebrow labels,
         // pull-quotes). Never used for body copy or full paragraphs.
         accent: ["var(--font-cormorant)", "Georgia", "serif"],
+        // Cursive script, only for the remembered-guest welcome line.
+        script: ["var(--font-script)", "cursive"],
       },
       fontSize: {
         // Type scale from typography-guide.md. Sizes that have a distinct
