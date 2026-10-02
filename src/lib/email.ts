@@ -144,6 +144,8 @@ export function stayExtensionConfirmationEmail({
         <li><strong>Total confirmed for your stay:</strong> ${amountText}</li>
       </ul>
       ${button(portalUrl, "View my booking")}
+      <p style="margin-top: 20px; font-size: 13px; color: #8a7d6e;">Want to save this for later? Copy the link below into your notes app, or send it to yourself on WhatsApp, so you can get back to your stay page anytime:</p>
+      ${link(portalUrl)}
     `),
   };
 }
