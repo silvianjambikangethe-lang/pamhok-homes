@@ -2,13 +2,16 @@ import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { releaseExpiredExtensionHold } from "@/lib/extension-hold";
 
-// Backstop only — the real enforcement of the 3-hour extension-hold
-// window is lazy (releaseExpiredExtensionHold runs on every booking read:
-// portal page, verify page, extend/check, extend/confirm), because
-// Vercel's cron on this project's current plan can only run once a day
-// and can't reliably enforce a 3-hour SLA on its own. This exists only to
-// eventually clean up a booking nobody happens to reload. Same auth
-// pattern as the other cron routes — see checkout-reminders for details.
+// Backstop only — the real enforcement of the 10-minute extension-hold
+// window is availability_view's own live time check (so a room frees up
+// for other guests the moment the window passes, independent of this
+// cron or any page load) plus releaseExpiredExtensionHold running on
+// every booking read (portal page, verify page, extend/check,
+// extend/confirm), which cleans up the stale pending_extension_* fields
+// on the booking row itself. Vercel's cron on this project's current plan
+// can only run once a day, so this route is only a backstop for a
+// booking nobody ever reloads. Same auth pattern as the other cron
+// routes — see checkout-reminders for details.
 
 function isAuthorized(request: Request): boolean {
   // Fail closed, not open — see checkout-reminders for why (2026-09-12).

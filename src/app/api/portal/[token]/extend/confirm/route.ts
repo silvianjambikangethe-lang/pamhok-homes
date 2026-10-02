@@ -88,15 +88,15 @@ export async function POST(
 
   // check_out is deliberately NOT updated here — the extra nights are only
   // granted once payment for them is confirmed (see the payment-completion
-  // paths: admin mark-paid and the jenga-pgw-callback edge function, which
-  // both call resolvePendingExtensionAfterPayment when they
-  // flip payment_status to Paid). Until then this is a real hold, not just
-  // a note: availability_view treats pending_extension_check_out as
-  // occupied for up to EXTENSION_HOLD_HOURS from
-  // pending_extension_requested_at, so nobody else can book those dates
-  // out from under this guest while they arrange payment — and the hold
-  // releases itself (see releaseExpiredExtensionHold) once that window
-  // passes without payment.
+  // paths: admin mark-paid, which calls resolvePendingExtensionAfterPayment
+  // directly, and the jenga-pgw-callback edge function, which runs the same
+  // logic via the mark_booking_paid SQL function — both flip payment_status
+  // to Paid). Until then this is a real hold, not just a note:
+  // availability_view treats pending_extension_check_out as occupied for up
+  // to EXTENSION_HOLD_MINUTES from pending_extension_requested_at, so nobody
+  // else can book those dates out from under this guest while they arrange
+  // payment — and the hold releases itself (see releaseExpiredExtensionHold)
+  // once that window passes without payment.
   //
   // Simplification, documented: extending re-opens payment for the whole
   // updated total rather than tracking the original charge and the

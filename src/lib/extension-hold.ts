@@ -4,17 +4,20 @@ import type { Database } from "@/lib/supabase/types";
 
 // A guest's stay-extension request holds the extra nights (via
 // availability_view — see the migration that added this) for up to this
-// long while they arrange payment. Vercel's cron on this project's
-// current (Hobby) plan can only run once a day, which can't reliably
-// enforce a 3-hour window on its own — so the real enforcement is lazy:
-// releaseExpiredExtensionHold() is called any time a booking with a
-// pending extension is read (portal page, verify page, extend/check,
-// extend/confirm), so a stale hold self-heals the moment anyone next
-// looks at it, independent of cron frequency. The daily cron
-// (cron/expire-extension-holds) is only a backstop for a booking nobody
-// ever reloads.
-export const EXTENSION_HOLD_HOURS = 3;
-const HOLD_MS = EXTENSION_HOLD_HOURS * 60 * 60 * 1000;
+// long while they arrange payment; once that window passes unpaid, the
+// room is available to other guests again immediately (availability_view
+// computes this live, from pending_extension_requested_at, independent of
+// any cron or page load). Vercel's cron on this project's current
+// (Hobby) plan can only run once a day, so it can't itself enforce a
+// short window — but it doesn't need to for availability; it only cleans
+// up the stale pending_extension_* fields on a booking row nobody
+// reloads. The same self-healing also runs any time a booking with a
+// pending extension is actually read (portal page, verify page,
+// extend/check, extend/confirm, releaseExpiredExtensionHold below), so a
+// stale hold's row is usually cleaned up within moments, well before the
+// daily cron would ever need to.
+export const EXTENSION_HOLD_MINUTES = 10;
+const HOLD_MS = EXTENSION_HOLD_MINUTES * 60 * 1000;
 
 type AdminClient = SupabaseClient<Database>;
 
@@ -79,7 +82,7 @@ export async function releaseExpiredExtensionHold(
   await supabase.from("guest_requests").insert({
     booking_id: booking.id,
     request_type: "extension",
-    message: `Extension hold expired unpaid after ${EXTENSION_HOLD_HOURS} hours, released, dates unchanged.`,
+    message: `Extension hold expired unpaid after ${EXTENSION_HOLD_MINUTES} minutes, released, dates unchanged.`,
     status: "Open",
   });
 
@@ -144,7 +147,7 @@ export async function resolvePendingExtensionAfterPayment(
       booking_id: booking.id,
       request_type: "extension",
       message: expired
-        ? "Guest paid, but their extension hold had already expired (3hr window passed) before payment cleared. Extra nights were NOT granted, amount adjusted back down. Check whether a refund of the difference is owed."
+        ? "Guest paid, but their extension hold had already expired (10min window passed) before payment cleared. Extra nights were NOT granted, amount adjusted back down. Check whether a refund of the difference is owed."
         : "Guest paid, but the extra nights were booked by someone else in the meantime. Extra nights were NOT granted, amount adjusted back down. Check whether a refund of the difference is owed.",
       status: "Open",
     });

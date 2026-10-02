@@ -17,7 +17,7 @@ function formatMoney(amount: number, currency: string) {
   }).format(amount);
 }
 
-const HOLD_HOURS = 3;
+const HOLD_MINUTES = 10;
 
 interface AlternateRoom {
   roomId: string;
@@ -179,7 +179,7 @@ export default function ExtendStaySection({
 
   if (pendingExtensionCheckOut) {
     const deadline = pendingExtensionRequestedAt
-      ? new Date(new Date(pendingExtensionRequestedAt).getTime() + HOLD_HOURS * 60 * 60 * 1000)
+      ? new Date(new Date(pendingExtensionRequestedAt).getTime() + HOLD_MINUTES * 60 * 1000)
       : null;
     return (
       <div className="rounded-2xl border border-gold-500/40 bg-gold-500/15 p-5 text-sm text-cocoa shadow-card dark:bg-gold-500/20 dark:text-gold-100">
@@ -192,7 +192,7 @@ export default function ExtendStaySection({
             These nights are held for you, but not confirmed yet. Complete payment below
             {deadline
               ? ` by ${format(deadline, "h:mm a")} on ${format(deadline, "d MMM")}`
-              : ` within ${HOLD_HOURS} hours`}{" "}
+              : ` within ${HOLD_MINUTES} minutes`}{" "}
             or the hold will be released.
           </p>
         </div>

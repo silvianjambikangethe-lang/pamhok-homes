@@ -206,13 +206,13 @@ create table if not exists bookings (
 
   -- A guest-requested stay extension is not applied to check_out until its
   -- payment is confirmed — these four columns hold the pending extension
-  -- (and its 3-hour availability hold, see availability_view below) until
+  -- (and its 10-minute availability hold, see availability_view below) until
   -- payment_status becomes Paid, at which point it's folded into check_out
   -- and cleared. See src/lib/extension-hold.ts.
   pending_extension_check_out date,          -- the check_out that will be applied once payment confirms
   pending_extension_nights int,              -- extra nights requested, for display only
   pending_extension_amount numeric(10,2),    -- additional cost already folded into total_amount, kept separately so it can be cleanly subtracted back out if the hold expires or conflicts
-  pending_extension_requested_at timestamptz, -- hold + payment window both expire 3 hours after this
+  pending_extension_requested_at timestamptz, -- hold + payment window both expire 10 minutes after this
 
   -- Door code / WiFi password live on `rooms`, not here — they're property
   -- details, not per-booking secrets. The guest portal shows them (once
@@ -635,7 +635,7 @@ create policy "admins view shift logs" on shift_logs
 -- room ONLY (no guest details, no payment/ID info), including a
 -- synthetic extra range for a booking's *pending* stay-extension hold
 -- (see the pending_extension_* columns above) so the calendar blocks
--- those nights for other guests during the guest's ~3 hour payment
+-- those nights for other guests during the guest's ~10 minute payment
 -- window, even though check_out itself hasn't moved yet.
 --
 -- The view runs security_invoker (not the default security_definer),

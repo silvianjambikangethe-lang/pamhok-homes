@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { releaseExpiredExtensionHold } from "@/lib/extension-hold";
+import { releaseExpiredExtensionHold, resolvePendingExtensionAfterPayment } from "@/lib/extension-hold";
 import { isStayOver } from "@/lib/stay-expiry";
 import { completeCheckout } from "@/lib/checkout";
 import { expireStaleBookingPayment, expireStaleLaundryPayment } from "@/lib/pending-payment-expiry";
@@ -55,6 +55,26 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
   if (error || !data) return null;
 
   if (await releaseExpiredExtensionHold(supabase, data)) {
+    ({ data, error } = await supabase
+      .from("bookings")
+      .select(
+        "*, room:rooms(id, name, slug, door_code, wifi_password, wifi_network_name), guest:guests(full_name)",
+      )
+      .eq("access_token", token)
+      .maybeSingle());
+    if (error || !data) return null;
+  }
+
+  // Self-heals a booking whose extension payment already cleared
+  // (payment_status Paid) but whose pending_extension_check_out never got
+  // resolved into an actual checkout-date change — the state a handful of
+  // bookings were stuck in before the Jenga payment callback's own
+  // extension-resolution gate was fixed (it used to only ever fire on a
+  // guest's very first payment, never on an extension top-up). Applying it
+  // here means any still-stuck booking fixes itself the moment its portal
+  // page is next loaded, with no admin action or guest-side refresh needed.
+  if (data.payment_status === "Paid" && data.pending_extension_check_out) {
+    await resolvePendingExtensionAfterPayment(supabase, data.id);
     ({ data, error } = await supabase
       .from("bookings")
       .select(
