@@ -22,14 +22,14 @@ const STYLE = `
 .reveal{animation:fadeUp 1s ease-out .3s both}
 .show{opacity:1!important}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.vase,.fl,.rise,.leaf{opacity:0}
+.wrap,.fl,.rise,.leaf{opacity:0}
 .stem{stroke-dasharray:1;stroke-dashoffset:1}
 .rise,.leaf{transform-box:fill-box;transform-origin:50% 100%;transform:scale(.2)}
-#bq.go .vase{animation:vIn 1.1s ease-out forwards}
+#bq.go .wrap{animation:vIn 1.1s ease-out forwards}
 #bq.go .stem{animation:draw .9s ease-out forwards;animation-delay:var(--d)}
 #bq.go .leaf,#bq.go .rise{animation:rise 1.5s cubic-bezier(.22,.8,.24,1) forwards;animation-delay:var(--d)}
 #bq.go .sway{animation:sway 8s ease-in-out 3.6s infinite}
-#bq.still .vase,#bq.still .rise,#bq.still .leaf{opacity:1;transform:none}
+#bq.still .wrap,#bq.still .rise,#bq.still .leaf{opacity:1;transform:none}
 #bq.still .stem{stroke-dashoffset:0}
 .sway{transform-box:view-box;transform-origin:180px 252px}
 @keyframes vIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -39,73 +39,16 @@ const STYLE = `
 `;
 
 // ---------------------------------------------------------------------------
-// Builds a calla-lilies-only bouquet SVG, reusing the same vase/stem/leaf
-// drawing approach as ThankYouGift's full bouquet.
+// Builds a calla-lilies-only bouquet SVG, wrapped in gift paper with a
+// ribbon and bow instead of standing in a vase.
 // ---------------------------------------------------------------------------
-
-function ruffle(): [number, number][] {
-  const pts: [number, number][] = [];
-  const N = 64;
-  for (let i = 0; i <= N; i++) {
-    const u = i / N;
-    const x = 100 + 160 * u;
-    const y =
-      248 +
-      9 * Math.sin(Math.PI * u) +
-      6 * Math.sin(u * Math.PI * 11 + 0.6) * (0.6 + 0.4 * Math.sin(u * Math.PI * 3.3 + 1));
-    pts.push([x, y]);
-  }
-  return pts;
-}
-
-function ruffleLine(dy: number) {
-  const p = ruffle();
-  let d = "M" + p[0][0].toFixed(1) + " " + (p[0][1] + dy).toFixed(1);
-  for (let i = 1; i < p.length; i++) {
-    d += " L" + p[i][0].toFixed(1) + " " + (p[i][1] + dy).toFixed(1);
-  }
-  return d;
-}
-
-function backRing(): [string, string] {
-  const p = ruffle();
-  const N = p.length - 1;
-  let d = "M";
-  for (let i = 0; i <= N; i++) {
-    const u = i / N;
-    const x = p[i][0];
-    const y = 243 - 5 * Math.sin(Math.PI * u) + 3.5 * Math.sin(u * Math.PI * 10 + 1.3);
-    d += (i ? " L" : "") + x.toFixed(1) + " " + y.toFixed(1);
-  }
-  const line = d;
-  for (let i = N; i >= 0; i--) {
-    d += " L" + p[i][0].toFixed(1) + " " + p[i][1].toFixed(1);
-  }
-  return [line, d + "Z"];
-}
-
-function vasePath() {
-  const p = ruffle();
-  let d = ruffleLine(0);
-  const e = p[p.length - 1];
-  d +=
-    " C246 " +
-    (e[1] + 6).toFixed(1) +
-    " 218 258 208 266 C210 286 248 298 248 332 C248 370 218 404 208 422 L152 422 C142 404 112 370 112 332 C112 298 150 286 152 266 C142 258 114 " +
-    (p[0][1] + 6).toFixed(1) +
-    " 100 " +
-    p[0][1].toFixed(1) +
-    "Z";
-  return d;
-}
 
 const defs =
   '<defs>' +
-  '<linearGradient id="vBody" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0B2A22"/><stop offset=".26" stop-color="#1F5A4A"/><stop offset=".42" stop-color="#3F866C"/><stop offset=".62" stop-color="#1B5042"/><stop offset="1" stop-color="#0A241E"/></linearGradient>' +
   '<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8A6A1F"/><stop offset=".3" stop-color="#EBD283"/><stop offset=".55" stop-color="#B8892B"/><stop offset=".8" stop-color="#F3E3A0"/><stop offset="1" stop-color="#8A6A1F"/></linearGradient>' +
-  '<radialGradient id="cream" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#FBF3DD"/><stop offset="1" stop-color="#DCC99A"/></radialGradient>' +
-  '<radialGradient id="floor" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>' +
-  '<pattern id="dam" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M9 2 L15 9 L9 16 L3 9Z" fill="none" stroke="#E8CE7A" stroke-opacity=".28" stroke-width=".7"/><circle cx="9" cy="9" r="1" fill="#E8CE7A" fill-opacity=".3"/></pattern>' +
+  '<linearGradient id="paper" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F3E6C6"/><stop offset=".4" stop-color="#E3CC94"/><stop offset=".7" stop-color="#C9A868"/><stop offset="1" stop-color="#A8824A"/></linearGradient>' +
+  '<linearGradient id="paperBack" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C9A868"/><stop offset=".5" stop-color="#A8824A"/><stop offset="1" stop-color="#8A6A3A"/></linearGradient>' +
+  '<radialGradient id="floor" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>' +
   '<linearGradient id="cOut2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".3" stop-color="#FBF9F1"/><stop offset=".65" stop-color="#EFE9D6"/><stop offset="1" stop-color="#D9D0B4"/></linearGradient>' +
   '<linearGradient id="cIn2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#F1EDDD"/><stop offset="1" stop-color="#BFC8A3"/></linearGradient>' +
   '<linearGradient id="cSpad2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F6B25A"/><stop offset=".5" stop-color="#EC8F32"/><stop offset="1" stop-color="#C9631A"/></linearGradient>' +
@@ -147,6 +90,41 @@ function callaFlower(x: number, y: number, rot: number, scale: number, flip: 1 |
     '<g class="rise" style="--d:' + d + 's"><g transform="translate(' + x + " " + y + ") rotate(" + rot +
     ") scale(" + (flip * scale).toFixed(2) + " " + scale.toFixed(2) + ')"><use href="#callaA"/></g></g>'
   );
+}
+
+// A paper cone (back layer + front layer with a center fold and a couple of
+// creases) with a vertical ribbon strip, a horizontal band, and a bow where
+// they cross — the calla lilies are wrapped in this instead of standing in
+// a vase, unlike the full ThankYouGift bouquet.
+function wrap() {
+  const top = 253;
+  const bottom = 424;
+  const back =
+    '<path d="M118 258 L242 258 L180 ' + bottom + 'Z" fill="url(#paperBack)"/>';
+  const front =
+    '<path d="M128 ' + top + ' L232 ' + top + ' L180 ' + bottom + 'Z" fill="url(#paper)" stroke="#8B6239" stroke-width="1.2" stroke-linejoin="round"/>' +
+    '<path d="M180 ' + top + ' L180 ' + bottom + '" fill="none" stroke="#8B6239" stroke-opacity=".45" stroke-width="1"/>' +
+    '<path d="M152 272 L172 398 M208 272 L188 398" fill="none" stroke="#FFFFFF" stroke-opacity=".2" stroke-width="2" stroke-linecap="round"/>';
+  const ribbonV =
+    '<path d="M172 ' + top + ' L188 ' + top + ' L180 ' + bottom + 'Z" fill="url(#gold)" stroke="#8A6A1F" stroke-width="1"/>';
+  const ribbonH =
+    '<path d="M140 296 L220 296 L213 317 L147 317Z" fill="url(#gold)" stroke="#8A6A1F" stroke-width="1"/>' +
+    '<path d="M143 302 L217 302 M145 311 L215 311" fill="none" stroke="#FFF8E0" stroke-opacity=".4" stroke-width="1"/>';
+  const bow =
+    '<g transform="translate(180 303)">' +
+    '<path d="M0 0 C-10 -14 -34 -14 -36 2 C-38 16 -16 18 0 6Z" fill="url(#gold)" stroke="#8A6A1F" stroke-width="1.1" stroke-linejoin="round"/>' +
+    '<path d="M0 0 C10 -14 34 -14 36 2 C38 16 16 18 0 6Z" fill="url(#gold)" stroke="#8A6A1F" stroke-width="1.1" stroke-linejoin="round"/>' +
+    '<path d="M-4 5 L-15 44 L-3 36Z" fill="url(#gold)" stroke="#8A6A1F" stroke-width="1"/>' +
+    '<path d="M4 5 L15 44 L3 36Z" fill="url(#gold)" stroke="#8A6A1F" stroke-width="1"/>' +
+    '<ellipse rx="8" ry="6" fill="url(#gold)" stroke="#8A6A1F" stroke-width="1.1"/>' +
+    "</g>";
+  return {
+    back: '<g class="wrap">' + back + "</g>",
+    front: '<g class="wrap">' +
+      '<ellipse cx="180" cy="438" rx="78" ry="8" fill="url(#floor)"/>' +
+      front + ribbonV + ribbonH + bow +
+      "</g>",
+  };
 }
 
 function build(bq: HTMLElement) {
@@ -194,48 +172,14 @@ function build(bq: HTMLElement) {
   C += '<g class="rise" style="--d:1.15s"><g transform="translate(214 148) rotate(10) scale(.78)"><use href="#callaBud"/></g></g>';
   C += '<g class="rise" style="--d:1.25s"><g transform="translate(122 160) rotate(-8) scale(.7)"><use href="#callaBud"/></g></g>';
 
-  const ruf = ruffleLine(0);
-  const br = backRing();
-  const vb =
-    '<g class="vase"><path d="' + br[1] + '" fill="#0C2A22"/>' +
-    '<path d="' + br[0] + '" fill="none" stroke="url(#gold)" stroke-width="2.2" stroke-linejoin="round"/>' +
-    '<ellipse cx="180" cy="251" rx="56" ry="8" fill="#07120E"/></g>';
-  const vf =
-    '<g class="vase">' +
-    '<ellipse cx="180" cy="450" rx="92" ry="9" fill="url(#floor)"/>' +
-    '<path d="M152 422 C150 428 142 430 140 434 L220 434 C218 430 210 428 208 422Z" fill="url(#vBody)"/>' +
-    '<path d="M130 434 L230 434 L236 446 L124 446Z" fill="#0F3A30"/>' +
-    '<path d="M130 434 L230 434 M124 446 L236 446" stroke="url(#gold)" stroke-width="2.5" fill="none"/>' +
-    '<use href="#vbody" fill="url(#vBody)"/>' +
-    '<g clip-path="url(#vclip)">' +
-    '<rect x="100" y="268" width="160" height="160" fill="url(#dam)"/>' +
-    '<path d="M146 284 C166 292 194 292 214 284" fill="none" stroke="url(#gold)" stroke-width="3"/>' +
-    '<path d="M146 291 C166 299 194 299 214 291" fill="none" stroke="#E8CE7A" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="0 6"/>' +
-    '<path d="M112 306 C150 320 210 320 248 306" fill="none" stroke="url(#gold)" stroke-width="3"/>' +
-    '<path d="M112 313 C150 327 210 327 248 313" fill="none" stroke="#E8CE7A" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="0 6"/>' +
-    '<path d="M134 398 C160 410 200 410 226 398" fill="none" stroke="url(#gold)" stroke-width="3"/>' +
-    '<path d="M134 391 C160 403 200 403 226 391" fill="none" stroke="#E8CE7A" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="0 6"/>' +
-    '<path d="M126 318 C122 348 130 380 150 406" fill="none" stroke="#FFFFFF" stroke-opacity=".2" stroke-width="8" stroke-linecap="round"/>' +
-    '<path d="M236 324 C240 348 232 374 216 394" fill="none" stroke="#FFFFFF" stroke-opacity=".1" stroke-width="4" stroke-linecap="round"/>' +
-    "</g>" +
-    '<ellipse cx="180" cy="348" rx="22" ry="27" fill="url(#cream)" stroke="url(#gold)" stroke-width="2.8"/>' +
-    '<ellipse cx="180" cy="348" rx="17.5" ry="22" fill="none" stroke="#B8892B" stroke-width=".9"/>' +
-    '<text x="180" y="358" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-weight="600" font-size="27" fill="#7A5A16">PH</text>' +
-    '<path d="M154 344 C144 330 130 334 132 346 C134 355 146 353 146 346 M206 344 C216 330 230 334 228 346 C226 355 214 353 214 346" fill="none" stroke="url(#gold)" stroke-width="2" stroke-linecap="round"/>' +
-    '<path d="M160 382 C170 392 190 392 200 382 M168 322 C174 316 186 316 192 322" fill="none" stroke="url(#gold)" stroke-width="1.8" stroke-linecap="round"/>' +
-    '<path d="M152 290 C138 292 132 304 140 310 C146 314 152 308 148 304 M208 290 C222 292 228 304 220 310 C214 314 208 308 212 304" fill="none" stroke="url(#gold)" stroke-width="2" stroke-linecap="round"/>' +
-    '<path d="' + ruf + '" fill="none" stroke="url(#gold)" stroke-width="2.6" stroke-linejoin="round"/>' +
-    '<path d="' + ruffleLine(3) + '" fill="none" stroke="#8A6A1F" stroke-opacity=".7" stroke-width="1" stroke-linejoin="round"/>' +
-    "</g>";
+  const { back, front } = wrap();
 
   bq.innerHTML =
     defs +
-    '<path id="vbody" d="' + vasePath() + '"/>' +
-    '<clipPath id="vclip"><use href="#vbody"/></clipPath>' +
     "</defs>" +
-    vb +
+    back +
     '<g class="sway">' + sA + "</g>" +
-    vf +
+    front +
     '<g class="sway">' + L + C + "</g>";
 }
 
@@ -374,7 +318,7 @@ export default function CallaThankYouGift({ onFinished }: { onFinished?: () => v
               id="bq"
               viewBox="0 20 360 440"
               role="img"
-              aria-label="A bouquet of calla lilies in an ornate Victorian vase"
+              aria-label="A bouquet of calla lilies wrapped in gift paper with a ribbon and bow"
             />
           </div>
           <p id="title" />
