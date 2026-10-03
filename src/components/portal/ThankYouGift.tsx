@@ -257,7 +257,7 @@ function bud(x: number, y: number, r: number) {
   );
 }
 
-function build(bq: HTMLElement) {
+function build(bq: HTMLElement, variant: "full" | "calla") {
   let sA = "";
   let L = "";
   let O = "";
@@ -298,34 +298,59 @@ function build(bq: HTMLElement) {
       ") rotate(" + l[2] + ") scale(" + l[3] + " " + l[4] + ')"><use href="#lf"/></g></g>';
   });
 
-  const ol: [number, number, number, number, number, number][] = [
-    [56, 168, 26, -6, 1.4, 1],
-    [56, 128, 23, 6, 1.55, 1],
-    [76, 92, 19, 14, 1.7, -1],
-    [309, 186, 24, 12, 1.5, -1],
-    [304, 146, 21, -10, 1.65, 1],
-  ];
-  ol.forEach((o) => {
-    O += flower(orchid(o[2], o[5]), "translate(" + o[0] + " " + o[1] + ") rotate(" + o[3] + ")", o[4]);
-  });
-  O +=
-    '<g class="fl" style="--d:1.9s">' +
-    bud(86, 70, 5) + bud(94, 60, 3.5) + bud(292, 114, 4.5) + bud(285, 104, 3) +
-    "</g>";
-
-  C += '<g class="rise" style="--d:1.15s"><g transform="translate(214 148) rotate(10) scale(.78)"><use href="#callaBud"/></g></g>';
-  C += '<g class="rise" style="--d:1.2s"><g transform="translate(122 160) rotate(-8) scale(.78)"><use href="#callaA"/></g></g>';
-  C += '<g class="rise" style="--d:1.35s"><g transform="translate(248 176) rotate(24) scale(-.64 .64)"><use href="#callaA"/></g></g>';
-
   function rr() {
     return Math.round(Math.random() * 360);
   }
-  D += flower(dahlia(24), "translate(100 172) rotate(" + rr() + ")", 1.7);
-  D += flower(dahlia(21), "translate(258 206) rotate(" + rr() + ")", 1.75);
-  D += flower(dahlia(16), "translate(172 162) rotate(" + rr() + ")", 1.9);
-  D += flower(dahlia(46), "translate(190 116) rotate(" + rr() + ")", 1.8);
-  D += flower(dahlia(34), "translate(136 188) rotate(" + rr() + ")", 2);
-  D += flower(dahlia(29), "translate(210 196) rotate(" + rr() + ")", 2.2);
+
+  if (variant === "calla") {
+    // Calla-only bouquet: the dahlia/orchid positions are reused for extra
+    // calla stems (scaled up) so the arrangement still fills out, instead of
+    // introducing new flower art.
+    const callas: [number, number, number, number, number][] = [
+      [100, 172, -10, 0.85, 1.7],
+      [258, 206, 16, 0.8, 1.75],
+      [172, 162, 22, 0.66, 1.9],
+      [190, 116, -14, 1.0, 1.8],
+      [136, 188, 10, 0.86, 2],
+      [210, 196, -22, 0.74, 2.2],
+    ];
+    callas.forEach((c, i) => {
+      const flip = i % 2 === 0 ? 1 : -1;
+      C += flower(
+        '<use href="#callaA"/>',
+        "translate(" + c[0] + " " + c[1] + ") rotate(" + c[2] + ") scale(" + (flip * c[3]).toFixed(2) + " " + c[3].toFixed(2) + ")",
+        c[4]
+      );
+    });
+    C += '<g class="rise" style="--d:1.15s"><g transform="translate(214 148) rotate(10) scale(.78)"><use href="#callaBud"/></g></g>';
+    C += '<g class="rise" style="--d:1.25s"><g transform="translate(122 160) rotate(-8) scale(.7)"><use href="#callaBud"/></g></g>';
+  } else {
+    const ol: [number, number, number, number, number, number][] = [
+      [56, 168, 26, -6, 1.4, 1],
+      [56, 128, 23, 6, 1.55, 1],
+      [76, 92, 19, 14, 1.7, -1],
+      [309, 186, 24, 12, 1.5, -1],
+      [304, 146, 21, -10, 1.65, 1],
+    ];
+    ol.forEach((o) => {
+      O += flower(orchid(o[2], o[5]), "translate(" + o[0] + " " + o[1] + ") rotate(" + o[3] + ")", o[4]);
+    });
+    O +=
+      '<g class="fl" style="--d:1.9s">' +
+      bud(86, 70, 5) + bud(94, 60, 3.5) + bud(292, 114, 4.5) + bud(285, 104, 3) +
+      "</g>";
+
+    C += '<g class="rise" style="--d:1.15s"><g transform="translate(214 148) rotate(10) scale(.78)"><use href="#callaBud"/></g></g>';
+    C += '<g class="rise" style="--d:1.2s"><g transform="translate(122 160) rotate(-8) scale(.78)"><use href="#callaA"/></g></g>';
+    C += '<g class="rise" style="--d:1.35s"><g transform="translate(248 176) rotate(24) scale(-.64 .64)"><use href="#callaA"/></g></g>';
+
+    D += flower(dahlia(24), "translate(100 172) rotate(" + rr() + ")", 1.7);
+    D += flower(dahlia(21), "translate(258 206) rotate(" + rr() + ")", 1.75);
+    D += flower(dahlia(16), "translate(172 162) rotate(" + rr() + ")", 1.9);
+    D += flower(dahlia(46), "translate(190 116) rotate(" + rr() + ")", 1.8);
+    D += flower(dahlia(34), "translate(136 188) rotate(" + rr() + ")", 2);
+    D += flower(dahlia(29), "translate(210 196) rotate(" + rr() + ")", 2.2);
+  }
 
   const ruf = ruffleLine(0);
   const br = backRing();
@@ -523,8 +548,10 @@ function buildTray(trayArt: HTMLElement) {
 // The component
 // ---------------------------------------------------------------------------
 
-const ThankYouGift = forwardRef<ThankYouGiftHandle, { onFinished?: () => void }>(
-  function ThankYouGift({ onFinished }, ref) {
+const ThankYouGift = forwardRef<
+  ThankYouGiftHandle,
+  { onFinished?: () => void; variant?: "full" | "calla" }
+>(function ThankYouGift({ onFinished, variant = "full" }, ref) {
     const rootRef = useRef<HTMLDivElement>(null);
     const playFnRef = useRef<() => void>(() => {});
     const onFinishedRef = useRef(onFinished);
@@ -548,23 +575,37 @@ const ThankYouGift = forwardRef<ThankYouGiftHandle, { onFinished?: () => void }>
       const envFront = root.querySelector<HTMLElement>("#envFront")!;
       const trayArt = root.querySelector<HTMLElement>("#trayArt")!;
 
-      build(bqEl);
+      build(bqEl, variant);
       buildEnvelope(envBack, envFront);
       buildTray(trayArt);
 
-      titleEl.textContent = "We're so happy you enjoyed your stay";
-      subEl.textContent =
-        "Please accept this virtual bouquet, a small present from all of us at Pamhok Homes. We hope to welcome you back soon.";
+      if (variant === "calla") {
+        titleEl.textContent = "Thank you for your honest feedback";
+        subEl.textContent =
+          "Please accept this bouquet of calla lilies — a small thank-you from all of us at Pamhok Homes. We hope to do better next time.";
+      } else {
+        titleEl.textContent = "We're so happy you enjoyed your stay";
+        subEl.textContent =
+          "Please accept this virtual bouquet, a small present from all of us at Pamhok Homes. We hope to welcome you back soon.";
+      }
 
       const timers: number[] = [];
       const anims: Animation[] = [];
-      const pcols = [
-        ["#C23B5E", "#7A1230"],
-        ["#9A1C42", "#4A0820"],
-        ["#F8DDE8", "#E7A3C3"],
-        ["#FFFFFF", "#EBD9C8"],
-        ["#D2476B", "#8E1B3A"],
-      ];
+      const pcols =
+        variant === "calla"
+          ? [
+              ["#FFFFFF", "#EBD9C8"],
+              ["#F7F2E2", "#D9D0B4"],
+              ["#EFEBD9", "#BFC8A3"],
+              ["#FADF70", "#C79212"],
+            ]
+          : [
+              ["#C23B5E", "#7A1230"],
+              ["#9A1C42", "#4A0820"],
+              ["#F8DDE8", "#E7A3C3"],
+              ["#FFFFFF", "#EBD9C8"],
+              ["#D2476B", "#8E1B3A"],
+            ];
 
       function petals() {
         for (let i = 0; i < 44; i++) {
@@ -734,8 +775,9 @@ const ThankYouGift = forwardRef<ThankYouGiftHandle, { onFinished?: () => void }>
         document.removeEventListener("keydown", onKeyDown);
       };
       // Runs once per mount: this overlay is created fresh each time a
-      // 4.8-5 star review triggers it, so there's nothing to react to here.
-    }, []);
+      // review triggers it (variant fixed for that mount), so there's
+      // nothing else to react to here.
+    }, [variant]);
 
     useImperativeHandle(ref, () => ({
       play: () => playFnRef.current(),
@@ -765,7 +807,11 @@ const ThankYouGift = forwardRef<ThankYouGiftHandle, { onFinished?: () => void }>
                   id="bq"
                   viewBox="0 20 360 440"
                   role="img"
-                  aria-label="A bouquet of dahlias, calla lilies and orchids in an ornate Victorian vase"
+                  aria-label={
+                    variant === "calla"
+                      ? "A bouquet of calla lilies in an ornate Victorian vase"
+                      : "A bouquet of dahlias, calla lilies and orchids in an ornate Victorian vase"
+                  }
                 />
               </div>
               <div aria-live="polite">

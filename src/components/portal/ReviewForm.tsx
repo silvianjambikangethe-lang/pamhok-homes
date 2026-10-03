@@ -4,12 +4,16 @@ import { useRef, useState } from "react";
 import { ArrowClockwise, CheckCircle } from "@phosphor-icons/react";
 import StarRating from "@/components/StarRating";
 import ThankYouGift, { type ThankYouGiftHandle } from "@/components/portal/ThankYouGift";
+import CallaThankYouGift from "@/components/portal/CallaThankYouGift";
 
-// A gift this warm is reserved for guests who loved their stay enough to say
-// so — 4.8 and 5.0 are the only ratings the 0.1-step slider can reach in
-// that top sliver. Exported so CheckoutSection can keep its post-review
-// refresh delay in sync with whether the gift animation is about to play.
+// 4.8 and 5.0 (the only ratings the 0.1-step slider can reach in that top
+// sliver) get the full ThankYouGift bouquet, unchanged, with its replay
+// button. 3.5-4.7 get a separate, much simpler calla-lilies gift (pops up,
+// holds, shrinks away — no envelope, no platter, no replay). Below 3.5, no
+// gift. Exported so CheckoutSection can keep its post-review refresh delay
+// in sync with whichever gift (if any) is about to play.
 export const GIFT_THRESHOLD = 4.8;
+export const GIFT_LOW_THRESHOLD = 3.5;
 
 // The form itself, without any card around it: ReviewPrompt supplies the
 // card, the pop-up animation and the X to skip it.
@@ -60,14 +64,15 @@ export default function ReviewForm({
   }
 
   if (done) {
-    const giftEarned = rating >= GIFT_THRESHOLD;
+    const fullGiftEarned = rating >= GIFT_THRESHOLD;
+    const callaGiftEarned = !fullGiftEarned && rating >= GIFT_LOW_THRESHOLD;
     return (
       <div className="flex flex-col gap-2 pr-8 text-sm font-medium text-ink">
         <div className="flex items-center gap-2">
           <CheckCircle size={20} weight="fill" className="text-success" />
           Thank you for your review!
         </div>
-        {giftEarned && (
+        {fullGiftEarned && (
           <>
             <ThankYouGift ref={giftRef} onFinished={() => setShowReplay(true)} />
             {showReplay && (
@@ -82,6 +87,7 @@ export default function ReviewForm({
             )}
           </>
         )}
+        {callaGiftEarned && <CallaThankYouGift />}
       </div>
     );
   }
