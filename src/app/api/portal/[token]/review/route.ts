@@ -71,6 +71,14 @@ export async function POST(
   });
 
   if (insertError) {
+    // 23505 = unique_violation on reviews_booking_id_unique — two
+    // near-simultaneous submits (double-click, two open tabs) both passed
+    // the "no existing review" check above before either insert landed.
+    // The DB constraint is the real guard; this just gives the second one
+    // the same friendly message as the check above instead of a 500.
+    if (insertError.code === "23505") {
+      return NextResponse.json({ error: "You've already reviewed this stay." }, { status: 409 });
+    }
     return NextResponse.json({ error: "Could not save review." }, { status: 500 });
   }
 
