@@ -158,6 +158,26 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
+  // Keep what Jenga actually said (see payment_callback_log), so a card or
+  // M-Pesa payment that doesn't complete can be diagnosed afterwards. Best
+  // effort only: it must never get in the way of recording the payment. Jenga's
+  // signed blob is stored as a length, not its contents.
+  try {
+    const all = Object.fromEntries(params.entries());
+    const blob = all["secureResponse"];
+    delete all["secureResponse"];
+    await supabase.from("payment_callback_log").insert({
+      reference: orderReference,
+      status: params.get("transactionStatus") ?? params.get("status"),
+      response_status: responseOk,
+      channel,
+      amount: Number.isFinite(paidAmount) ? paidAmount : null,
+      params: { ...all, secureResponseChars: blob ? blob.length : 0 },
+    });
+  } catch (err) {
+    console.error("payment_callback_log insert failed", err);
+  }
+
   const method = /mpesa|m-pesa|mobile|equitel|airtel|mkey/i.test(channel) ? "mpesa" : "card";
   const success =
     (status === "success" || status === "paid") && responseOk !== "false";
