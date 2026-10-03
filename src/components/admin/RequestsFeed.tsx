@@ -159,9 +159,9 @@ export default function RequestsFeed({
                 <p className="mt-1 text-xs text-ink/65">
                   {format(parseISO(r.created_at), "d MMM yyyy, h:mm a")}
                 </p>
-                {(r.status === "Returned" || r.status === "Resolved") && (
+                {((isLaundry && r.status === "Closed") || r.status === "Resolved") && (
                   <p className="mt-1 text-xs font-medium text-ink/65">
-                    {r.status} by {r.completedByStaffName ?? "admin"} at{" "}
+                    {isLaundry ? "Returned" : r.status} by {r.completedByStaffName ?? "admin"} at{" "}
                     {format(parseISO(r.updated_at), "h:mm a")}
                   </p>
                 )}
