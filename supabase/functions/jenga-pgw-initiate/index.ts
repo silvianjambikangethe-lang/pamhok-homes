@@ -112,13 +112,27 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: booking, error: bookingError } = await supabase
-      .from("bookings")
-      .select(
-        "id, room_id, check_in, check_out, paid_at, total_amount, payment_status, id_verification_status, terms_accepted_at, pending_extension_check_out, pending_extension_amount, guest:guests(full_name, email, phone)",
-      )
-      .eq("access_token", token)
-      .maybeSingle();
+    // The booking and (for a laundry payment) the laundry request are looked up
+    // together instead of one after the other; the laundry row is checked to
+    // belong to this booking right after, exactly as the old query did.
+    const [bookingResult, laundryResult] = await Promise.all([
+      supabase
+        .from("bookings")
+        .select(
+          "id, room_id, check_in, check_out, paid_at, total_amount, payment_status, id_verification_status, terms_accepted_at, pending_extension_check_out, pending_extension_amount, guest:guests(full_name, email, phone)",
+        )
+        .eq("access_token", token)
+        .maybeSingle(),
+      requestId
+        ? supabase
+            .from("guest_requests")
+            .select("id, booking_id, laundry_amount, laundry_payment_status")
+            .eq("id", requestId)
+            .eq("request_type", "laundry")
+            .maybeSingle()
+        : Promise.resolve(null),
+    ]);
+    const { data: booking, error: bookingError } = bookingResult;
 
     if (bookingError || !booking) {
       return json({ error: "Booking not found." }, 404);
@@ -141,15 +155,10 @@ Deno.serve(async (req) => {
       // Laundry charge: priced by the host after the request is made, and only
       // payable once the booking's own payment gate has passed (same as the
       // old mpesa-initiate-laundry, which did not re-check ID/terms).
-      const { data: laundry, error: laundryError } = await supabase
-        .from("guest_requests")
-        .select("id, laundry_amount, laundry_payment_status")
-        .eq("id", requestId)
-        .eq("booking_id", booking.id)
-        .eq("request_type", "laundry")
-        .maybeSingle();
+      const laundry = laundryResult?.data;
+      const laundryError = laundryResult?.error;
 
-      if (laundryError || !laundry || !laundry.laundry_amount) {
+      if (laundryError || !laundry || laundry.booking_id !== booking.id || !laundry.laundry_amount) {
         return json({ error: "Laundry request not found." }, 404);
       }
       if (laundry.laundry_payment_status === "Paid") {
@@ -368,29 +377,34 @@ Deno.serve(async (req) => {
     // booking payments were already recorded above (that is what holds the
     // dates); laundry charges and extension top-ups are recorded here. A
     // failure to record only degrades to the payment_reference fallback below.
-    if (!claimedReference) {
-      const { error: attemptError } = await supabase.from("payment_attempts").insert({
-        reference: orderReference,
-        booking_id: requestId ? null : booking.id,
-        request_id: requestId ?? null,
-      });
-      if (attemptError) console.error("payment_attempts insert failed", attemptError);
-    }
-
+    // The attempt record and the payment_reference are independent writes, so
+    // they run together.
     const tWrite = performance.now();
-    // The method (mpesa vs card) isn't known until the guest picks a channel
-    // on Jenga's page — the callback fills it in from Jenga's channel field.
-    if (requestId) {
-      await supabase
-        .from("guest_requests")
-        .update({ laundry_payment_reference: orderReference })
-        .eq("id", requestId);
-    } else {
-      await supabase
-        .from("bookings")
-        .update({ payment_reference: orderReference })
-        .eq("id", booking.id);
-    }
+    await Promise.all([
+      !claimedReference
+        ? supabase
+            .from("payment_attempts")
+            .insert({
+              reference: orderReference,
+              booking_id: requestId ? null : booking.id,
+              request_id: requestId ?? null,
+            })
+            .then(({ error: attemptError }) => {
+              if (attemptError) console.error("payment_attempts insert failed", attemptError);
+            })
+        : Promise.resolve(),
+      // The method (mpesa vs card) isn't known until the guest picks a channel
+      // on Jenga's page — the callback fills it in from Jenga's channel field.
+      requestId
+        ? supabase
+            .from("guest_requests")
+            .update({ laundry_payment_reference: orderReference })
+            .eq("id", requestId)
+        : supabase
+            .from("bookings")
+            .update({ payment_reference: orderReference })
+            .eq("id", booking.id),
+    ]);
 
     lap("our_db_writes", tWrite);
     lap("total", t0);
