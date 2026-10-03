@@ -78,6 +78,14 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Stage timers (ms), returned in the response so slowness can be traced to
+  // our own steps vs. Jenga's.
+  const t0 = performance.now();
+  const timings: Record<string, number> = {};
+  const lap = (name: string, since: number) => {
+    timings[name] = Math.round(performance.now() - since);
+  };
+
   try {
     const { token, requestId, termsAccepted, method } = await req.json();
 
@@ -98,6 +106,7 @@ Deno.serve(async (req) => {
       return json({ error: "Payment not yet configured.", configured: false }, 501);
     }
 
+    const tLookup = performance.now();
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -224,6 +233,8 @@ Deno.serve(async (req) => {
       }
     }
 
+    lap("our_lookups", tLookup);
+    const tAuth = performance.now();
     const authRes = await fetch(`${AUTH_BASE}/authentication/api/v3/authenticate/merchant`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Api-Key": consumerKey },
@@ -236,6 +247,7 @@ Deno.serve(async (req) => {
       return json({ error: "Could not start payment." }, 502);
     }
     const { accessToken } = await authRes.json();
+    lap("jenga_auth", tAuth);
 
     const currency = "KES";
     const callbackUrl =
@@ -332,6 +344,7 @@ Deno.serve(async (req) => {
         ? [String(Number(amountKes.toFixed(2)))]
         : [Math.round(amountKes).toFixed(2)];
 
+    const tPost = performance.now();
     let pgwRes: Response | null = null;
     let sentAmount = "";
     for (const candidate of orderAmountCandidates) {
@@ -341,6 +354,7 @@ Deno.serve(async (req) => {
       console.error("Jenga rejected orderAmount format", candidate, pgwRes.status);
     }
 
+    lap("jenga_checkout_post", tPost);
     const redirectUrl = pgwRes?.headers.get("location");
     if (!pgwRes || pgwRes.status !== 302 || !redirectUrl) {
       const pgwBody = await pgwRes?.text().catch(() => "") ?? "";
@@ -363,6 +377,7 @@ Deno.serve(async (req) => {
       if (attemptError) console.error("payment_attempts insert failed", attemptError);
     }
 
+    const tWrite = performance.now();
     // The method (mpesa vs card) isn't known until the guest picks a channel
     // on Jenga's page — the callback fills it in from Jenga's channel field.
     if (requestId) {
@@ -377,8 +392,10 @@ Deno.serve(async (req) => {
         .eq("id", booking.id);
     }
 
+    lap("our_db_writes", tWrite);
+    lap("total", t0);
     // orderAmount is echoed so the exact string posted to Jenga can be checked.
-    return json({ ok: true, redirectUrl, orderAmount: sentAmount });
+    return json({ ok: true, redirectUrl, orderAmount: sentAmount, timings });
   } catch (err) {
     console.error("jenga-pgw-initiate failed", err);
     return json({ error: "Could not start payment. Please try again." }, 500);
