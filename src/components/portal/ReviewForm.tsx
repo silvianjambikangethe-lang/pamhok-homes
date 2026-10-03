@@ -4,13 +4,16 @@ import { useRef, useState } from "react";
 import { ArrowClockwise, CheckCircle } from "@phosphor-icons/react";
 import StarRating from "@/components/StarRating";
 import ThankYouGift, { type ThankYouGiftHandle } from "@/components/portal/ThankYouGift";
+import CallaThankYouGift from "@/components/portal/CallaThankYouGift";
 
-// Every submitted review now gets a thank-you bouquet: 4.8 and 5.0 (the only
-// ratings the 0.1-step slider can reach in that top sliver) get the full
-// dahlia/orchid/calla bouquet, everything else gets a calla-lilies-only
-// bouquet with an apologetic note. Exported so CheckoutSection can keep its
-// post-review refresh delay in sync with the gift animation.
+// 4.8 and 5.0 (the only ratings the 0.1-step slider can reach in that top
+// sliver) get the full ThankYouGift bouquet, unchanged, with its replay
+// button. 3.5-4.7 get a separate, much simpler calla-lilies gift (pops up,
+// holds, shrinks away — no envelope, no platter, no replay). Below 3.5, no
+// gift. Exported so CheckoutSection can keep its post-review refresh delay
+// in sync with whichever gift (if any) is about to play.
 export const GIFT_THRESHOLD = 4.8;
+export const GIFT_LOW_THRESHOLD = 3.5;
 
 // The form itself, without any card around it: ReviewPrompt supplies the
 // card, the pop-up animation and the X to skip it.
@@ -61,24 +64,30 @@ export default function ReviewForm({
   }
 
   if (done) {
-    const giftVariant: "full" | "calla" = rating >= GIFT_THRESHOLD ? "full" : "calla";
+    const fullGiftEarned = rating >= GIFT_THRESHOLD;
+    const callaGiftEarned = !fullGiftEarned && rating >= GIFT_LOW_THRESHOLD;
     return (
       <div className="flex flex-col gap-2 pr-8 text-sm font-medium text-ink">
         <div className="flex items-center gap-2">
           <CheckCircle size={20} weight="fill" className="text-success" />
           Thank you for your review!
         </div>
-        <ThankYouGift ref={giftRef} variant={giftVariant} onFinished={() => setShowReplay(true)} />
-        {showReplay && (
-          <button
-            type="button"
-            onClick={() => giftRef.current?.play()}
-            className="focus-ring mt-1 flex w-fit items-center gap-1.5 rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-medium text-ink/75 transition-colors hover:bg-page hover:text-ink"
-          >
-            <ArrowClockwise size={14} />
-            Gift Replay
-          </button>
+        {fullGiftEarned && (
+          <>
+            <ThankYouGift ref={giftRef} onFinished={() => setShowReplay(true)} />
+            {showReplay && (
+              <button
+                type="button"
+                onClick={() => giftRef.current?.play()}
+                className="focus-ring mt-1 flex w-fit items-center gap-1.5 rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-medium text-ink/75 transition-colors hover:bg-page hover:text-ink"
+              >
+                <ArrowClockwise size={14} />
+                Gift Replay
+              </button>
+            )}
+          </>
         )}
+        {callaGiftEarned && <CallaThankYouGift />}
       </div>
     );
   }

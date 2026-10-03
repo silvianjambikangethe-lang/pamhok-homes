@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, ClockCountdown } from "@phosphor-icons/react";
 import ReviewPrompt from "@/components/portal/ReviewPrompt";
+import { GIFT_THRESHOLD, GIFT_LOW_THRESHOLD } from "@/components/portal/ReviewForm";
 
 // Easy to extend later (trash out, windows closed, etc.) without
 // restructuring, just add another string.
@@ -179,12 +180,15 @@ export default function CheckoutSection({
             <ReviewPrompt
               token={token}
               onClose={() => router.refresh()}
-              onSubmitted={() => {
-                // Every review now plays a ~18s thank-you gift animation
-                // (see ThankYouGift — full bouquet or calla lilies only)
-                // before its own replay button appears — refreshing the
-                // page any sooner than that would unmount it mid-animation.
-                window.setTimeout(() => router.refresh(), 19000);
+              onSubmitted={(rating) => {
+                // A 4.8-5 star review plays a ~18s thank-you gift animation
+                // (see ThankYouGift) before its own replay button appears.
+                // A 3.5-4.7 review plays a much shorter (~6s) calla-lilies
+                // gift (see CallaThankYouGift) with no replay. Either way,
+                // refreshing the page any sooner would cut the gift off.
+                const delay =
+                  rating >= GIFT_THRESHOLD ? 19000 : rating >= GIFT_LOW_THRESHOLD ? 6000 : 2500;
+                window.setTimeout(() => router.refresh(), delay);
               }}
             />
           </div>
