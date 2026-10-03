@@ -46,7 +46,13 @@ const LAUNDRY_STAGES = [
   "Closed",
 ];
 
-export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
+export default function RequestsFeed({
+  requests,
+  showingResolved = false,
+}: {
+  requests: RequestRow[];
+  showingResolved?: boolean;
+}) {
   const router = useRouter();
   // Picks up a staff member advancing a stage, or a payment callback
   // marking a laundry charge paid, without the admin refreshing the tab.
@@ -114,7 +120,7 @@ export default function RequestsFeed({ requests }: { requests: RequestRow[] }) {
   if (requests.length === 0) {
     return (
       <p className="rounded-2xl border border-taupe/20 bg-surface p-6 text-sm text-ink/65 shadow-card">
-        No guest requests yet.
+        {showingResolved ? "No guest requests yet." : "No open requests. You're all caught up."}
       </p>
     );
   }

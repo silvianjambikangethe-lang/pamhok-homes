@@ -67,12 +67,18 @@ export async function POST(
     }
   }
 
+  // "Returned" is the last real step, so it closes the request straight away:
+  // the guest still gets the "returned" email below, but the request leaves the
+  // admin's open list and the guest can start a fresh pickup. (Returned is
+  // only reachable once the charge is paid, checked above.)
+  const savedStage: GuestRequestStatus = stage === "Returned" ? "Closed" : stage;
+
   // completed_by cleared, not preserved: this is an admin action, not a
   // staff one, so any leftover staff attribution from an earlier stage
   // would misleadingly claim a staff member made THIS transition too.
   const { data, error } = await supabase
     .from("guest_requests")
-    .update({ status: stage, completed_by: null, updated_at: new Date().toISOString() })
+    .update({ status: savedStage, completed_by: null, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("request_type", "laundry")
     .select("id, booking_id");
