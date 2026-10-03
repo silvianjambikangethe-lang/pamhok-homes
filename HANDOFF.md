@@ -1,6 +1,6 @@
 # Pamhok Homes — Handoff / Status Summary
 
-Last updated: 2026-09-24. Paste this file into a new chat to continue
+Last updated: 2026-10-03. Paste this file into a new chat to continue
 with full context. This is a **condensed rewrite** — full session-by-
 session history before this date lives in git (`git log HANDOFF.md`,
 or `git show <commit>:HANDOFF.md` for any prior version) if you ever
@@ -17,223 +17,80 @@ open work.
 
 ## Currently open / blocked
 
-- **PayPal is gone, fully removed 2026-09-22** (was previously disabled
-  via a kill switch after PayPal restricted the merchant account — that
-  whole code path, `lib/paypal.ts`, `payment-flags.ts`, and all PayPal
-  routes/UI are deleted, not just switched off). Guests now choose
-  **M-Pesa or card** only. Don't re-add PayPal without the owner asking.
-- **Old sandbox findings, superseded:** the sandbox merchant also lacked
-  the raw STK/USSD Push product (401101) — same root cause as the live
-  "Not Authorized"; both merchants are PGW-only. Known gap that remains:
-  the callback does not verify Jenga's `hash` (formula unpublished);
-  compensated by random per-attempt references + an underpayment check.
-- **Payments now go through Jenga PGW hosted checkout (2026-09-24).**
-  The live merchant is subscribed to PGW *Mobile Money (MPESA, Equitel)*
-  and *Card* — NOT the raw STK/USSD Push API (the old `mpesa-initiate`
-  got "Not Authorized" for that reason). New Edge Functions, deployed by
-  hand via the Supabase dashboard (the MCP deploy tool was blocked):
-  `jenga-pgw-initiate` (JWT on; booking, or laundry when `requestId` is
-  passed; `JENGA_ENV=production` → live `JENGA_*` secrets +
-  api.finserve.africa / v3.jengapgw.io, else sandbox) and
-  `jenga-pgw-callback` (JWT off; marks paid via the `mark_*` RPCs; method
-  taken from Jenga's `desc`; only *under*payment is rejected, since
-  Jenga adds a fee on top). References are random per attempt so a guest
-  can't forge a paid callback. Live test: `env:"live"`, real checkout
-  page, **Card works** (priced 1 KES as KSh 1.04), but **MPESA fails on
-  Jenga's page with error 1001 "unable to calculate charges"** at both
-  0 and 1 KES — a Jenga merchant-config issue, needs Jenga support
-  (message drafted in chat: ask them to enable charges/tariffs for
-  Mobile Money on the live merchant). Full paid-callback loop not yet
-  verified with real money.
-- **BUG FOUND + FIXED IN SOURCE 2026-09-24 (redeploy needed):** a real
-  1.04 KES card payment succeeded at Jenga but the site showed Failed,
-  because the deployed `jenga-pgw-callback` read Jenga's documented
-  field names. The REAL callback is: `responseStatus=true&transactionStatus=SUCCESS
-  &orderReference&transactionReference&transactionDate&transactionAmount
-  &transactionCurrency&message&paymentChannel=CARD|MPESA|EQUITEL|AIRTEL
-  &secureResponse&extraData`. The source now uses those (documented names
-  kept as fallbacks), marks Failed only on an explicit failure, never flips
-  an already-Paid booking, and leaves unknown/processing statuses alone.
-  **Until the fixed file is pasted into the Supabase dashboard function
-  `jenga-pgw-callback`, every real payment is charged but shown Failed.**
-  The demo booking was repaired by hand with `mark_booking_paid`.
-- **Live test results 2026-09-24:** a real 1.04 KES CARD payment
-  (Jenga txn ref 626712015428) completes end to end after the callback
-  field-name fix — it was repaired by hand once, the fixed callback has not
-  yet marked a booking Paid on its own, so verify with the next real
-  payment. An abandoned or declined card produces NO callback: the booking
-  stays Pending and the guest can pay again. Still untested: M-Pesa
-  (Mobile) end to end — blocked on Jenga error 1001; when fixed, read the
-  callback logs for the `paymentChannel` / `transactionStatus` values it
-  sends for MPESA.
-- **Hardening 2026-09-24 (DEPLOYED: initiate v2, callback v4; verified):**
-  migration `20260924140000_payment_attempts.sql` (APPLIED) adds
-  `payment_attempts` (service-role only). `jenga-pgw-initiate` records every
-  attempt reference and no longer returns Jenga error text / env to the
-  browser; `jenga-pgw-callback` resolves references through that table
-  (old `payment_reference` lookup kept as fallback) so a guest who starts a
-  second attempt can still complete the first, and logs
-  `DUPLICATE PAYMENT` if a booking is paid twice (guest charged twice, may
-  need a manual refund). Verified live with simulated Jenga callbacks on a temp booking
-  (deleted after): unknown reference ignored; PENDING left alone;
-  underpayment not accepted; explicit FAILED marks Failed; SUCCESS on an
-  OLDER attempt after a newer one failed marks Paid (the orphaning bug is
-  fixed); fee-inclusive amount accepted; a second SUCCESS logs DUPLICATE
-  PAYMENT and changes nothing else; FAILED after Paid stays Paid. Minor:
-  the duplicate success re-stamps `payment_reference` with the later
-  reference (the first is in `security_events.detail`). The catch-all in
-  `jenga-pgw-initiate` now returns a generic message (source updated
-  2026-09-24 — redeploy `jenga-pgw-initiate` to take effect). The admin
-  Security Log highlights a second successful payment as "Paid twice —
-  check whether a refund is owed" (uses `detail.already_paid`; booking
-  payments only, laundry duplicates are not detected). The pay card and
-  its help dropdown mention that Jenga may add a small processing fee.
-- **Temporary booking gate: added then REMOVED 2026-09-24** (owner asked to
-  stop it). Code deleted, `site_content.booking_gate` row deleted; public
-  booking is open to everyone as before.
-- **NO RESERVE BEFORE PAYMENT + BLANK JENGA DETAILS (2026-09-24, owner
-  request) — IN PROGRESS, needs the steps below:**
-  (1) Blank customer details on Jenga's page: `jenga-pgw-initiate` now
-  sends the customer name/email/phone/address BLANK so the guest types their
-  own (countryCode stays KE); if Jenga refuses blanks it retries once with
-  the booking's details (check logs for "rejected blank customer details").
-  (2) Rooms are only taken once PAID: migration
-  `20260924190000_availability_only_paid_bookings.sql` changes
-  `availability_view` so a booking holds its dates only when
-  `paid_at is not null` (or Blocked); unpaid / abandoned bookings no
-  longer lock a room. `jenga-pgw-initiate` re-checks the view right before
-  a first payment (409 "dates were just booked by another guest") and
-  `jenga-pgw-callback` logs a `double_booking_conflict` security event
-  (shown in the admin Security Log) if two guests still pay for the same
-  dates so one can be refunded. The 3-hour stay-EXTENSION hold is
-  deliberately unchanged. Site copy no longer says the room "stays
-  reserved" / "Reserve". ORDER: (a) redeploy BOTH edge functions, (b) THEN
-  apply the migration (applying it first would leave a window with no
-  "still free?" check). STATUS 2026-09-24: functions redeployed (initiate v4, callback v5) and
-  the migration APPLIED — unpaid bookings no longer hold rooms. VERIFIED
-  LIVE 2026-09-24: Jenga accepted BLANK customer details on the first try (no
-  fallback), and its checkout page opens with empty first/last name, email,
-  phone and address; payment methods stay locked until the guest fills
-  them in. Availability view checked: 0 rows while all bookings are unpaid.
-- **15-MINUTE PAYMENT-WINDOW HOLD (2026-09-24, owner request):** unpaid
-  bookings still never hold a room, but from the moment a guest clicks Pay
-  their dates are held for 15 minutes (= Jenga's paymentTimeLimit; a 3-minute
-  hold was rejected because payment can take longer and a second guest could
-  then start paying mid-payment). Migration `20260924220000_payment_window_hold.sql`
-  (APPLIED) adds a third branch to `availability_view` (unpaid booking with a
-  `payment_attempts` row < 15 min old) and a trailing `booking_id` column.
-  `jenga-pgw-initiate` now CLAIMS first (inserts the attempt), then checks no
-  other paid / blocked / held booking overlaps (ignoring its own via
-  `booking_id`); on overlap it deletes the claim and returns 409 "being booked
-  by another guest right now"; it also releases the claim if Jenga fails.
-  `jenga-pgw-callback`'s double-booking check now queries PAID/Blocked
-  `bookings` only (a rival's open window is not a clash). The hold ends at 15
-  min or when paid; a FAILED callback does not release it early. **Functions
-  must be redeployed (initiate + callback) — status below.** Audit result: no
-  code path deletes or auto-cancels an existing booking (only the booking
-  form's own rollback of a half-created group, the admin cancel / ID-reject
-  actions, and the daily cron that just releases an expired 3-hour
-  stay-EXTENSION hold; that extension hold is unchanged).
-- **SECURITY FIX 2026-09-24 (migration `20260924210000_lock_payment_functions_to_service_role.sql`, APPLIED):**
-  Supabase's security advisor showed the four `mark_booking_paid` /
-  `mark_booking_payment_failed` / `mark_laundry_paid` /
-  `mark_laundry_payment_failed` functions were executable by any signed-in
-  (`authenticated`) account via /rest/v1/rpc — the earlier `revoke ... from
-  public` did not remove Supabase's default direct grant. Now executable by
-  `service_role` ONLY (verified: anon/authenticated = false). Only
-  `jenga-pgw-callback` calls them. LESSON: for any new SECURITY DEFINER
-  function, revoke execute from `public, anon, authenticated` explicitly and
-  re-run the advisor (`get_advisors` security) afterwards. Remaining advisor
-  items are expected: INFO `rls_enabled_no_policy` on login_attempts /
-  payment_attempts / rate_limits (service-role-only tables, by design) and
-  ERROR `security_definer_view` on staff_cleaning_laundry_feed /
-  staff_checkout_schedule (owner-privileged staff views guarded by
-  `auth.uid()` in staff_users, by design). Leaked-password protection is not
-  flagged by the advisor (i.e. enabled).
-- **REAL BUG, LIVE 2026-09-25 to 2026-09-29, NOW FIXED:** the
-  `20260924220000_payment_window_hold.sql` migration (adds a 15-min
-  payment-window hold to `availability_view`) was applied on 2026-09-24, but
-  the matching `jenga-pgw-initiate` code (which excludes the guest's OWN
-  hold via `.neq("booking_id", booking.id)`) was not redeployed until
-  2026-09-29. In that window, ANY guest who reloaded the payment page or
-  retried on a second device within 15 minutes of their first payment
-  attempt was wrongly told "those dates were just booked by another guest"
-  — the old code saw the guest's own just-created hold as a conflict. Found
-  and reproduced live on a real test booking (owner: paid-attempt on phone,
-  retried on laptop, got blocked). Fixed by redeploying `jenga-pgw-initiate`
-  (now v5) and `jenga-pgw-callback` (now v6) together; re-tested with two
-  back-to-back initiate calls on the same booking — both now succeed.
-  **If this ever happens again: check the deployed function version's
-  content actually contains `.neq("booking_id"` before assuming it's Jenga's
-  fault** — the DB migration and the Edge Function code for this feature
-  must always be deployed in the same sitting, migration can go either
-  order relative to the initiate function but callback+initiate must match.
-- **Mobile card-payment timeout fix (2026-09-29):** `PaymentSection.tsx`'s
-  `handlePay()` now wraps the `jenga-pgw-initiate` call in an
-  `AbortController` with a 30s timeout (the client library supports a
-  `signal` option on `.invoke()`). On abort, shows an inline message
-  ("The payment page took too long to load. Please check your connection
-  and try again.") instead of waiting on the browser's own native
-  connection timeout, which was suspected of producing a full-page
-  browser error on mobile before our JS ever got a chance to catch it.
-  Not yet confirmed to fix the actual mobile symptom (no repeatable
-  mobile test case exists yet) — this narrows the failure window and
-  gives a clean message if it recurs; watch for reports.
-- **CLEAN SLATE 2026-09-24 (owner request): the Test Room, all test
-  bookings and all test guests were DELETED.** ID photos were removed
-  through the site's own check-out routine (POST /api/portal/<token>/checkout
-  after blanking the guest email), storage bucket `id-documents` checked
-  empty. Real rooms untouched (10 active, Room One..Ten). To run live
-  end-to-end tests again, recreate a hidden-or-visible test room by copying
-  Room One's photos/amenities/bed setup with FAKE door code (0000) and
-  WiFi, a small price (100 KES was used), `display_order` 11, then delete
-  the room, its bookings and guests afterwards. Remember: bookings on any
-  room show in the admin Bookings list, dashboard totals and the staff
-  schedule. The public site is OPEN (site_status.is_open = true since
-  2026-09-24 18:24 UTC) — a visible test room is bookable by real guests.
-  The owner's later test bookings (Room Seven / Room Eight, 3 in all) were
-  deleted the same way on 2026-09-24 — the database now holds 0 bookings,
-  0 guests, 0 ID files, 10 real rooms. The site was CLOSED again at 19:49
-  UTC (site_status.is_open = false) and should be reopened by the owner.
-- **Guest screens are live (pushed 2026-09-24, commit 360f9aa).**
-  `PaymentSection` and `LaundryPaymentSection` are one "Pay with M-Pesa or
-  card" button (site theme: rounded-full mocha/terracotta, not green) calling
-  `jenga-pgw-initiate`, with a collapsible "Need help paying?" `PaymentNotes` card under it
-  (closed by default; bold + highlighted + underlined options; includes
-  "enter the cardholder name exactly as on the card") telling
-  the guest to pick Mobile→Kenya→MPESA or Card on Jenga's page (Jenga's docs
-  have no parameter to preselect a channel/telco or prefill the M-Pesa
-  number). Repo cleanup done: the old `mpesa-*` / `jenga-card-*` /
-  sandbox-test function folders, `supabase/functions/_shared`, and the
-  unused polling routes are deleted. The nine old deployed functions (`mpesa-*`, `jenga-card-*`, sandbox
-  tests) were DELETED from Supabase on 2026-09-24 by the owner; only
-  `jenga-pgw-initiate` and `jenga-pgw-callback` remain. Test rows from the live test were
-  deleted (DB back to 1 booking / 1 guest / 10 rooms).
-- **M-Pesa on the live checkout still fails (Jenga error 1001, "unable
-  to calculate charges")** — reproduced 3 times at 0 and 1 KES; support
-  message drafted in chat, awaiting the owner sending it to Jenga.
-  Last test order reference: PGWT6RFXL9U9YU7. Card works.
+- **M-Pesa on the live Jenga checkout now completes (confirmed 2026-10-02),
+  resolving the earlier "error 1001, unable to calculate charges" block.**
+  Evidence: booking `PMH-M75AJ7` (La Suite Lumière, 200 KES) was paid by
+  real M-Pesa through Jenga PGW — not a manually-seeded test row — with a
+  genuine Jenga order reference. Card continues to work reliably (several
+  more real payments since 2026-09-29, e.g. `PMH-BBQXTU`, `PMH-HG9SLT`,
+  `PMH-2SDFZV`). No code change is on record as "the M-Pesa fix" — the two-
+  pay-button work (`a1eed8b`, sends M-Pesa a different `orderAmount` string
+  format than card) looks like what unblocked it, but this was never
+  confirmed against a live Jenga error 1001 reproduction, only inferred from
+  the real payment succeeding.
+- **ACTION NEEDED — real double-charge on `PMH-M75AJ7` (2026-10-02):** the
+  guest's M-Pesa payment was submitted twice 10 minutes apart (references
+  `PGWM4P79WN42R4D` at 17:36–17:39, then `PGWDDNUT4SHUJ2H` at 17:46–17:47)
+  and **both succeeded at Jenga** — this is exactly the "Paid twice" case
+  `mark_booking_paid` detects (`security_events` has `already_paid: true`
+  for the second one). The admin Security Log on `/admin/bookings` already
+  surfaces this; the booking's stored `payment_reference` is the *later*
+  reference (`PGWDDNUT4SHUJ2H`) per the documented re-stamp behavior, but
+  the *first* one (`PGWM4P79WN42R4D`) is what actually needs refunding.
+  This is a manual action for the owner (Jenga dashboard or support) —
+  nothing in code should "fix" a double real-money charge automatically.
+- **New: `payment_callback_log` (added 2026-10-03, migration
+  `20261003100000_payment_callback_log.sql`, APPLIED).** Every Jenga
+  callback — success, failure, or mismatch — is now logged verbatim
+  (`secureResponse` stored as a length only, no card data) so a payment
+  that doesn't complete can be diagnosed without waiting for a fresh
+  repro. Private, RLS on with no policies (service-role only). One row
+  logged so far (a real CARD laundry payment, 2026-10-03).
+- **Admin/staff laundry "Returned" auto-close inconsistency, found +
+  fixed 2026-10-03 (PR #31, open as a draft, CI green, awaiting review).**
+  The admin laundry-stage route already converted a "Returned" stage to
+  "Closed" on save (`56cd8c3`) so the request drops off the open list by
+  itself. The staff route (`/api/staff/requests/[id]/status` — used when
+  *staff*, not the admin, taps "Mark Returned" in the Staff Laundry task
+  list) never got that conversion, so a staff-closed request stayed
+  stored as `"Returned"` and kept showing as open/urgent on both
+  dashboards until someone tapped "Mark Closed" separately. Fixed to
+  match; also fixed the admin feed's "Returned by … at …" attribution
+  line, which was checking a status value that's no longer ever
+  persisted for laundry.
+- **Full repo + Supabase audit, 2026-10-03:** `tsc --noEmit`, `eslint .`,
+  and `next build` all clean. Both deployed Edge Functions
+  (`jenga-pgw-initiate` v17, `jenga-pgw-callback` v12) were pulled from
+  Supabase and diffed byte-for-byte against the repo's
+  `supabase/functions/*/index.ts` — **identical, no drift** (the earlier
+  "deployed by hand, can drift" risk is not currently realized). All 47
+  local migration files have a matching applied migration in Supabase, in
+  order, nothing pending. `get_advisors` (security + performance) shows
+  nothing new since the 2026-09-24 baseline — same INFO/ERROR items,
+  all by design (see Security posture below) — plus two pre-existing
+  INFO-level performance notes (a few unindexed FKs, one unused index on
+  `payment_attempts`) and one WARN (`staff_members` has two permissive
+  SELECT policies for `authenticated` — redundant, not a security hole,
+  not yet cleaned up).
+- **Checkout reminder simplified 2026-10-03:** one email only, sent on the
+  check-out day itself (05:00 UTC = 08:00 Nairobi, 2 hours before the
+  10:00 AM checkout) — the previous evening-before "checkout is tomorrow /
+  extend your stay" reminder is gone entirely, per owner request. See
+  `src/app/api/cron/checkout-reminders/route.ts` and `vercel.json`.
 - **Door codes / WiFi passwords: OWNER DECISION 2026-09-24 — they will NOT
   be changed.** (They were flagged 2026-09-20 as previously exposed; the
   public-exposure hole itself is closed, and the owner has decided to keep
   the current codes.) Do not re-raise this.
-- **Supabase settings checked 2026-09-24:** daily backups are ON (Pro
-  plan; 8 daily physical backups listed, newest 24 Sep 05:27 UTC) — note
-  they do NOT include Storage files (room photos, logo, ID uploads) and a
-  restore can lose up to a day of data; point-in-time recovery is a
-  separate paid add-on the owner may want once bookings are daily.
-  Leaked-password protection is not flagged by the security advisor
-  (enabled).
-- **Clock in/out has no notification** — admin checks "Staff Shifts"
-  manually. Confirmed with owner this is fine as-is, not a gap.
+- **Mobile card-payment timeout fix (2026-09-29), still unconfirmed:**
+  `PaymentSection.tsx`'s `handlePay()` wraps the `jenga-pgw-initiate` call
+  in a 30s `AbortController` timeout with an inline error message instead
+  of the browser's native connection-timeout error. No repeatable mobile
+  test case has existed to confirm it fixes the original symptom — watch
+  for reports.
 - **Vercel Git auto-deploy has occasionally not triggered on a push**
   (self-resolved before, no root cause found). If a merge doesn't
   produce a new deployment within a couple minutes, check
   `list_deployments` directly.
-- **Checkboxes use `accent-terracotta-500`, not `text-terracotta-500`** —
-  the latter only themes a checkbox with Tailwind's forms plugin, which is
-  not installed, so the browser's default blue showed (fixed 2026-09-24 in
-  BookingWidget, PaymentSection, CheckoutSection).
 - **Zero real guest reviews yet** — homepage shows sample testimonials
   by design until real ones exist to feature via `/admin/reviews`.
 - **The site logo's source file is a 1254→2508px raster (not vector)**,
@@ -241,12 +98,18 @@ open work.
   there's a real detail ceiling — if a vector (SVG/AI/EPS) or larger
   export ever becomes available, swap it in for a genuinely sharper
   result instead of more sharpening.
+- **Supabase settings checked 2026-09-24 (unchanged since):** daily
+  backups are ON (Pro plan) but do NOT include Storage files (room
+  photos, logo, ID uploads), and a restore can lose up to a day of data;
+  point-in-time recovery is a separate paid add-on the owner may want
+  once bookings are daily. Leaked-password protection is enabled.
 
 ## What's built (current state, not a build log)
 
 **Guest flow**: browse rooms → book → pay (one button → Jenga PGW hosted
-checkout, guest picks Mobile/MPESA or Card there; card live, M-Pesa
-blocked on Jenga error 1001, see above) → upload ID (Dojah OCR + name-match, 2
+checkout, guest picks Mobile/MPESA or Card there; both methods confirmed
+completing on real payments as of 2026-10-02, see above) → upload ID
+(Dojah OCR + name-match, 2
 auto attempts then manual admin review) → guest portal
 (`/portal/[token]`, token-only auth, no login) unlocks door
 code/WiFi/laundry/extend-stay/checkout → post-stay review. **The
@@ -274,6 +137,13 @@ proper `import`), and dead `displayCurrency` state left over in
 selector wiring (the selector renders its own converted amount
 internally — that state was never read). No behavior change intended
 beyond the render-purity fix; nothing else in the app was touched.
+
+**Repo-wide audit repeated 2026-10-03** - `eslint`/`tsc --noEmit`/`next build`
+all clean again (no new errors since the 2026-09-23 pass above). Also
+verified both deployed Edge Functions match the repo source exactly (no
+hand-deploy drift) and every local migration is applied in Supabase. One
+real bug found and fixed: see "Admin/staff laundry... auto-close
+inconsistency" above.
 
 **Walk-in/admin-created bookings now give the guest a real portal
 link** (`src/app/api/admin/bookings/manual/route.ts` +
