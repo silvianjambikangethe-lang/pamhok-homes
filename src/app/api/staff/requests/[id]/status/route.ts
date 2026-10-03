@@ -72,12 +72,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
   }
 
+  // "Returned" is the last real laundry step, so it closes the request
+  // straight away — same auto-close as the admin stage picker (see
+  // /api/admin/requests/[id]/laundry-stage), so a request closes the same
+  // way regardless of whether staff or the admin advanced it. The guest
+  // still gets the "returned" email below under the real stage name.
+  const savedStatus: GuestRequestStatus =
+    requestType === "laundry" && status === "Returned" ? "Closed" : (status as GuestRequestStatus);
+
   // Through staff_task_updates — a column-restricted view, so this can
   // only ever touch status/completed_by/updated_at, never message/booking_id.
   const { data, error } = await supabase
     .from("staff_task_updates")
     .update({
-      status: status as GuestRequestStatus,
+      status: savedStatus,
       completed_by: workerId,
       updated_at: new Date().toISOString(),
     })
