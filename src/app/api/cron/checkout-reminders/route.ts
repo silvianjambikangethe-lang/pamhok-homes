@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { sendEmail, checkoutReminderEmail } from "@/lib/email";
 
-// Point a scheduler at this route once or twice daily (see vercel.json's
-// `crons` entry) — ~8 PM for "evening-before", ~9 AM for
-// "checkout-morning". Vercel Cron authenticates its own requests with
+// Sends ONE reminder per stay, on the check-out day only: vercel.json runs
+// this at 05:00 UTC = 08:00 Nairobi, two hours before the 10:00 AM check-out.
+// There is deliberately no day-before email (and so no "extend your stay"
+// nudge); guests who want more nights can still extend from their booking
+// page. Vercel Cron authenticates its own requests with
 // `Authorization: Bearer $CRON_SECRET` when a CRON_SECRET env var exists;
 // this also accepts a manual `x-cron-secret` header for any other caller.
-
-type ReminderType = "evening-before" | "checkout-morning";
 
 interface ReminderBooking {
   id: string;
@@ -19,7 +19,7 @@ interface ReminderBooking {
   room: { name: string } | null;
 }
 
-async function sendReminder(booking: ReminderBooking, type: ReminderType) {
+async function sendReminder(booking: ReminderBooking) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const portalUrl = `${siteUrl}/portal/${booking.access_token}`;
 
@@ -28,7 +28,6 @@ async function sendReminder(booking: ReminderBooking, type: ReminderType) {
   const { subject, html } = checkoutReminderEmail({
     guestName: booking.guest.full_name,
     roomName: booking.room?.name ?? "your room",
-    type,
     portalUrl,
   });
   await sendEmail({ to: booking.guest.email, subject, html });
@@ -51,40 +50,20 @@ export async function GET(request: Request) {
   }
 
   const supabase = createAdminSupabaseClient();
+  // 05:00 UTC is already the same calendar day in Nairobi (08:00), so the UTC
+  // date is the check-out date.
   const today = format(new Date(), "yyyy-MM-dd");
-  const tomorrow = format(addDays(new Date(), 1), "yyyy-MM-dd");
 
-  const selectWithJoins =
-    "id, access_token, check_out, guest:guests(full_name, email), room:rooms(name)";
+  const { data } = await supabase
+    .from("bookings")
+    .select("id, access_token, check_out, guest:guests(full_name, email), room:rooms(name)")
+    .eq("check_out", today)
+    .eq("booking_status", "Confirmed")
+    .eq("payment_status", "Paid")
+    .is("checked_out_at", null);
 
-  const [{ data: eveningBefore }, { data: checkoutMorning }] = await Promise.all([
-    // "Your stay wraps up tomorrow" — sent the evening before check_out.
-    supabase
-      .from("bookings")
-      .select(selectWithJoins)
-      .eq("check_out", tomorrow)
-      .eq("booking_status", "Confirmed")
-      .is("checked_out_at", null),
-    // "Checkout is today" — sent the morning of check_out.
-    supabase
-      .from("bookings")
-      .select(selectWithJoins)
-      .eq("check_out", today)
-      .eq("booking_status", "Confirmed")
-      .is("checked_out_at", null),
-  ]);
+  const dueToday = (data ?? []) as unknown as ReminderBooking[];
+  await Promise.all(dueToday.map((b) => sendReminder(b)));
 
-  const evening = (eveningBefore ?? []) as unknown as ReminderBooking[];
-  const morning = (checkoutMorning ?? []) as unknown as ReminderBooking[];
-
-  await Promise.all([
-    ...evening.map((b) => sendReminder(b, "evening-before")),
-    ...morning.map((b) => sendReminder(b, "checkout-morning")),
-  ]);
-
-  return NextResponse.json({
-    ok: true,
-    eveningBeforeCount: evening.length,
-    checkoutMorningCount: morning.length,
-  });
+  return NextResponse.json({ ok: true, checkoutTodayCount: dueToday.length });
 }

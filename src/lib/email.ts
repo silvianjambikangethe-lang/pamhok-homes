@@ -185,34 +185,23 @@ export function idVerificationResultEmail({
   };
 }
 
+// Sent once, on the check-out day, two hours before the 10:00 AM check-out
+// (see the checkout-reminders cron).
 export function checkoutReminderEmail({
   guestName,
   roomName,
-  type,
   portalUrl,
 }: {
   guestName: string;
   roomName: string;
-  type: "evening-before" | "checkout-morning";
   portalUrl: string;
 }) {
-  if (type === "evening-before") {
-    return {
-      subject: "Checkout is tomorrow",
-      html: wrapper(`
-        <p>Hi ${escapeHtml(guestName)},</p>
-        <p>Just a heads-up, your stay in ${roomName} wraps up tomorrow.</p>
-        <p>Loving it here? You can extend your stay right from your booking page.</p>
-        ${button(portalUrl, "Extend my stay")}
-      `),
-    };
-  }
-
   return {
-    subject: "Checkout is today",
+    subject: "Checkout is today at 10:00 AM",
     html: wrapper(`
       <p>Hi ${escapeHtml(guestName)},</p>
-      <p><strong>Checkout is today.</strong> Please confirm your checkout on your booking page whenever you're ready to head out, our cleaning team will be by shortly after.</p>
+      <p><strong>Checkout from ${escapeHtml(roomName)} is today at 10:00 AM</strong>, in about two hours.</p>
+      <p>When you're ready to head out, please confirm your checkout on your booking page. Our cleaning team will be by shortly after.</p>
       ${button(portalUrl, "Confirm checkout")}
     `),
   };
