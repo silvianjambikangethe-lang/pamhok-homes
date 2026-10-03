@@ -8,9 +8,14 @@ export async function POST(
   const { id } = await params;
   const supabase = await createServerSupabaseClient();
 
+  // completed_by cleared, not preserved: this is an admin action, not a
+  // staff one, so any leftover staff attribution from an earlier stage
+  // (e.g. a staff member marking it "In Progress") would misleadingly
+  // claim a staff member made THIS transition too — same reasoning as
+  // the laundry-stage admin route.
   const { data, error } = await supabase
     .from("guest_requests")
-    .update({ status: "Resolved", updated_at: new Date().toISOString() })
+    .update({ status: "Resolved", completed_by: null, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select("id");
 
