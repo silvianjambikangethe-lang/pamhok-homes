@@ -5,10 +5,11 @@ import { ArrowClockwise, CheckCircle } from "@phosphor-icons/react";
 import StarRating from "@/components/StarRating";
 import ThankYouGift, { type ThankYouGiftHandle } from "@/components/portal/ThankYouGift";
 
-// A gift this warm is reserved for guests who loved their stay enough to say
-// so — 4.8 and 5.0 are the only ratings the 0.1-step slider can reach in
-// that top sliver. Exported so CheckoutSection can keep its post-review
-// refresh delay in sync with whether the gift animation is about to play.
+// Every submitted review now gets a thank-you bouquet: 4.8 and 5.0 (the only
+// ratings the 0.1-step slider can reach in that top sliver) get the full
+// dahlia/orchid/calla bouquet, everything else gets a calla-lilies-only
+// bouquet with an apologetic note. Exported so CheckoutSection can keep its
+// post-review refresh delay in sync with the gift animation.
 export const GIFT_THRESHOLD = 4.8;
 
 // The form itself, without any card around it: ReviewPrompt supplies the
@@ -60,27 +61,23 @@ export default function ReviewForm({
   }
 
   if (done) {
-    const giftEarned = rating >= GIFT_THRESHOLD;
+    const giftVariant: "full" | "calla" = rating >= GIFT_THRESHOLD ? "full" : "calla";
     return (
       <div className="flex flex-col gap-2 pr-8 text-sm font-medium text-ink">
         <div className="flex items-center gap-2">
           <CheckCircle size={20} weight="fill" className="text-success" />
           Thank you for your review!
         </div>
-        {giftEarned && (
-          <>
-            <ThankYouGift ref={giftRef} onFinished={() => setShowReplay(true)} />
-            {showReplay && (
-              <button
-                type="button"
-                onClick={() => giftRef.current?.play()}
-                className="focus-ring mt-1 flex w-fit items-center gap-1.5 rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-medium text-ink/75 transition-colors hover:bg-page hover:text-ink"
-              >
-                <ArrowClockwise size={14} />
-                Gift Replay
-              </button>
-            )}
-          </>
+        <ThankYouGift ref={giftRef} variant={giftVariant} onFinished={() => setShowReplay(true)} />
+        {showReplay && (
+          <button
+            type="button"
+            onClick={() => giftRef.current?.play()}
+            className="focus-ring mt-1 flex w-fit items-center gap-1.5 rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-medium text-ink/75 transition-colors hover:bg-page hover:text-ink"
+          >
+            <ArrowClockwise size={14} />
+            Gift Replay
+          </button>
         )}
       </div>
     );
