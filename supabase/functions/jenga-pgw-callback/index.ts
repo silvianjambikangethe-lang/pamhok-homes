@@ -129,7 +129,12 @@ async function sendConfirmationEmail(supabase: any, bookingId: string, wasAlread
   } catch (err) {
     console.error("payment-email route unreachable", err);
   }
-  if (!wasAlreadyPaid) await sendPaymentSucceededEmail(supabase, bookingId);
+  // Falls back even for an extension repayment: this generic copy ("your
+  // stay is booked") is slightly off for that case, but the function's own
+  // promise is "a paying guest always gets something" — silence is worse
+  // than a slightly-generic email, and the portal link still gets them to
+  // their booking either way.
+  await sendPaymentSucceededEmail(supabase, bookingId);
 }
 
 Deno.serve(async (req) => {
