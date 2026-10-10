@@ -281,10 +281,13 @@ export async function getReviews(): Promise<{ reviews: Review[]; isSample: boole
   return { reviews: data as unknown as Review[], isSample: false };
 }
 
-// Homepage-facing subset: only reviews an admin has explicitly featured
-// (see /admin/reviews), not just the most recent ones — a 1-star review
-// submitted five minutes ago shouldn't outrank a 5-star one from last
-// month just by being newer. Falls back to sample testimonials only when
+// Homepage-facing subset: reviews with featured = true — auto-set at
+// submission time for anything 3.5 stars and up (see
+// /api/portal/[token]/review/route.ts), with an admin free to feature or
+// un-feature any review by hand from /admin/reviews regardless of rating.
+// Never just the most recent reviews — a 1-star review submitted five
+// minutes ago shouldn't outrank a 5-star one from last month just by being
+// newer. Falls back to sample testimonials only when
 // nothing has been featured yet, same "never blend real and fake" rule as
 // getReviews() — once even one real review is featured, that's what shows,
 // however few.
