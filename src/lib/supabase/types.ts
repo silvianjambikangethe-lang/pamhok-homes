@@ -159,6 +159,10 @@ export type Booking = {
   paid_at: string | null;
   booking_status: BookingStatus;
   block_note: string | null;
+  // Precise start/end for a Blocked row — null for a plain whole-day block.
+  // See the migration comment on these columns for the full rationale.
+  block_start_at: string | null;
+  block_end_at: string | null;
   id_document_path: string | null;
   id_document_back_path: string | null;
   id_document_path_2: string | null;

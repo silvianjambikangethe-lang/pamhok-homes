@@ -13,6 +13,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing fields." }, { status: 400 });
   }
 
+  // Optional precise start/end for this block, already computed client-side
+  // (in the admin's own local time, see BlockDatesForm.tsx) — null for a
+  // plain whole-day block. check_in/check_out above stay the only thing
+  // availability math reads; these are purely the Room Status grid's
+  // "confirm release" signal.
+  if (typeof body.blockStartAt !== "undefined" && body.blockStartAt !== null && typeof body.blockStartAt !== "string") {
+    return NextResponse.json({ error: "Invalid start time." }, { status: 400 });
+  }
+  if (typeof body.blockEndAt !== "undefined" && body.blockEndAt !== null && typeof body.blockEndAt !== "string") {
+    return NextResponse.json({ error: "Invalid end time." }, { status: 400 });
+  }
+
   const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -25,6 +37,8 @@ export async function POST(request: Request) {
       currency: "KES",
       booking_status: "Blocked",
       block_note: typeof body.note === "string" ? body.note.slice(0, 500) : null,
+      block_start_at: body.blockStartAt ?? null,
+      block_end_at: body.blockEndAt ?? null,
     })
     .select("id")
     .single();
