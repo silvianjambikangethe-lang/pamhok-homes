@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { format, parseISO } from "date-fns";
-import { Lock, Phone, User, Warning, X } from "@phosphor-icons/react";
-import { CHECK_OUT_TIME } from "@/lib/site";
+import { format, parse, parseISO } from "date-fns";
+import { Clock, Lock, Phone, User, Warning, X } from "@phosphor-icons/react";
+import { CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/site";
 
 export type RoomStatus = {
   id: string;
@@ -24,7 +24,25 @@ export type RoomStatus = {
   blockNote: string | null;
   blockStartAt: string | null;
   blockEndAt: string | null;
+  // One-time override of CHECK_IN_TIME for this booking (see
+  // src/lib/site.ts) — e.g. "2:00 PM" when cleaning ran long. Null means
+  // the normal site-wide time applies.
+  checkInTimeOverride: string | null;
 };
+
+// "2:00 PM" <-> "14:00", so the modal's <input type="time"> (24h) and the
+// stored/displayed text (same format as CHECK_IN_TIME) can convert either
+// way without the server ever needing to parse a timezone.
+function to24Hour(display: string): string {
+  try {
+    return format(parse(display, "h:mm a", new Date()), "HH:mm");
+  } catch {
+    return "";
+  }
+}
+function toDisplayTime(value24: string): string {
+  return format(parse(value24, "HH:mm", new Date()), "h:mm a");
+}
 
 // Stale = checkout time (10:00 AM) plus a 30-minute grace period has
 // passed on the checkout date, and the guest still hasn't confirmed
@@ -44,6 +62,34 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
   const [confirmingRelease, setConfirmingRelease] = useState(false);
   const [releasing, setReleasing] = useState(false);
   const [releaseError, setReleaseError] = useState<string | null>(null);
+  const [editingCheckInTime, setEditingCheckInTime] = useState(false);
+  const [checkInTimeInput, setCheckInTimeInput] = useState("");
+  const [savingCheckInTime, setSavingCheckInTime] = useState(false);
+  const [checkInTimeError, setCheckInTimeError] = useState<string | null>(null);
+
+  const effectiveCheckInTime = room.checkInTimeOverride || CHECK_IN_TIME;
+
+  async function saveCheckInTime(override: string | null) {
+    if (!room.bookingId) return;
+    setSavingCheckInTime(true);
+    setCheckInTimeError(null);
+
+    const res = await fetch(`/api/admin/bookings/${room.bookingId}/check-in-time`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ checkInTimeOverride: override }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setCheckInTimeError(data?.error ?? "Could not update the check-in time.");
+      setSavingCheckInTime(false);
+      return;
+    }
+
+    setEditingCheckInTime(false);
+    router.refresh();
+  }
 
   // A block has no guest attached, but still has a bookingId (the Blocked
   // row itself) — that's what tells a block apart from "Available".
@@ -342,6 +388,80 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
                   </div>
                 </div>
               )}
+
+              <div className="rounded-xl border border-taupe/20 bg-page p-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink/55">
+                  Check-in time
+                </p>
+                {!editingCheckInTime ? (
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="flex items-center gap-2 text-sm text-ink">
+                      <Clock size={16} className="shrink-0 text-terracotta-600" />
+                      {effectiveCheckInTime}
+                      {room.checkInTimeOverride && (
+                        <span className="text-xs font-normal text-ink/55">(adjusted)</span>
+                      )}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCheckInTimeInput(to24Hour(effectiveCheckInTime));
+                        setCheckInTimeError(null);
+                        setEditingCheckInTime(true);
+                      }}
+                      className="focus-ring rounded-full border border-taupe/25 px-3 py-1 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-xs text-ink/65">
+                      Pushes this one guest&apos;s check-in later (e.g. cleaning
+                      ran long) — resets on its own for the next booking.
+                    </p>
+                    <input
+                      type="time"
+                      value={checkInTimeInput}
+                      onChange={(e) => setCheckInTimeInput(e.target.value)}
+                      className="focus-ring w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
+                    />
+                    {checkInTimeError && (
+                      <p className="text-xs text-danger">{checkInTimeError}</p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          checkInTimeInput && saveCheckInTime(toDisplayTime(checkInTimeInput))
+                        }
+                        disabled={savingCheckInTime || !checkInTimeInput}
+                        className="focus-ring rounded-full bg-mocha-500 px-3.5 py-1.5 text-xs font-semibold text-mousse hover:bg-mocha-600 disabled:opacity-60 dark:bg-terracotta-500 dark:text-white dark:hover:bg-terracotta-600"
+                      >
+                        {savingCheckInTime ? "Saving…" : "Save"}
+                      </button>
+                      {room.checkInTimeOverride && (
+                        <button
+                          type="button"
+                          onClick={() => saveCheckInTime(null)}
+                          disabled={savingCheckInTime}
+                          className="focus-ring rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300 disabled:opacity-60"
+                        >
+                          Reset to {CHECK_IN_TIME}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setEditingCheckInTime(false)}
+                        disabled={savingCheckInTime}
+                        className="focus-ring rounded-full px-3.5 py-1.5 text-xs font-semibold text-ink/65 hover:text-ink disabled:opacity-60"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

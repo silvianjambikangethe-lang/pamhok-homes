@@ -231,7 +231,10 @@ export default function PortalClient({
           {booking.extensionJustConfirmed ? (
             <ExtensionConfirmedMessage />
           ) : (
-            <CheckInConfirmationMessage checkIn={booking.check_in} />
+            <CheckInConfirmationMessage
+              checkIn={booking.check_in}
+              checkInTimeOverride={booking.check_in_time_override}
+            />
           )}
         </div>
       )}

@@ -163,6 +163,10 @@ export type Booking = {
   // See the migration comment on these columns for the full rationale.
   block_start_at: string | null;
   block_end_at: string | null;
+  // One-time override of CHECK_IN_TIME for this booking only (e.g. "2:00
+  // PM" when cleaning ran long) — display-ready text, same format as
+  // CHECK_IN_TIME. Null means use the normal site-wide time.
+  check_in_time_override: string | null;
   id_document_path: string | null;
   id_document_back_path: string | null;
   id_document_path_2: string | null;
