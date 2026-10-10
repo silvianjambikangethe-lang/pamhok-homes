@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CaretDown } from "@phosphor-icons/react";
 
 export default function BlockDatesForm({
   rooms,
@@ -52,17 +53,24 @@ export default function BlockDatesForm({
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label className="text-sm font-medium text-ink/80">Room</label>
-          <select
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            className="focus-ring mt-1.5 w-full rounded-lg border border-taupe/25 bg-page px-3 py-2.5 text-sm text-ink"
-          >
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative mt-1.5">
+            <select
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              className="focus-ring w-full appearance-none rounded-lg border border-taupe/25 bg-page px-3 py-2.5 pr-9 text-sm text-ink"
+            >
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            <CaretDown
+              size={14}
+              weight="bold"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink/50"
+            />
+          </div>
         </div>
         <div>
           <label className="text-sm font-medium text-ink/80">From</label>

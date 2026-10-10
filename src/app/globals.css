@@ -44,6 +44,12 @@
    * (Dark mode resets this to the browser default below.) */
   accent-color: var(--pk-primary);
 
+  /* Tells the browser which palette its own chrome (native date-picker
+   * panel/icon, scrollbars it still draws itself, etc.) should render in,
+   * so the calendar icon on <input type="date"> isn't stuck in light mode
+   * on a dark page. */
+  color-scheme: light;
+
   /* Brown light theme tokens. Colour and shadow only; light mode. */
   --pk-bg: #F6EFE4;
   --pk-surface: #FFFBF5;
@@ -88,6 +94,7 @@
   --color-border: 170 129 100;
 
   accent-color: auto;
+  color-scheme: dark;
 
   /* Original values of the brand scales (see :root). */
   --c-terracotta-50: 251 238 227;
@@ -320,6 +327,23 @@ body {
    * already noticeably smaller and is left untouched. */
   video::-webkit-media-controls-overlay-play-button {
     transform: scale(0.6);
+  }
+
+  /* <input type="date">'s native calendar icon: a plain hover affordance
+   * (opacity lift) so it reads as part of the themed field rather than a
+   * bare browser icon dropped on top of it. color-scheme above (set on
+   * :root/.dark) handles the icon's light/dark rendering so it stays
+   * visible on the page's own background in both modes. */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 2px;
+    opacity: 0.65;
+    transition: opacity 150ms ease-out;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
   }
 }
 

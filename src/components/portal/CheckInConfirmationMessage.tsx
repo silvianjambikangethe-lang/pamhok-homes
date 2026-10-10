@@ -29,7 +29,9 @@ export default function CheckInConfirmationMessage({ checkIn }: { checkIn: strin
         Check-in starts at <strong className="text-ink">{CHECK_IN_TIME}</strong> on{" "}
         <strong className="text-ink">{formattedDate}</strong>.{" "}
         {roomStatus && <strong className="text-ink">{roomStatus}</strong>}{" "}
-        Once inside, please make use of the provided slippers. During your
+        Once inside, please make use of the provided slippers. Switch on the
+        switch outside the washroom, then press the water heater button
+        inside to get hot water. During your
         stay, keep an eye on your <strong className="text-ink">My Booking</strong> page (and
         your email) for cleaning day notices and checkout reminders, so you&apos;re never
         caught off guard. Laundry is billed separately from your stay, you&apos;ll only be
