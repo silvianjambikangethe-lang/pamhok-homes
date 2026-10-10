@@ -181,6 +181,12 @@ create table if not exists bookings (
   block_start_at timestamptz,
   block_end_at timestamptz,
 
+  -- One-time override of CHECK_IN_TIME (src/lib/site.ts) for this booking
+  -- only — e.g. "2:00 PM" when cleaning ran long. Display-ready text, same
+  -- format as CHECK_IN_TIME. Null means use the normal site-wide time; the
+  -- next booking for this room is a fresh row, so it resets on its own.
+  check_in_time_override text,
+
   -- ID verification gate. Automated via Dojah document analysis
   -- (src/lib/dojah.ts) — front + back of the ID, no selfie/face-match — a
   -- guest gets 2 attempts (upload-id route) before the booking is flagged

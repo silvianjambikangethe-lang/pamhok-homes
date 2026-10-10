@@ -33,7 +33,7 @@ export default async function AdminBookingsPage() {
       supabase
         .from("bookings")
         .select(
-          "id, room_id, check_in, check_out, booking_reference, second_guest_name, second_guest_phone, guest:guests(full_name, phone)",
+          "id, room_id, check_in, check_out, booking_reference, second_guest_name, second_guest_phone, check_in_time_override, guest:guests(full_name, phone)",
         )
         .eq("booking_status", "Confirmed")
         .is("checked_out_at", null)
@@ -74,6 +74,7 @@ export default async function AdminBookingsPage() {
         bookingReference: b.booking_reference,
         secondGuestName: b.second_guest_name,
         secondGuestPhone: b.second_guest_phone,
+        checkInTimeOverride: b.check_in_time_override,
       },
     ]),
   );
@@ -104,6 +105,7 @@ export default async function AdminBookingsPage() {
       bookingReference: stay?.bookingReference ?? null,
       secondGuestName: stay?.secondGuestName ?? null,
       secondGuestPhone: stay?.secondGuestPhone ?? null,
+      checkInTimeOverride: stay?.checkInTimeOverride ?? null,
       blockNote: block?.blockNote ?? null,
       blockStartAt: block?.blockStartAt ?? null,
       blockEndAt: block?.blockEndAt ?? null,
