@@ -12,8 +12,13 @@ export default async function AdminBookingsPage() {
   const supabase = await createServerSupabaseClient();
   const today = format(new Date(), "yyyy-MM-dd");
 
-  const [{ data: bookings }, { data: rooms }, { data: activeStays }, { data: securityEvents }] =
-    await Promise.all([
+  const [
+    { data: bookings },
+    { data: rooms },
+    { data: activeStays },
+    { data: activeBlocks },
+    { data: securityEvents },
+  ] = await Promise.all([
       supabase
         .from("bookings")
         .select(
@@ -32,6 +37,15 @@ export default async function AdminBookingsPage() {
         )
         .eq("booking_status", "Confirmed")
         .is("checked_out_at", null)
+        .lte("check_in", today)
+        .gte("check_out", today),
+      // Room Status grid, same idea but for a host-blocked room (see
+      // BlockDatesForm) — a room can't be both at once, availability_view
+      // already guarantees a Blocked and a Confirmed row never overlap.
+      supabase
+        .from("bookings")
+        .select("id, room_id, block_note, block_start_at, block_end_at")
+        .eq("booking_status", "Blocked")
         .lte("check_in", today)
         .gte("check_out", today),
       // Security Log: every automatic payment-marking event (see the
@@ -64,18 +78,37 @@ export default async function AdminBookingsPage() {
     ]),
   );
 
-  const roomStatuses: RoomStatus[] = (rooms ?? []).map((room) => ({
-    id: room.id,
-    name: room.name,
-    bookingId: stayByRoomId.get(room.id)?.bookingId ?? null,
-    guestName: stayByRoomId.get(room.id)?.guestName ?? null,
-    guestPhone: stayByRoomId.get(room.id)?.guestPhone ?? null,
-    checkIn: stayByRoomId.get(room.id)?.checkIn ?? null,
-    checkOut: stayByRoomId.get(room.id)?.checkOut ?? null,
-    bookingReference: stayByRoomId.get(room.id)?.bookingReference ?? null,
-    secondGuestName: stayByRoomId.get(room.id)?.secondGuestName ?? null,
-    secondGuestPhone: stayByRoomId.get(room.id)?.secondGuestPhone ?? null,
-  }));
+  const blockByRoomId = new Map(
+    (activeBlocks ?? []).map((b) => [
+      b.room_id,
+      {
+        bookingId: b.id,
+        blockNote: b.block_note,
+        blockStartAt: b.block_start_at,
+        blockEndAt: b.block_end_at,
+      },
+    ]),
+  );
+
+  const roomStatuses: RoomStatus[] = (rooms ?? []).map((room) => {
+    const stay = stayByRoomId.get(room.id);
+    const block = blockByRoomId.get(room.id);
+    return {
+      id: room.id,
+      name: room.name,
+      bookingId: stay?.bookingId ?? block?.bookingId ?? null,
+      guestName: stay?.guestName ?? null,
+      guestPhone: stay?.guestPhone ?? null,
+      checkIn: stay?.checkIn ?? null,
+      checkOut: stay?.checkOut ?? null,
+      bookingReference: stay?.bookingReference ?? null,
+      secondGuestName: stay?.secondGuestName ?? null,
+      secondGuestPhone: stay?.secondGuestPhone ?? null,
+      blockNote: block?.blockNote ?? null,
+      blockStartAt: block?.blockStartAt ?? null,
+      blockEndAt: block?.blockEndAt ?? null,
+    };
+  });
 
   const rows: AdminBookingRow[] = (bookings ?? []).map((b) => ({
     id: b.id,

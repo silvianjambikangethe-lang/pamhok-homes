@@ -334,7 +334,8 @@ body {
    * bare browser icon dropped on top of it. color-scheme above (set on
    * :root/.dark) handles the icon's light/dark rendering so it stays
    * visible on the page's own background in both modes. */
-  input[type="date"]::-webkit-calendar-picker-indicator {
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     border-radius: 6px;
     padding: 2px;
@@ -342,7 +343,8 @@ body {
     transition: opacity 150ms ease-out;
   }
 
-  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover {
     opacity: 1;
   }
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
-import { Phone, User, Warning, X } from "@phosphor-icons/react";
+import { Lock, Phone, User, Warning, X } from "@phosphor-icons/react";
 import { CHECK_OUT_TIME } from "@/lib/site";
 
 export type RoomStatus = {
@@ -18,6 +18,12 @@ export type RoomStatus = {
   // Second guest sharing this room (a room sleeps up to 2) — display-only.
   secondGuestName: string | null;
   secondGuestPhone: string | null;
+  // A host-blocked room (see BlockDatesForm) — mutually exclusive with an
+  // active guest stay above; availability_view never lets both exist for
+  // the same room on the same day.
+  blockNote: string | null;
+  blockStartAt: string | null;
+  blockEndAt: string | null;
 };
 
 // Stale = checkout time (10:00 AM) plus a 30-minute grace period has
@@ -35,8 +41,19 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [confirmingRelease, setConfirmingRelease] = useState(false);
+  const [releasing, setReleasing] = useState(false);
+  const [releaseError, setReleaseError] = useState<string | null>(null);
 
-  const stale =
+  // A block has no guest attached, but still has a bookingId (the Blocked
+  // row itself) — that's what tells a block apart from "Available".
+  const isBlocked = Boolean(room.bookingId) && !room.guestName;
+  // Only a block given a precise end time (see BlockDatesForm's optional
+  // Start/End time fields) can ever flag this way — a plain whole-day block
+  // has no defined end to compare against "now".
+  const blockEnded = room.blockEndAt ? new Date() >= parseISO(room.blockEndAt) : false;
+
+  const staleCheckout =
     room.guestName && room.checkOut && isStaleCheckout(room.checkOut, new Date());
 
   async function handleDelete() {
@@ -58,18 +75,41 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
     router.refresh();
   }
 
+  // Releasing a block uses the exact same mechanism as freeing up a stale
+  // checkout — cancelling the booking row (here, the Blocked one) drops it
+  // out of availability_view and the room is bookable again.
+  async function handleRelease() {
+    if (!room.bookingId) return;
+    setReleasing(true);
+    setReleaseError(null);
+
+    const res = await fetch(`/api/admin/bookings/${room.bookingId}/cancel`, {
+      method: "POST",
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setReleaseError(data?.error ?? "Could not release the room.");
+      setReleasing(false);
+      return;
+    }
+
+    router.refresh();
+  }
+
   return (
     <>
       <div
         className={`rounded-2xl border p-5 shadow-card ${
-          stale
+          staleCheckout || blockEnded
             ? "border-danger/50 bg-danger/5"
-            : room.guestName
+            : room.guestName || isBlocked
               ? "border-terracotta-500/40 bg-surface"
               : "border-taupe/20 bg-page"
         }`}
       >
         <p className="font-serif text-h3 text-ink">{room.name}</p>
+
         {room.guestName ? (
           <button
             type="button"
@@ -98,11 +138,27 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
               View guest details →
             </span>
           </button>
+        ) : isBlocked ? (
+          <div className="mt-3 space-y-1.5 text-sm">
+            <p className="flex items-center gap-2 font-semibold text-ink/80">
+              <Lock size={16} className="shrink-0 text-terracotta-600" />
+              Blocked
+            </p>
+            {room.blockNote && <p className="text-ink/70">{room.blockNote}</p>}
+            {room.blockStartAt && room.blockEndAt ? (
+              <p className="text-xs text-ink/55">
+                {format(parseISO(room.blockStartAt), "d MMM, h:mm a")} –{" "}
+                {format(parseISO(room.blockEndAt), "d MMM, h:mm a")}
+              </p>
+            ) : (
+              <p className="text-xs text-ink/55">Blocked for the day</p>
+            )}
+          </div>
         ) : (
           <p className="mt-3 text-sm text-ink/55">Available</p>
         )}
 
-        {stale && (
+        {staleCheckout && (
           <div className="mt-4 border-t border-danger/30 pt-3">
             <p className="flex items-center gap-1.5 text-xs font-semibold text-danger">
               <Warning size={14} weight="fill" />
@@ -136,6 +192,58 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
                     type="button"
                     onClick={() => setConfirming(false)}
                     disabled={deleting}
+                    className="focus-ring rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {isBlocked && (
+          <div
+            className={`mt-4 border-t pt-3 ${blockEnded ? "border-danger/30" : "border-taupe/20"}`}
+          >
+            {blockEnded && (
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-danger">
+                <Warning size={14} weight="fill" />
+                Block time is up
+              </p>
+            )}
+            {releaseError && <p className="mt-1.5 text-xs text-danger">{releaseError}</p>}
+            {!confirmingRelease ? (
+              <button
+                type="button"
+                onClick={() => setConfirmingRelease(true)}
+                className={`focus-ring mt-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold ${
+                  blockEnded
+                    ? "border-danger/40 text-danger hover:bg-danger/10"
+                    : "border-taupe/25 text-ink/80 hover:border-terracotta-300"
+                }`}
+              >
+                {blockEnded ? "Confirm release" : "Release room"}
+              </button>
+            ) : (
+              <div className="mt-2 space-y-2">
+                <p className="text-xs text-ink/80">
+                  Confirm the room is actually ready — this removes the
+                  block and frees it for new bookings.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRelease}
+                    disabled={releasing}
+                    className="focus-ring rounded-full bg-danger px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-60"
+                  >
+                    {releasing ? "Releasing…" : "Yes, release it"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingRelease(false)}
+                    disabled={releasing}
                     className="focus-ring rounded-full border border-taupe/25 px-3.5 py-1.5 text-xs font-semibold text-ink/80 hover:border-terracotta-300"
                   >
                     Cancel

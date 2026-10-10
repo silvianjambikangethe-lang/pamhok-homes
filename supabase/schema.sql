@@ -173,6 +173,13 @@ create table if not exists bookings (
   -- see availability_view below, which blocks this status too)
   booking_status text not null default 'Confirmed',
   block_note text,              -- only used when booking_status = 'Blocked'
+  -- Precise start/end time for a Blocked row, on top of the whole-day
+  -- check_in/check_out span above (which stays the source of truth for
+  -- availability math). Null for a plain whole-day block, or whenever the
+  -- admin leaves both time fields blank. Powers the Room Status grid's
+  -- "this block's time is up, confirm release?" prompt.
+  block_start_at timestamptz,
+  block_end_at timestamptz,
 
   -- ID verification gate. Automated via Dojah document analysis
   -- (src/lib/dojah.ts) — front + back of the ID, no selfie/face-match — a
