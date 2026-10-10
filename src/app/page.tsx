@@ -201,7 +201,10 @@ export default async function HomePage() {
               className="flex w-[82%] shrink-0 snap-center flex-col gap-4 rounded-2xl border border-taupe/20 bg-surface p-6 shadow-card sm:w-auto sm:shrink"
             >
               <StarRating rating={review.rating} size={16} showEmpty={false} className="gap-1" />
-              {review.comment && (
+              {/* A 3.5-4.4 star review is featured (shows here) but only as
+                  a rating, no text — the written comment only renders for
+                  4.5+, see the auto-feature rule in the review API route. */}
+              {review.comment && review.rating >= 4.5 && (
                 <blockquote className="font-accent text-quote italic text-ink/80">
                   “{review.comment}”
                 </blockquote>

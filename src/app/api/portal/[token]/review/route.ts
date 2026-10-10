@@ -63,11 +63,17 @@ export async function POST(
   const guestName = (booking as unknown as { guest?: { full_name?: string } }).guest?.full_name;
   const displayName = guestName ? `${guestName.split(" ")[0]} ${guestName.split(" ")[1]?.[0] ?? ""}.`.trim() : null;
 
+  // Auto-feature by rating instead of waiting on an admin: 3.5+ shows on
+  // the homepage automatically (the written comment itself only renders
+  // there for 4.5+, see page.tsx — a 3.5-4.4 review shows its star rating
+  // only). Below 3.5 keeps the old default: admin-only until a human
+  // features or deletes it from /admin/reviews.
   const { error: insertError } = await supabase.from("reviews").insert({
     booking_id: booking.id,
     rating,
     comment: typeof body.comment === "string" ? body.comment.slice(0, 2000) : null,
     guest_display_name: displayName,
+    featured: rating >= 3.5,
   });
 
   if (insertError) {
