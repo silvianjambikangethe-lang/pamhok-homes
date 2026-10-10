@@ -6,7 +6,7 @@ import { generateBookingReference, generatePassReference } from "@/lib/booking-r
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { isNameBlocked } from "@/lib/guest-blocklist";
 import { parseRecognitionToken } from "@/lib/guest-recognition";
-import { SITE } from "@/lib/site";
+import { HOUSE_RULES_VERSION, SITE } from "@/lib/site";
 import { EMAIL_RE, PHONE_RE, parseExtraRoomGuests, type OccupantInput } from "@/lib/validation";
 import type { IdVerificationMethod } from "@/lib/supabase/types";
 
@@ -51,6 +51,10 @@ interface BookingRequestBody {
   // for a recognized returning guest, whose payment step then skips the
   // second tick; everyone else still accepts at payment as before.
   termsAccepted?: boolean;
+  // The House Rules pop-up's own "Yes, I Accept" (see HouseRulesModal.tsx),
+  // shown right after the Terms checkbox — a second, separate acceptance
+  // required from every guest, regardless of the recognition flow above.
+  houseRulesAccepted: boolean;
 }
 
 const MAX_EXTRA_ROOMS = 9;
@@ -68,6 +72,9 @@ function isValidBody(body: unknown): body is BookingRequestBody {
     return false;
   }
   if (typeof b.termsAccepted !== "undefined" && typeof b.termsAccepted !== "boolean") {
+    return false;
+  }
+  if (b.houseRulesAccepted !== true) {
     return false;
   }
   if (typeof b.extraRoomIds !== "undefined") {
@@ -337,6 +344,8 @@ export async function POST(request: Request) {
           booking_status: "Confirmed",
           booking_reference: generateBookingReference(),
           pass_reference: generatePassReference(body.checkIn, bookedRoom.display_order),
+          house_rules_accepted_at: new Date().toISOString(),
+          house_rules_version: HOUSE_RULES_VERSION,
           ...(occupant
             ? {
                 occupant_name: occupant.name,

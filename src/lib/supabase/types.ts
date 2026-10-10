@@ -192,6 +192,12 @@ export type Booking = {
   // only, display-only, no portal/payment/verification tied to them.
   second_guest_name: string | null;
   second_guest_phone: string | null;
+  // Set when the guest accepts the House Rules pop-up shown right after
+  // the Terms & Privacy checkbox on the public booking widget (see
+  // HouseRulesModal.tsx). house_rules_version records which copy of the
+  // rules they agreed to (HOUSE_RULES_VERSION in src/lib/site.ts).
+  house_rules_accepted_at: string | null;
+  house_rules_version: string | null;
 };
 
 export type LaundryPaymentStatus = "Pending" | "Paid" | "Failed";

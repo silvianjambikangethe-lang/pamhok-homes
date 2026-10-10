@@ -245,6 +245,14 @@ create table if not exists bookings (
   second_guest_name text,
   second_guest_phone text,
 
+  -- Set when the guest accepts the House Rules pop-up shown right after
+  -- the Terms & Privacy checkbox on the public booking widget. version
+  -- records which copy of the rules they agreed to (HOUSE_RULES_VERSION
+  -- in src/lib/site.ts), so a later change to the rules' wording doesn't
+  -- retroactively blur what an earlier guest actually consented to.
+  house_rules_accepted_at timestamptz,
+  house_rules_version text,
+
   created_at timestamptz default now(),
 
   constraint valid_dates check (check_out > check_in)
