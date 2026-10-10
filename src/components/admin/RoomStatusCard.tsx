@@ -66,6 +66,11 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
   const [checkInTimeInput, setCheckInTimeInput] = useState("");
   const [savingCheckInTime, setSavingCheckInTime] = useState(false);
   const [checkInTimeError, setCheckInTimeError] = useState<string | null>(null);
+  // Flips the instant either release button is confirmed — the card shows
+  // "Available" right away instead of waiting on the network round-trip
+  // and the server-data refresh that follows it. Reverted if the request
+  // actually fails.
+  const [locallyReleased, setLocallyReleased] = useState(false);
 
   const effectiveCheckInTime = room.checkInTimeOverride || CHECK_IN_TIME;
 
@@ -92,20 +97,27 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
   }
 
   // A block has no guest attached, but still has a bookingId (the Blocked
-  // row itself) — that's what tells a block apart from "Available".
-  const isBlocked = Boolean(room.bookingId) && !room.guestName;
+  // row itself) — that's what tells a block apart from "Available". Once
+  // either release button is confirmed, locallyReleased forces this (and
+  // guestName below) to read as empty immediately, ahead of the server
+  // actually agreeing.
+  const guestName = locallyReleased ? null : room.guestName;
+  const isBlocked = !locallyReleased && Boolean(room.bookingId) && !room.guestName;
   // Only a block given a precise end time (see BlockDatesForm's optional
   // Start/End time fields) can ever flag this way — a plain whole-day block
   // has no defined end to compare against "now".
-  const blockEnded = room.blockEndAt ? new Date() >= parseISO(room.blockEndAt) : false;
+  const blockEnded =
+    !locallyReleased && room.blockEndAt ? new Date() >= parseISO(room.blockEndAt) : false;
 
   const staleCheckout =
-    room.guestName && room.checkOut && isStaleCheckout(room.checkOut, new Date());
+    guestName && room.checkOut && isStaleCheckout(room.checkOut, new Date());
 
   async function handleDelete() {
     if (!room.bookingId) return;
     setDeleting(true);
     setError(null);
+    setLocallyReleased(true);
+    setShowDetails(false);
 
     const res = await fetch(`/api/admin/bookings/${room.bookingId}/cancel`, {
       method: "POST",
@@ -115,6 +127,7 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
       const data = await res.json().catch(() => null);
       setError(data?.error ?? "Could not free up the room.");
       setDeleting(false);
+      setLocallyReleased(false);
       return;
     }
 
@@ -128,6 +141,7 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
     if (!room.bookingId) return;
     setReleasing(true);
     setReleaseError(null);
+    setLocallyReleased(true);
 
     const res = await fetch(`/api/admin/bookings/${room.bookingId}/cancel`, {
       method: "POST",
@@ -137,6 +151,7 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
       const data = await res.json().catch(() => null);
       setReleaseError(data?.error ?? "Could not release the room.");
       setReleasing(false);
+      setLocallyReleased(false);
       return;
     }
 
@@ -149,14 +164,14 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
         className={`rounded-2xl border p-5 shadow-card ${
           staleCheckout || blockEnded
             ? "border-danger/50 bg-danger/5"
-            : room.guestName || isBlocked
+            : guestName || isBlocked
               ? "border-terracotta-500/40 bg-surface"
               : "border-taupe/20 bg-page"
         }`}
       >
         <p className="font-serif text-h3 text-ink">{room.name}</p>
 
-        {room.guestName ? (
+        {guestName ? (
           <button
             type="button"
             onClick={() => setShowDetails(true)}
@@ -165,7 +180,7 @@ export default function RoomStatusCard({ room }: { room: RoomStatus }) {
             <div className="space-y-1.5 text-sm">
               <p className="flex items-center gap-2 text-ink/80">
                 <User size={16} className="shrink-0 text-terracotta-600" />
-                {room.guestName}
+                {guestName}
                 {room.secondGuestName && ` + ${room.secondGuestName}`}
               </p>
               {room.guestPhone && (
