@@ -4,7 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { generateBookingReference, generatePassReference } from "@/lib/booking-reference";
 import { isNameBlocked } from "@/lib/guest-blocklist";
-import { EMAIL_RE, PHONE_RE } from "@/lib/validation";
+import { EMAIL_RE, PHONE_RE, parseExtraRoomGuests } from "@/lib/validation";
 import { sendPaymentSucceededEmail } from "@/lib/booking-emails";
 
 // Matches the public booking route's MAX_EXTRA_ROOMS — same reasoning, kept
@@ -39,6 +39,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid room selection." }, { status: 400 });
   }
 
+  // Optional, per extra room: a different person actually staying there
+  // (e.g. a friend taking that room) — see parseExtraRoomGuests. Only
+  // redirects that room's confirmation email/portal link; guestId below
+  // (payer, ID verification) stays the walk-in's own guest for every room.
+  const extraRoomGuests = parseExtraRoomGuests(body.extraRoomGuests, extraRoomIds);
+  if (!extraRoomGuests) {
+    return NextResponse.json({ error: "Invalid room guest details." }, { status: 400 });
+  }
+
   // Optional — a walk-in guest can still be booked with just a name, same
   // as before. When given, they're what lets the guest actually reach
   // their own portal (self-checkin details, door code/WiFi, cleaning and
@@ -50,6 +59,21 @@ export async function POST(request: Request) {
   }
   if (guestPhone && !PHONE_RE.test(guestPhone)) {
     return NextResponse.json({ error: "Enter a valid phone number, or leave it blank." }, { status: 400 });
+  }
+
+  // Optional — a second guest sharing the primary room (a room sleeps up to
+  // 2). Display-only: shown in the admin's Room Status popup, no portal/
+  // payment/verification tied to them.
+  const secondGuestName = typeof body.secondGuestName === "string" ? body.secondGuestName.trim() : "";
+  const secondGuestPhone = typeof body.secondGuestPhone === "string" ? body.secondGuestPhone.trim() : "";
+  if (secondGuestName.length > 100) {
+    return NextResponse.json({ error: "2nd guest name is too long." }, { status: 400 });
+  }
+  if (secondGuestPhone && !PHONE_RE.test(secondGuestPhone)) {
+    return NextResponse.json(
+      { error: "Enter a valid 2nd guest phone number, or leave it blank." },
+      { status: 400 },
+    );
   }
 
   const nights = differenceInCalendarDays(parseISO(body.checkOut), parseISO(body.checkIn));
@@ -123,6 +147,30 @@ export async function POST(request: Request) {
     extraRooms = extraRoomIds.map((id) => extras.find((r) => r.id === id)!);
   }
 
+  // Availability check — this route used to rely on nothing but the
+  // booking_reference unique constraint (which doesn't stop two bookings on
+  // the same room/dates), so a walk-in entered here could silently
+  // double-book a room already taken online or by another walk-in. Same
+  // overlap rule as the public booking route's check against
+  // availability_view.
+  const allRoomIds = [room.id, ...extraRoomIds];
+  const { data: taken, error: takenError } = await supabase
+    .from("availability_view")
+    .select("room_id")
+    .in("room_id", allRoomIds)
+    .lt("check_in", body.checkOut)
+    .gt("check_out", body.checkIn);
+
+  if (takenError) {
+    return NextResponse.json({ error: "Could not verify availability." }, { status: 500 });
+  }
+  if (taken && taken.length > 0) {
+    return NextResponse.json(
+      { error: "One of the selected rooms is no longer free for those dates." },
+      { status: 409 },
+    );
+  }
+
   const { data: guestRow, error: guestError } = await supabase
     .from("guests")
     .insert({
@@ -145,6 +193,10 @@ export async function POST(request: Request) {
     booking_reference: string | null;
     check_in: string;
     check_out: string;
+    roomName: string;
+    occupantName: string | null;
+    occupantEmail: string | null;
+    occupantPhone: string | null;
   };
   const created: CreatedBooking[] = [];
 
@@ -161,6 +213,7 @@ export async function POST(request: Request) {
   // The requested room first, so its portal is where the guest lands and
   // links to the others — same ordering/comment as the public route.
   for (const bookedRoom of [room, ...extraRooms]) {
+    const occupant = extraRoomGuests[bookedRoom.id];
     let booking: CreatedBooking | null = null;
 
     // booking_reference has a unique constraint — retry a few times on the
@@ -189,12 +242,28 @@ export async function POST(request: Request) {
           paid_at: new Date().toISOString(),
           booking_reference: generateBookingReference(),
           pass_reference: generatePassReference(body.checkIn, bookedRoom.display_order),
+          ...(occupant
+            ? {
+                occupant_name: occupant.name,
+                occupant_email: occupant.email ?? null,
+                occupant_phone: occupant.phone ?? null,
+              }
+            : {}),
+          ...(bookedRoom.id === room.id && secondGuestName
+            ? { second_guest_name: secondGuestName, second_guest_phone: secondGuestPhone || null }
+            : {}),
         })
         .select("id, access_token, booking_reference, check_in, check_out")
         .single();
 
       if (data) {
-        booking = data;
+        booking = {
+          ...data,
+          roomName: bookedRoom.name,
+          occupantName: occupant?.name ?? null,
+          occupantEmail: occupant?.email ?? null,
+          occupantPhone: occupant?.phone ?? null,
+        };
       } else if (bookingError?.code !== "23505") {
         await rollback();
         return NextResponse.json(
@@ -216,11 +285,18 @@ export async function POST(request: Request) {
   // Manual bookings are inserted as Paid + Verified above (admin has
   // already handled payment and ID in person), so this is the same
   // "booking confirmed" email every other Paid booking gets — it's what
-  // hands the guest their portal link. Only the primary booking's email
-  // is sent: its portal page is where the guest lands and links to the
-  // rest of the group, same as the public flow. Safe to call
-  // unconditionally: it no-ops if the guest has no email on file.
+  // hands the guest their portal link. The primary booking's email always
+  // goes out (same as before). An extra room only gets its own email when
+  // it was given its own occupant — otherwise it would just be a second,
+  // unwanted copy landing in the same primary guest's inbox. Safe either
+  // way: sendPaymentSucceededEmail no-ops with no email on file.
   await sendPaymentSucceededEmail(supabase, booking.id, false);
+  await Promise.all(
+    created
+      .slice(1)
+      .filter((b) => b.occupantEmail)
+      .map((b) => sendPaymentSucceededEmail(supabase, b.id, false)),
+  );
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const portalUrl = `${siteUrl}/portal/${booking.access_token}`;
@@ -236,6 +312,18 @@ export async function POST(request: Request) {
       portalUrl,
       guestPhone: guestPhone || null,
       emailSent: Boolean(guestEmail),
+      // One entry per room (primary included), so the admin can copy any
+      // room's own link straight away rather than waiting on email
+      // delivery — most useful for a room given its own occupant, but
+      // included for every room for a consistent UI.
+      rooms: created.map((b) => ({
+        roomName: b.roomName,
+        portalUrl: `${siteUrl}/portal/${b.access_token}`,
+        occupantName: b.occupantName,
+        occupantEmail: b.occupantEmail,
+        occupantPhone: b.occupantPhone,
+        emailSent: Boolean(b === booking ? guestEmail : b.occupantEmail),
+      })),
     },
   });
 }

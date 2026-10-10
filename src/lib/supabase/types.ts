@@ -181,6 +181,23 @@ export type Booking = {
   pending_extension_requested_at: string | null;
   extension_confirmed_at: string | null;
   remember_me_choice: boolean | null;
+  // Set only when an extra room in a group booking is for someone other
+  // than the booker (e.g. a friend taking the next room) — redirects just
+  // that room's confirmation email/portal link to them. guest_id (payer, ID
+  // verification, "your other rooms") is unaffected either way.
+  occupant_name: string | null;
+  occupant_email: string | null;
+  occupant_phone: string | null;
+  // Second guest sharing this one room (a room sleeps up to 2) — name/phone
+  // only, display-only, no portal/payment/verification tied to them.
+  second_guest_name: string | null;
+  second_guest_phone: string | null;
+  // Set when the guest accepts the House Rules pop-up shown right after
+  // the Terms & Privacy checkbox on the public booking widget (see
+  // HouseRulesModal.tsx). house_rules_version records which copy of the
+  // rules they agreed to (HOUSE_RULES_VERSION in src/lib/site.ts).
+  house_rules_accepted_at: string | null;
+  house_rules_version: string | null;
 };
 
 export type LaundryPaymentStatus = "Pending" | "Paid" | "Failed";

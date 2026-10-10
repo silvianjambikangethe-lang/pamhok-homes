@@ -6,8 +6,8 @@ import { generateBookingReference, generatePassReference } from "@/lib/booking-r
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { isNameBlocked } from "@/lib/guest-blocklist";
 import { parseRecognitionToken } from "@/lib/guest-recognition";
-import { SITE } from "@/lib/site";
-import { EMAIL_RE, PHONE_RE } from "@/lib/validation";
+import { HOUSE_RULES_VERSION, SITE } from "@/lib/site";
+import { EMAIL_RE, PHONE_RE, parseExtraRoomGuests, type OccupantInput } from "@/lib/validation";
 import type { IdVerificationMethod } from "@/lib/supabase/types";
 
 // One response for anything that stops a booking being created on our side,
@@ -30,6 +30,13 @@ interface BookingRequestBody {
   // guest record. Each extra room becomes its own booking (own portal, own
   // payment), all sharing the guest and the dates.
   extraRoomIds?: string[];
+  // Optional, per extra room: who's actually staying there, if it's not the
+  // person making this booking (e.g. a friend taking the next room). Only
+  // redirects that one room's confirmation email/portal link to them —
+  // guest_id (payer, ID verification, "your other rooms") stays this
+  // booking's own guest either way. Keyed by roomId, a subset of
+  // extraRoomIds; a room left out just stays under the booker, as before.
+  extraRoomGuests?: Record<string, OccupantInput>;
   checkIn: string;
   checkOut: string;
   guest: { fullName: string; email: string; phone: string };
@@ -44,6 +51,10 @@ interface BookingRequestBody {
   // for a recognized returning guest, whose payment step then skips the
   // second tick; everyone else still accepts at payment as before.
   termsAccepted?: boolean;
+  // The House Rules pop-up's own "Yes, I Accept" (see HouseRulesModal.tsx),
+  // shown right after the Terms checkbox — a second, separate acceptance
+  // required from every guest, regardless of the recognition flow above.
+  houseRulesAccepted: boolean;
 }
 
 const MAX_EXTRA_ROOMS = 9;
@@ -61,6 +72,9 @@ function isValidBody(body: unknown): body is BookingRequestBody {
     return false;
   }
   if (typeof b.termsAccepted !== "undefined" && typeof b.termsAccepted !== "boolean") {
+    return false;
+  }
+  if (b.houseRulesAccepted !== true) {
     return false;
   }
   if (typeof b.extraRoomIds !== "undefined") {
@@ -114,6 +128,11 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (!isValidBody(body)) {
     return NextResponse.json({ error: "Missing or invalid fields." }, { status: 400 });
+  }
+
+  const extraRoomGuests = parseExtraRoomGuests(body.extraRoomGuests, body.extraRoomIds ?? []);
+  if (!extraRoomGuests) {
+    return NextResponse.json({ error: "Invalid room guest details." }, { status: 400 });
   }
 
   const checkIn = parseISO(body.checkIn);
@@ -305,6 +324,7 @@ export async function POST(request: Request) {
   // portal then links to the others (same guest, same dates).
   for (const bookedRoom of [room, ...extraRooms]) {
     const totalAmount = nights * bookedRoom.price_per_night;
+    const occupant = extraRoomGuests[bookedRoom.id];
 
     // booking_reference has a unique constraint — retry a few times on the
     // astronomically rare collision rather than failing the whole booking.
@@ -324,6 +344,15 @@ export async function POST(request: Request) {
           booking_status: "Confirmed",
           booking_reference: generateBookingReference(),
           pass_reference: generatePassReference(body.checkIn, bookedRoom.display_order),
+          house_rules_accepted_at: new Date().toISOString(),
+          house_rules_version: HOUSE_RULES_VERSION,
+          ...(occupant
+            ? {
+                occupant_name: occupant.name,
+                occupant_email: occupant.email ?? null,
+                occupant_phone: occupant.phone ?? null,
+              }
+            : {}),
           ...(inheritedVerification
             ? {
                 id_verification_status: inheritedVerification.status,

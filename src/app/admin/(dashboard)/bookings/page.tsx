@@ -27,7 +27,9 @@ export default async function AdminBookingsPage() {
       // they actually confirm checkout).
       supabase
         .from("bookings")
-        .select("id, room_id, check_out, guest:guests(full_name, phone)")
+        .select(
+          "id, room_id, check_in, check_out, booking_reference, second_guest_name, second_guest_phone, guest:guests(full_name, phone)",
+        )
         .eq("booking_status", "Confirmed")
         .is("checked_out_at", null)
         .lte("check_in", today)
@@ -53,7 +55,11 @@ export default async function AdminBookingsPage() {
         bookingId: b.id,
         guestName: (b as unknown as { guest?: { full_name?: string } }).guest?.full_name ?? null,
         guestPhone: (b as unknown as { guest?: { phone?: string } }).guest?.phone ?? null,
+        checkIn: b.check_in,
         checkOut: b.check_out,
+        bookingReference: b.booking_reference,
+        secondGuestName: b.second_guest_name,
+        secondGuestPhone: b.second_guest_phone,
       },
     ]),
   );
@@ -64,7 +70,11 @@ export default async function AdminBookingsPage() {
     bookingId: stayByRoomId.get(room.id)?.bookingId ?? null,
     guestName: stayByRoomId.get(room.id)?.guestName ?? null,
     guestPhone: stayByRoomId.get(room.id)?.guestPhone ?? null,
+    checkIn: stayByRoomId.get(room.id)?.checkIn ?? null,
     checkOut: stayByRoomId.get(room.id)?.checkOut ?? null,
+    bookingReference: stayByRoomId.get(room.id)?.bookingReference ?? null,
+    secondGuestName: stayByRoomId.get(room.id)?.secondGuestName ?? null,
+    secondGuestPhone: stayByRoomId.get(room.id)?.secondGuestPhone ?? null,
   }));
 
   const rows: AdminBookingRow[] = (bookings ?? []).map((b) => ({

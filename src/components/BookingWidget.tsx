@@ -12,6 +12,7 @@ import BookingCalendar, {
 import type { AvailabilityRow, Room } from "@/lib/supabase/types";
 import type { DisplayCurrency } from "@/lib/currency";
 import CurrencySelector from "@/components/CurrencySelector";
+import HouseRulesModal from "@/components/HouseRulesModal";
 import { readStoredRecognition, type StoredRecognition } from "@/lib/guest-recognition-storage";
 
 function formatCurrency(amount: number, currency: string) {
@@ -63,6 +64,8 @@ export interface OtherRoom {
   max_guests: number;
   bed_config: string;
 }
+
+type ExtraGuestInput = { name: string; email: string; phone: string };
 
 export default function BookingWidget({
   room,
@@ -116,6 +119,13 @@ export default function BookingWidget({
   );
   const [guest, setGuest] = useState({ fullName: "", email: "", phone: "" });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  // A second, separate acceptance shown right after agreedToTerms is
+  // ticked — the House Rules pop-up (see HouseRulesModal). Both are
+  // required to submit; dismissing the pop-up without accepting un-ticks
+  // agreedToTerms too, so the checkbox never reads "agreed" while the
+  // rules pop-up itself was never actually accepted.
+  const [houseRulesOpen, setHouseRulesOpen] = useState(false);
+  const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recognition, setRecognition] = useState<StoredRecognition | null>(null);
@@ -139,6 +149,10 @@ export default function BookingWidget({
   }, []);
 
   const [extraRoomIds, setExtraRoomIds] = useState<string[]>(initialExtraIds);
+  // Per-extra-room occupant details (e.g. a friend taking that room) —
+  // optional, keyed by roomId. Left blank, that room just stays under the
+  // booker's own name, same as before this existed.
+  const [extraGuestInputs, setExtraGuestInputs] = useState<Record<string, ExtraGuestInput>>({});
 
   const nights =
     selection.checkIn && selection.checkOut
@@ -181,9 +195,25 @@ export default function BookingWidget({
     : null;
 
   function toggleExtraRoom(id: string) {
-    setExtraRoomIds((ids) =>
-      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
-    );
+    setExtraRoomIds((ids) => {
+      const next = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+      if (!next.includes(id)) {
+        setExtraGuestInputs((inputs) => {
+          if (!(id in inputs)) return inputs;
+          const rest = { ...inputs };
+          delete rest[id];
+          return rest;
+        });
+      }
+      return next;
+    });
+  }
+
+  function updateExtraGuestInput(roomId: string, field: keyof ExtraGuestInput, value: string) {
+    setExtraGuestInputs((prev) => {
+      const current = prev[roomId] ?? { name: "", email: "", phone: "" };
+      return { ...prev, [roomId]: { ...current, [field]: value } };
+    });
   }
 
   const showGuestDetails =
@@ -195,6 +225,7 @@ export default function BookingWidget({
     guest.email.trim() &&
     guest.phone.trim() &&
     agreedToTerms &&
+    houseRulesAccepted &&
     !submitting;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -211,9 +242,15 @@ export default function BookingWidget({
         body: JSON.stringify({
           roomId: room.id,
           extraRoomIds: selectedExtras.map((r) => r.id),
+          extraRoomGuests: Object.fromEntries(
+            selectedExtras
+              .map((r) => [r.id, extraGuestInputs[r.id]] as const)
+              .filter(([, v]) => v && (v.name.trim() || v.email.trim() || v.phone.trim())),
+          ),
           checkIn: format(selection.checkIn, "yyyy-MM-dd"),
           checkOut: format(selection.checkOut, "yyyy-MM-dd"),
           guest,
+          houseRulesAccepted,
           ...(changeFrom ? { changeFromToken: changeFrom } : {}),
           ...(recognition
             ? { recognitionToken: recognition.recognitionToken, termsAccepted: agreedToTerms }
@@ -402,6 +439,43 @@ export default function BookingWidget({
                           >
                             See room →
                           </Link>
+
+                          {checked && (
+                            <div className="mt-2 rounded-xl border border-taupe/20 bg-page p-3">
+                              <p className="text-xs font-semibold text-ink/70">
+                                Who&apos;s staying here?{" "}
+                                <span className="font-normal text-ink/50">
+                                  (optional — leave blank if it&apos;s you)
+                                </span>
+                              </p>
+                              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                                <input
+                                  type="text"
+                                  maxLength={100}
+                                  placeholder="Name"
+                                  value={extraGuestInputs[r.id]?.name ?? ""}
+                                  onChange={(e) => updateExtraGuestInput(r.id, "name", e.target.value)}
+                                  className="focus-ring w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
+                                />
+                                <input
+                                  type="email"
+                                  maxLength={254}
+                                  placeholder="Email (for their room card)"
+                                  value={extraGuestInputs[r.id]?.email ?? ""}
+                                  onChange={(e) => updateExtraGuestInput(r.id, "email", e.target.value)}
+                                  className="focus-ring w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
+                                />
+                                <input
+                                  type="tel"
+                                  maxLength={20}
+                                  placeholder="Phone"
+                                  value={extraGuestInputs[r.id]?.phone ?? ""}
+                                  onChange={(e) => updateExtraGuestInput(r.id, "phone", e.target.value)}
+                                  className="focus-ring w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
+                                />
+                              </div>
+                            </div>
+                          )}
                         </li>
                       );
                     })}
@@ -497,7 +571,15 @@ export default function BookingWidget({
             type="checkbox"
             required
             checked={agreedToTerms}
-            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setAgreedToTerms(checked);
+              if (checked) {
+                setHouseRulesOpen(true);
+              } else {
+                setHouseRulesAccepted(false);
+              }
+            }}
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 accent-terracotta-500 focus:ring-terracotta-500"
           />
           <span>
@@ -521,6 +603,19 @@ export default function BookingWidget({
             </Link>
           </span>
         </label>
+
+        <HouseRulesModal
+          open={houseRulesOpen}
+          onAccept={() => {
+            setHouseRulesAccepted(true);
+            setHouseRulesOpen(false);
+          }}
+          onDismiss={() => {
+            setHouseRulesOpen(false);
+            setAgreedToTerms(false);
+            setHouseRulesAccepted(false);
+          }}
+        />
 
         {error && (
           <p role="alert" className="flex items-center gap-2 text-sm text-danger">

@@ -226,6 +226,33 @@ create table if not exists bookings (
   -- kept even if they retry payment (only ever set once, not overwritten).
   terms_accepted_at timestamptz,
 
+  -- A group booking's guest_id is always the person who made the booking
+  -- (same for every room in the group — they pay, verify ID, and "your
+  -- other rooms" on the portal is still looked up by this guest_id). These
+  -- three are set only when an extra room is actually for someone else
+  -- (e.g. a friend taking the next room) — they redirect that one room's
+  -- confirmation email/portal link to the real occupant. Nothing else
+  -- (payment, verification, portal access) is affected by them.
+  occupant_name text,
+  occupant_email text,
+  occupant_phone text,
+
+  -- A room sleeps up to 2 guests (see rooms.max_guests) — these hold the
+  -- second guest's name/phone when a booking is for two people sharing
+  -- this one room (distinct from occupant_* above, which is for a
+  -- different room in a group booking). Display-only, same as the
+  -- primary guest's own phone.
+  second_guest_name text,
+  second_guest_phone text,
+
+  -- Set when the guest accepts the House Rules pop-up shown right after
+  -- the Terms & Privacy checkbox on the public booking widget. version
+  -- records which copy of the rules they agreed to (HOUSE_RULES_VERSION
+  -- in src/lib/site.ts), so a later change to the rules' wording doesn't
+  -- retroactively blur what an earlier guest actually consented to.
+  house_rules_accepted_at timestamptz,
+  house_rules_version text,
+
   created_at timestamptz default now(),
 
   constraint valid_dates check (check_out > check_in)

@@ -36,6 +36,12 @@ export const SITE = {
 export const CHECK_IN_TIME = "1:00 PM";
 export const CHECK_OUT_TIME = "10:00 AM";
 
+// Bump this whenever the House Rules pop-up's content changes (see
+// HouseRulesModal.tsx) — stored on bookings.house_rules_version alongside
+// house_rules_accepted_at, so it's always clear which version of the rules
+// a given guest actually agreed to.
+export const HOUSE_RULES_VERSION = "2026-10-10";
+
 export const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/rooms", label: "Rooms" },

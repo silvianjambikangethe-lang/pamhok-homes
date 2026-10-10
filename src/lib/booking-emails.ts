@@ -28,13 +28,21 @@ export async function sendPaymentSucceededEmail(
   const { data: booking } = await supabase
     .from("bookings")
     .select(
-      "check_in, check_out, total_amount, currency, booking_reference, access_token, payment_method, payment_reference, paid_at, guest:guests(full_name, email), room:rooms(name)",
+      "check_in, check_out, total_amount, currency, booking_reference, access_token, payment_method, payment_reference, paid_at, occupant_name, occupant_email, guest:guests(full_name, email), room:rooms(name)",
     )
     .eq("id", bookingId)
     .maybeSingle();
 
   const guest = booking?.guest as unknown as { full_name: string; email: string | null } | null;
-  if (!booking || !guest?.email) return;
+  if (!booking) return;
+
+  // A group booking's extra room can name a different occupant (e.g. a
+  // friend taking that room) — when that's set, this room's confirmation
+  // goes to them instead of whoever booked and is paying. Falls back to
+  // the booking's own guest otherwise, same as before this existed.
+  const recipientName = booking.occupant_name?.trim() || guest?.full_name;
+  const recipientEmail = booking.occupant_email?.trim() || guest?.email;
+  if (!recipientName || !recipientEmail) return;
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const portalUrl = `${siteUrl}/portal/${booking.access_token}`;
@@ -46,7 +54,7 @@ export async function sendPaymentSucceededEmail(
   // own "total confirmed for your stay" wording below for the same
   // reasoning).
   const receiptImage = await generateReceiptImage({
-    guestName: guest.full_name,
+    guestName: recipientName,
     roomName,
     checkIn: booking.check_in,
     checkOut: booking.check_out,
@@ -67,19 +75,19 @@ export async function sendPaymentSucceededEmail(
 
   if (wasAlreadyPaid) {
     const { subject, html } = stayExtensionConfirmationEmail({
-      guestName: guest.full_name,
+      guestName: recipientName,
       roomName,
       newCheckOut: booking.check_out,
       totalPaid: booking.total_amount,
       currency: booking.currency,
       portalUrl,
     });
-    await sendEmail({ to: guest.email, subject, html, attachments });
+    await sendEmail({ to: recipientEmail, subject, html, attachments });
     return;
   }
 
   const { subject, html } = bookingConfirmationEmail({
-    guestName: guest.full_name,
+    guestName: recipientName,
     roomName,
     checkIn: booking.check_in,
     checkOut: booking.check_out,
@@ -88,5 +96,5 @@ export async function sendPaymentSucceededEmail(
     currency: booking.currency,
     portalUrl,
   });
-  await sendEmail({ to: guest.email, subject, html, attachments });
+  await sendEmail({ to: recipientEmail, subject, html, attachments });
 }
