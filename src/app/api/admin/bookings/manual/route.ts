@@ -6,6 +6,7 @@ import { generateBookingReference, generatePassReference } from "@/lib/booking-r
 import { isNameBlocked } from "@/lib/guest-blocklist";
 import { EMAIL_RE, PHONE_RE, parseExtraRoomGuests } from "@/lib/validation";
 import { sendPaymentSucceededEmail } from "@/lib/booking-emails";
+import { HOUSE_RULES_VERSION } from "@/lib/site";
 
 // Matches the public booking route's MAX_EXTRA_ROOMS — same reasoning, kept
 // as a local copy since it's a bare number, not a shared regex/behavior.
@@ -24,6 +25,14 @@ export async function POST(request: Request) {
     body.guestName.trim().length > 100
   ) {
     return NextResponse.json({ error: "Missing fields." }, { status: 400 });
+  }
+
+  // Same gate as the public booking route — the admin (on behalf of the
+  // guest in front of them) must have shown and gotten agreement to the
+  // House Rules pop-up before this booking is actually created, not just
+  // ticked a box in the form.
+  if (body.houseRulesAccepted !== true) {
+    return NextResponse.json({ error: "House rules must be accepted first." }, { status: 400 });
   }
 
   // Optional extra rooms — a walk-in group booked under one name, same
@@ -242,6 +251,8 @@ export async function POST(request: Request) {
           paid_at: new Date().toISOString(),
           booking_reference: generateBookingReference(),
           pass_reference: generatePassReference(body.checkIn, bookedRoom.display_order),
+          house_rules_accepted_at: new Date().toISOString(),
+          house_rules_version: HOUSE_RULES_VERSION,
           ...(occupant
             ? {
                 occupant_name: occupant.name,

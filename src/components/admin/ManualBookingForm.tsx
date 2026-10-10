@@ -6,6 +6,7 @@ import { format, parseISO } from "date-fns";
 import { CaretDown, Check, Copy, WhatsappLogo } from "@phosphor-icons/react";
 import { CHECK_IN_TIME, CHECK_OUT_TIME, SITE, whatsappLink } from "@/lib/site";
 import { normalizePhone } from "@/lib/phone";
+import HouseRulesModal from "@/components/HouseRulesModal";
 
 type RoomCard = {
   roomName: string;
@@ -70,6 +71,7 @@ export default function ManualBookingForm({
   const [extraGuestInputs, setExtraGuestInputs] = useState<Record<string, ExtraGuestInput>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [houseRulesOpen, setHouseRulesOpen] = useState(false);
   const [card, setCard] = useState<GuestCard | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -160,8 +162,17 @@ export default function ManualBookingForm({
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  // The form itself never calls the booking API directly — submitting it
+  // opens the House Rules pop-up first (native required-field validation
+  // still runs before onSubmit fires), and only accepting that gate goes
+  // on to actually create the booking and send the guest their portal
+  // link, matching the public booking widget's flow.
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setHouseRulesOpen(true);
+  }
+
+  async function submitBooking() {
     setSubmitting(true);
     setError(null);
 
@@ -185,6 +196,7 @@ export default function ManualBookingForm({
         guestPhone,
         secondGuestName,
         secondGuestPhone,
+        houseRulesAccepted: true,
       }),
     });
 
@@ -518,6 +530,15 @@ export default function ManualBookingForm({
           )}
         </div>
       )}
+
+      <HouseRulesModal
+        open={houseRulesOpen}
+        onAccept={() => {
+          setHouseRulesOpen(false);
+          submitBooking();
+        }}
+        onDismiss={() => setHouseRulesOpen(false)}
+      />
     </div>
   );
 }
