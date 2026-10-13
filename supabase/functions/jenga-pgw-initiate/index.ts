@@ -263,25 +263,48 @@ Deno.serve(async (req) => {
       Deno.env.get("JENGA_PGW_CALLBACK_URL") ??
       `${Deno.env.get("SUPABASE_URL")}/functions/v1/jenga-pgw-callback`;
 
-    // Jenga's checkout form rejects last names with spaces/special characters.
+    // Jenga's checkout form rejects last names with spaces/special characters,
+    // so names are stripped to letters only — this also satisfies the "strip
+    // special characters and trim" rule, since the regex drops spaces,
+    // apostrophes, hyphens and accents alike.
     const guest = Array.isArray(booking.guest) ? booking.guest[0] : booking.guest;
     const nameParts = (guest?.full_name ?? "Guest").trim().split(/\s+/);
     const sanitizeName = (s: string) => s.replace(/[^A-Za-z]/g, "") || "Guest";
     const firstName = sanitizeName(nameParts[0] ?? "Guest");
     const lastName = sanitizeName(nameParts.slice(1).join("")) || "Guest";
 
-    // The guest types their own details on Jenga's page (the cardholder name
-    // has to match the card exactly, so pre-filled names caused mismatches).
-    // Jenga lists these fields as required, so they are sent BLANK first; only
-    // if Jenga refuses blanks do we fall back to the booking's own details.
-    const postToPgw = (orderAmount: string, signature: string, details: {
-      firstName: string;
-      lastName: string;
-      email: string;
-      phone: string;
-      address: string;
-      postalCode: string;
-    }) =>
+    // Normalizes a stored guest phone ("0712345678", "+254712345678",
+    // "254712345678") to Jenga's expected "2547XXXXXXXX"/"2541XXXXXXXX".
+    // Jenga's checkout page parses this with libphonenumber and splits it
+    // into the "+254" prefix plus the 9-digit box shown to the guest, so the
+    // full 254-prefixed number is what has to go on the wire for that split
+    // to work — not the bare 9 digits.
+    const formatPhone = (raw: string | null | undefined): string => {
+      const digits = (raw ?? "").replace(/\D/g, "");
+      const local = digits.startsWith("254")
+        ? digits.slice(3)
+        : digits.startsWith("0")
+          ? digits.slice(1)
+          : digits;
+      return /^[17]\d{8}$/.test(local) ? `254${local}` : "254700000000";
+    };
+
+    // The guest's own details are pre-filled on Jenga's page for both
+    // payment methods, so they only need to enter card details or their
+    // M-Pesa PIN. Jenga's checkout has no mechanism to pre-select country,
+    // telco or phone on its separate M-Pesa sub-form (confirmed empirically:
+    // that form is always blank and never patched from these POST fields),
+    // so the guest still picks those themselves.
+    const customerDetails = {
+      firstName,
+      lastName,
+      email: guest?.email || "guest@pamhokhomes.com",
+      phone: formatPhone(guest?.phone),
+      address: "Nairobi",
+      postalCode: "00100",
+    };
+
+    const postToPgw = (orderAmount: string, signature: string) =>
       fetch(`${PGW_BASE}/processPayment`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -294,12 +317,12 @@ Deno.serve(async (req) => {
           productType: "Service",
           productDescription: description,
           paymentTimeLimit: "15mins",
-          customerFirstName: details.firstName,
-          customerLastName: details.lastName,
-          customerEmail: details.email,
-          customerPhone: details.phone,
-          customerAddress: details.address,
-          customerPostalCodeZip: details.postalCode,
+          customerFirstName: customerDetails.firstName,
+          customerLastName: customerDetails.lastName,
+          customerEmail: customerDetails.email,
+          customerPhone: customerDetails.phone,
+          customerAddress: customerDetails.address,
+          customerPostalCodeZip: customerDetails.postalCode,
           countryCode: "KE",
           callbackUrl,
           signature,
@@ -307,34 +330,12 @@ Deno.serve(async (req) => {
         redirect: "manual",
       });
 
-    // Tries blank customer details first, then the booking's own, for one
-    // orderAmount string — the signature is recomputed for each, since it's
-    // part of the signed payload.
     const attemptCheckout = async (orderAmount: string) => {
       const signature = await signJenga(
         `${merchantCode}${orderReference}${currency}${orderAmount}${callbackUrl}`,
         privateKeyPem,
       );
-      let res = await postToPgw(orderAmount, signature, {
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        address: "",
-        postalCode: "",
-      });
-      if (res.status !== 302 || !res.headers.get("location")) {
-        console.error("Jenga rejected blank customer details; retrying with the booking's details", res.status);
-        res = await postToPgw(orderAmount, signature, {
-          firstName,
-          lastName,
-          email: guest?.email || "guest@pamhokhomes.com",
-          phone: guest?.phone || "254700000000",
-          address: "Nairobi",
-          postalCode: "00100",
-        });
-      }
-      return res;
+      return postToPgw(orderAmount, signature);
     };
 
     // Jenga wants a different orderAmount format per payment channel, so the
