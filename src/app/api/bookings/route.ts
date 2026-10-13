@@ -40,6 +40,12 @@ interface BookingRequestBody {
   checkIn: string;
   checkOut: string;
   guest: { fullName: string; email: string; phone: string };
+  // Optional — a second guest sharing the primary room (a room sleeps up
+  // to 2). Display-only: shown in the admin's Room Status popup and used
+  // only to reach either guest if needed; no portal/payment/verification
+  // tied to them.
+  secondGuestName?: string;
+  secondGuestPhone?: string;
   // "Change rooms" flow: access_token of the cancelled booking whose
   // id_verification_status should carry over to the new booking.
   changeFromToken?: string;
@@ -47,13 +53,10 @@ interface BookingRequestBody {
   // email (see src/lib/guest-recognition.ts). Carries over verification
   // the same way changeFromToken does.
   recognitionToken?: string;
-  // The Terms and Privacy Policy tick from the booking card. Only honored
-  // for a recognized returning guest, whose payment step then skips the
-  // second tick; everyone else still accepts at payment as before.
-  termsAccepted?: boolean;
-  // The House Rules pop-up's own "Yes, I Accept" (see HouseRulesModal.tsx),
-  // shown right after the Terms checkbox — a second, separate acceptance
-  // required from every guest, regardless of the recognition flow above.
+  // The House Rules pop-up's own "Yes, I Accept" (see HouseRulesModal.tsx) —
+  // required from every guest before the booking is created. Terms &
+  // Privacy Policy acceptance is a separate agreement, made once, right
+  // before payment (see PaymentSection.tsx / jenga-pgw-initiate).
   houseRulesAccepted: boolean;
 }
 
@@ -71,11 +74,21 @@ function isValidBody(body: unknown): body is BookingRequestBody {
   if (typeof b.recognitionToken !== "undefined" && typeof b.recognitionToken !== "string") {
     return false;
   }
-  if (typeof b.termsAccepted !== "undefined" && typeof b.termsAccepted !== "boolean") {
-    return false;
-  }
   if (b.houseRulesAccepted !== true) {
     return false;
+  }
+  if (typeof b.secondGuestName !== "undefined") {
+    if (typeof b.secondGuestName !== "string" || b.secondGuestName.trim().length > 100) {
+      return false;
+    }
+  }
+  if (typeof b.secondGuestPhone !== "undefined") {
+    if (
+      typeof b.secondGuestPhone !== "string" ||
+      (b.secondGuestPhone.trim() && !PHONE_RE.test(b.secondGuestPhone.trim()))
+    ) {
+      return false;
+    }
   }
   if (typeof b.extraRoomIds !== "undefined") {
     const extras = b.extraRoomIds;
@@ -322,6 +335,9 @@ export async function POST(request: Request) {
 
   // The requested room first, so its portal is where the guest lands; the
   // portal then links to the others (same guest, same dates).
+  const secondGuestName = body.secondGuestName?.trim() ?? "";
+  const secondGuestPhone = body.secondGuestPhone?.trim() ?? "";
+
   for (const bookedRoom of [room, ...extraRooms]) {
     const totalAmount = nights * bookedRoom.price_per_night;
     const occupant = extraRoomGuests[bookedRoom.id];
@@ -359,8 +375,8 @@ export async function POST(request: Request) {
                 id_verification_method: inheritedVerification.method,
               }
             : {}),
-          ...(viaRecognition && body.termsAccepted === true
-            ? { terms_accepted_at: new Date().toISOString() }
+          ...(bookedRoom.id === room.id && secondGuestName
+            ? { second_guest_name: secondGuestName, second_guest_phone: secondGuestPhone || null }
             : {}),
         })
         .select("id, access_token, booking_reference")

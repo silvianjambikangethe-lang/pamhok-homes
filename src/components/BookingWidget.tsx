@@ -118,14 +118,18 @@ export default function BookingWidget({
     initialExtraIds.length > 0 ? "other" : null,
   );
   const [guest, setGuest] = useState({ fullName: "", email: "", phone: "" });
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  // A second, separate acceptance shown right after agreedToTerms is
-  // ticked — the House Rules pop-up (see HouseRulesModal). Both are
-  // required to submit; dismissing the pop-up without accepting un-ticks
-  // agreedToTerms too, so the checkbox never reads "agreed" while the
-  // rules pop-up itself was never actually accepted.
+  // A second guest sharing this room (a room sleeps up to 2) — just a name
+  // and number, shown in the admin's Room Status popup and kept so either
+  // guest can be reached if needed. No portal/payment/verification tied
+  // to them, same as the admin manual-booking form's own 2nd-guest fields.
+  const [secondGuestName, setSecondGuestName] = useState("");
+  const [secondGuestPhone, setSecondGuestPhone] = useState("");
+  // House Rules must be agreed to before the booking is created — clicking
+  // the submit button opens the pop-up (see HouseRulesModal) instead of
+  // submitting right away; accepting it is what actually creates the
+  // booking. Terms & Privacy Policy is a separate agreement, made once,
+  // right before payment on the portal page (see PaymentSection.tsx).
   const [houseRulesOpen, setHouseRulesOpen] = useState(false);
-  const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recognition, setRecognition] = useState<StoredRecognition | null>(null);
@@ -224,14 +228,20 @@ export default function BookingWidget({
     guest.fullName.trim() &&
     guest.email.trim() &&
     guest.phone.trim() &&
-    agreedToTerms &&
-    houseRulesAccepted &&
     !submitting;
 
-  async function handleSubmit(e: React.FormEvent) {
+  // The form itself never calls the booking API directly — submitting it
+  // opens the House Rules pop-up first (native required-field validation
+  // still runs before onSubmit fires), and only accepting that gate goes
+  // on to actually create the booking.
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit || !selection.checkIn || !selection.checkOut) return;
+    setHouseRulesOpen(true);
+  }
 
+  async function submitBooking() {
+    if (!selection.checkIn || !selection.checkOut) return;
     setSubmitting(true);
     setError(null);
 
@@ -250,11 +260,12 @@ export default function BookingWidget({
           checkIn: format(selection.checkIn, "yyyy-MM-dd"),
           checkOut: format(selection.checkOut, "yyyy-MM-dd"),
           guest,
-          houseRulesAccepted,
-          ...(changeFrom ? { changeFromToken: changeFrom } : {}),
-          ...(recognition
-            ? { recognitionToken: recognition.recognitionToken, termsAccepted: agreedToTerms }
+          ...(guestCount === 2 && secondGuestName.trim()
+            ? { secondGuestName: secondGuestName.trim(), secondGuestPhone: secondGuestPhone.trim() }
             : {}),
+          houseRulesAccepted: true,
+          ...(changeFrom ? { changeFromToken: changeFrom } : {}),
+          ...(recognition ? { recognitionToken: recognition.recognitionToken } : {}),
         }),
       });
 
@@ -565,56 +576,40 @@ export default function BookingWidget({
           </div>
         )}
 
-        <label htmlFor="agreedToTerms" className="flex items-start gap-2.5 text-sm text-ink/80">
-          <input
-            id="agreedToTerms"
-            type="checkbox"
-            required
-            checked={agreedToTerms}
-            onChange={(e) => {
-              const checked = e.target.checked;
-              setAgreedToTerms(checked);
-              if (checked) {
-                setHouseRulesOpen(true);
-              } else {
-                setHouseRulesAccepted(false);
-              }
-            }}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-taupe/40 accent-terracotta-500 focus:ring-terracotta-500"
-          />
-          <span>
-            I agree to the{" "}
-            <Link
-              href="/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="focus-ring rounded font-medium text-terracotta-600 underline hover:text-terracotta-700"
-            >
-              Terms &amp; Conditions
-            </Link>{" "}
-            and{" "}
-            <Link
-              href="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="focus-ring rounded font-medium text-terracotta-600 underline hover:text-terracotta-700"
-            >
-              Privacy Policy
-            </Link>
-          </span>
-        </label>
+        {guestCount === 2 && (
+          <div className="rounded-xl border border-taupe/20 bg-page p-3.5">
+            <p className="text-xs font-semibold text-ink/70">
+              2nd guest in this room{" "}
+              <span className="font-normal text-ink/50">(optional — so we can reach either of you)</span>
+            </p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <input
+                type="text"
+                maxLength={100}
+                placeholder="Name"
+                value={secondGuestName}
+                onChange={(e) => setSecondGuestName(e.target.value)}
+                className="focus-ring w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
+              />
+              <input
+                type="tel"
+                maxLength={20}
+                placeholder="Phone"
+                value={secondGuestPhone}
+                onChange={(e) => setSecondGuestPhone(e.target.value)}
+                className="focus-ring w-full rounded-lg border border-taupe/25 bg-surface px-3 py-2 text-sm text-ink"
+              />
+            </div>
+          </div>
+        )}
 
         <HouseRulesModal
           open={houseRulesOpen}
           onAccept={() => {
-            setHouseRulesAccepted(true);
             setHouseRulesOpen(false);
+            void submitBooking();
           }}
-          onDismiss={() => {
-            setHouseRulesOpen(false);
-            setAgreedToTerms(false);
-            setHouseRulesAccepted(false);
-          }}
+          onDismiss={() => setHouseRulesOpen(false)}
         />
 
         {error && (
