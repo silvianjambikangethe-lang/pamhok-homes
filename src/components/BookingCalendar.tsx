@@ -30,6 +30,12 @@ export interface DateSelection {
 function buildBlockedDates(bookedRanges: DateRange[]): Set<string> {
   const blocked = new Set<string>();
   for (const range of bookedRanges) {
+    // A same-day early checkout now reaches here as a zero-width range
+    // (start === end, see availability_view's early-checkout shortening) —
+    // it blocks nothing. Skip it rather than passing start > end to
+    // eachDayOfInterval below, which walks the interval in reverse instead
+    // of throwing, silently blocking that day (and the day before it).
+    if (!isBefore(range.start, range.end)) continue;
     // check_out day itself is NOT blocked — a new guest may check in the
     // same day the previous guest checks out.
     const days = eachDayOfInterval({ start: range.start, end: addDays(range.end, -1) });
