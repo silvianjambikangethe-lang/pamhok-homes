@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CHECK_IN_TIME, CHECK_OUT_TIME } from "@/lib/site";
 
 // Shown right after the guest ticks "I agree to the Terms & Privacy Policy"
@@ -19,6 +20,13 @@ export default function HouseRulesModal({
   onDismiss: () => void;
 }) {
   const acceptRef = useRef<HTMLButtonElement>(null);
+  // Rendered through a portal straight onto <body> (below), so this can
+  // only run once mounted in the browser — avoids the classic SSR
+  // "document is not defined" crash and a hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- mount flag avoids an SSR "document is not defined" crash
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (open) acceptRef.current?.focus();
@@ -33,9 +41,28 @@ export default function HouseRulesModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, onDismiss]);
 
-  if (!open) return null;
+  // Without this, the page behind keeps scrolling along with the modal
+  // (two scrollable things stacked, fighting over wheel/touch input) —
+  // part of why the modal could feel like it had "no scroll" of its own.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
-  return (
+  if (!open || !mounted) return null;
+
+  // Rendered as a portal directly on <body> — not nested inside the
+  // booking card/page markup — so this `fixed` overlay is never at the
+  // mercy of an ancestor's own stacking context (e.g. the sticky header's
+  // own backdrop-blur layer, which some mobile browsers paint above a
+  // same-page `position: fixed` descendant regardless of z-index). This
+  // guarantees the overlay — and its own scroll — always covers the
+  // actual viewport, header included.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -44,12 +71,6 @@ export default function HouseRulesModal({
       className="fixed inset-0 z-50 overflow-y-auto bg-espresso/60 p-4"
       onClick={onDismiss}
     >
-      {/* A plain `flex items-center` wrapper clips any overflow above the
-          centered point when the panel is taller than the viewport — there
-          is no way to scroll up to see the rest. min-h-full on this inner
-          wrapper keeps it centered while short, but lets it grow (and the
-          outer div's own scroll reach the whole thing) once the panel is
-          taller, so the top is never stuck out of reach. */}
       <div className="flex min-h-full items-center justify-center">
       <div
         className="relative w-full max-w-md rounded-2xl border-2 border-terracotta-500 bg-surface p-6 shadow-warm"
@@ -162,6 +183,7 @@ export default function HouseRulesModal({
         </p>
       </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

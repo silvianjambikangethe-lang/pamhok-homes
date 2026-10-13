@@ -228,6 +228,7 @@ export default function BookingWidget({
     guest.fullName.trim() &&
     guest.email.trim() &&
     guest.phone.trim() &&
+    (guestCount !== 2 || (secondGuestName.trim() && secondGuestPhone.trim())) &&
     !submitting;
 
   // The form itself never calls the booking API directly — submitting it
@@ -580,11 +581,12 @@ export default function BookingWidget({
           <div className="rounded-xl border border-taupe/20 bg-page p-3.5">
             <p className="text-xs font-semibold text-ink/70">
               2nd guest in this room{" "}
-              <span className="font-normal text-ink/50">(optional — so we can reach either of you)</span>
+              <span className="font-normal text-ink/50">(so we can reach either of you)</span>
             </p>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               <input
                 type="text"
+                required
                 maxLength={100}
                 placeholder="Name"
                 value={secondGuestName}
@@ -593,6 +595,7 @@ export default function BookingWidget({
               />
               <input
                 type="tel"
+                required
                 maxLength={20}
                 placeholder="Phone"
                 value={secondGuestPhone}
