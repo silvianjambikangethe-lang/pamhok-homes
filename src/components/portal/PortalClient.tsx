@@ -18,6 +18,8 @@ import ExtendStaySection from "@/components/portal/ExtendStaySection";
 import CheckoutSection from "@/components/portal/CheckoutSection";
 import { getCheckoutNotices, getCleaningNotices } from "@/lib/guest-notices";
 import ReviewPrompt from "@/components/portal/ReviewPrompt";
+import { GIFT_THRESHOLD } from "@/components/portal/ReviewForm";
+import GiftReplay from "@/components/portal/GiftReplay";
 import VerificationPassSection from "@/components/portal/VerificationPassSection";
 import ArrivalSection from "@/components/portal/ArrivalSection";
 import CheckInConfirmationMessage from "@/components/portal/CheckInConfirmationMessage";
@@ -454,6 +456,9 @@ export default function PortalClient({
                   Download receipt
                 </a>
               )}
+              {booking.hasReview &&
+                booking.reviewRating !== null &&
+                booking.reviewRating >= GIFT_THRESHOLD && <GiftReplay />}
             </div>
             {!booking.hasReview && <ReviewPrompt token={token} />}
           </>
