@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, format, isBefore, parseISO, startOfDay } from "date-fns";
-import { Plus, Trash, Warning } from "@phosphor-icons/react";
+import { Check, Plus, Trash, Warning } from "@phosphor-icons/react";
 import type { BillingCycle, BusinessExpense } from "@/lib/supabase/types";
 
 const CYCLES: { value: BillingCycle; label: string }[] = [
@@ -76,6 +76,26 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
       const data = await res.json().catch(() => null);
       setError(data?.error ?? "Could not delete expense.");
     }
+  }
+
+  // Marks the bill paid right now and, for a recurring one, rolls its due
+  // date forward a cycle — the server computes the new date (and handles a
+  // bill that's several cycles overdue), so just reload what comes back.
+  async function handleClear(id: string) {
+    setBusyId(id);
+    setError(null);
+    const res = await fetch(`/api/admin/business-expenses/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ markPaid: true }),
+    });
+    setBusyId(null);
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? "Could not clear expense.");
+      return;
+    }
+    router.refresh();
   }
 
   async function handleAdd(e: React.FormEvent) {
@@ -257,13 +277,26 @@ export default function ExpensesPanel({ initial }: { initial: BusinessExpense[] 
               </button>
             </div>
 
-            <div className="mt-3 flex items-center gap-2 text-xs">
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
               {dueSoon && (
                 <span className="flex items-center gap-1 font-semibold text-danger">
                   <Warning size={14} /> Due {format(parseISO(expense.next_due_date), "d MMM yyyy")}
                 </span>
               )}
               <span className="text-ink/55">{formatAmount(expense.amount, expense.currency)}</span>
+              {expense.last_paid_at && (
+                <span className="text-ink/45">
+                  Last paid {format(parseISO(expense.last_paid_at), "d MMM yyyy")}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => handleClear(expense.id)}
+                disabled={busy}
+                className="focus-ring ml-auto flex items-center gap-1 rounded-full border border-success/30 px-3 py-1 text-xs font-semibold text-success hover:bg-success/10 disabled:opacity-40"
+              >
+                <Check size={13} weight="bold" /> {busy ? "Clearing…" : "Clear"}
+              </button>
             </div>
           </div>
         );

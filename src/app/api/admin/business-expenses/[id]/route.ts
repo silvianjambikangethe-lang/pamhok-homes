@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
+import { addMonths, addYears, format, parseISO, startOfDay } from "date-fns";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { BusinessExpense } from "@/lib/supabase/types";
 
 const VALID_CYCLES = ["monthly", "annual", "one-time"];
+
+// Advances a due date by whole billing cycles until it's back in the
+// future — handles a bill that's several cycles overdue, not just one.
+function nextDueDateAfterPaying(currentDueDate: string, cycle: string) {
+  let due = parseISO(currentDueDate);
+  const today = startOfDay(new Date());
+  const advance = cycle === "annual" ? addYears : addMonths;
+  do {
+    due = advance(due, 1);
+  } while (due <= today);
+  return format(due, "yyyy-MM-dd");
+}
 
 export async function PATCH(
   request: Request,
@@ -40,11 +53,31 @@ export async function PATCH(
   }
   if (typeof body?.notes === "string") update.notes = body.notes.trim() || null;
 
+  const supabase = await createServerSupabaseClient();
+
+  // "Clear" button: records the payment and, for a recurring bill, rolls
+  // next_due_date forward by a cycle (or several, if it's been overdue a
+  // while) so clearing it also stops it nagging as due until the new date.
+  // A one-time bill just gets last_paid_at — there's no next cycle to move
+  // to; the admin deletes it separately once they're done with it.
+  if (body?.markPaid === true) {
+    const { data: current } = await supabase
+      .from("business_expenses")
+      .select("billing_cycle, next_due_date")
+      .eq("id", id)
+      .maybeSingle();
+    if (!current) {
+      return NextResponse.json({ error: "Not authorized or expense not found." }, { status: 403 });
+    }
+    update.last_paid_at = new Date().toISOString();
+    if (current.billing_cycle === "monthly" || current.billing_cycle === "annual") {
+      update.next_due_date = nextDueDateAfterPaying(current.next_due_date, current.billing_cycle);
+    }
+  }
+
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
-
-  const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
     .from("business_expenses")

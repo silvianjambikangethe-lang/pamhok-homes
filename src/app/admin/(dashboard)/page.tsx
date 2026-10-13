@@ -65,6 +65,7 @@ export default async function AdminOverviewPage() {
     { data: refundsNeeded, count: refundsNeededCount },
     { data: renewalsDueSoon },
     { data: checkoutsDueData },
+    { data: laundryRevenueRows },
   ] = await Promise.all([
     supabase
       .from("bookings")
@@ -118,6 +119,19 @@ export default async function AdminOverviewPage() {
       .is("checked_out_at", null)
       .lte("check_out", today)
       .order("check_out", { ascending: true }),
+    // Laundry charges are tracked separately from a booking's own
+    // total_amount/payment_status (see guest_requests.laundry_*, they can
+    // be in flight alongside a stay or extension payment) — folded in here
+    // so "Revenue this month" is the business's actual income, not just
+    // room revenue. Recognised on laundry_paid_at (when the charge was
+    // actually paid), same intent as bookings' own Paid total below.
+    supabase
+      .from("guest_requests")
+      .select("laundry_amount")
+      .eq("request_type", "laundry")
+      .eq("laundry_payment_status", "Paid")
+      .gte("laundry_paid_at", monthStart)
+      .lte("laundry_paid_at", `${monthEnd}T23:59:59`),
   ]);
 
   const checkoutsDue = ((checkoutsDueData ?? []) as unknown as CheckoutDueRow[]).map((b) => ({
@@ -129,9 +143,14 @@ export default async function AdminOverviewPage() {
   const bookingsThisMonth = (monthBookings ?? []).filter(
     (b) => b.booking_status !== "Blocked",
   ).length;
-  const revenueThisMonth = (monthBookings ?? [])
+  const roomRevenueThisMonth = (monthBookings ?? [])
     .filter((b) => b.payment_status === "Paid")
     .reduce((sum, b) => sum + Number(b.total_amount), 0);
+  const laundryRevenueThisMonth = (laundryRevenueRows ?? []).reduce(
+    (sum, r) => sum + Number(r.laundry_amount ?? 0),
+    0,
+  );
+  const revenueThisMonth = roomRevenueThisMonth + laundryRevenueThisMonth;
   const pendingUnpaid = (monthBookings ?? []).filter(
     (b) => b.payment_status !== "Paid" && b.booking_status !== "Blocked",
   ).length;

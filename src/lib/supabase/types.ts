@@ -431,6 +431,7 @@ export type BusinessExpense = {
   next_due_date: string;
   notes: string | null;
   created_at: string;
+  last_paid_at: string | null;
 };
 
 // Admin-maintained "do not book" list, checked against the booking name at
