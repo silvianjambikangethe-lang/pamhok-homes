@@ -696,8 +696,23 @@ create policy "anon can view availability rows" on bookings
   to anon
   using (booking_status in ('Confirmed', 'Blocked', 'Pending Verification'));
 
+-- check_out shortens to the actual checkout date (same "turnover day"
+-- convention check_out already uses) once checked_out_at is set earlier
+-- than the original date, so a room freed up early by the guest's own
+-- Check-Out button (or the admin's "Mark checked out") is immediately
+-- bookable again instead of staying blocked through the original stay
+-- length. A checkout on or after check_out changes nothing.
 create or replace view availability_view as
-  select room_id, check_in, check_out, booking_status
+  select
+    room_id,
+    check_in,
+    case
+      when checked_out_at is not null
+        and (checked_out_at + interval '3 hours')::date < check_out
+      then (checked_out_at + interval '3 hours')::date
+      else check_out
+    end as check_out,
+    booking_status
   from bookings
   where booking_status in ('Confirmed', 'Blocked', 'Pending Verification')
   union all
