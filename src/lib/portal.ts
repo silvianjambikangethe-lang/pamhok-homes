@@ -19,6 +19,11 @@ export interface PortalBooking extends Booking {
   room: Pick<Room, "id" | "name" | "slug" | "door_code" | "wifi_password" | "wifi_network_name"> | null;
   guest: Pick<Guest, "full_name"> | null;
   hasReview: boolean;
+  // The rating on file, once hasReview is true — lets the cleared/"thanks
+  // for staying" view know whether this guest earned the full thank-you
+  // gift, so its Replay option survives the refresh into that view
+  // instead of only existing in the moment right after submitting.
+  reviewRating: number | null;
   // True for exactly one page load: the one right after a stay-extension
   // payment resolved. Read once here and cleared in the same request, so
   // the guest sees "your extension payment has been received" exactly
@@ -125,8 +130,8 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     await supabase.from("bookings").update({ extension_confirmed_at: null }).eq("id", data.id);
   }
 
-  const [{ count }, { data: laundryRows }, siblingResult] = await Promise.all([
-    supabase.from("reviews").select("id", { count: "exact", head: true }).eq("booking_id", data.id),
+  const [{ data: reviewRow }, { data: laundryRows }, siblingResult] = await Promise.all([
+    supabase.from("reviews").select("rating").eq("booking_id", data.id).maybeSingle(),
     supabase
       .from("guest_requests")
       .select("id, status, created_at, laundry_amount, laundry_currency, laundry_payment_status")
@@ -231,7 +236,8 @@ export async function getBookingByToken(token: string): Promise<PortalBooking | 
     extensionJustConfirmed,
     rememberMeAnswer,
     rememberedFirstName,
-    hasReview: (count ?? 0) > 0,
+    hasReview: !!reviewRow,
+    reviewRating: reviewRow?.rating ?? null,
     latestLaundryRequest: latestLaundry,
     siblingBookings,
   } as unknown as PortalBooking;
