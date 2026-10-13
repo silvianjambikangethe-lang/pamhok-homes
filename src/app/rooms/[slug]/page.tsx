@@ -9,6 +9,16 @@ import { getAllAvailability, getRoomBySlug, getRooms } from "@/lib/data";
 import { getExchangeRates } from "@/lib/currency";
 import { SITE, pageTitle } from "@/lib/site";
 
+// Room availability is read here on every page load via Supabase's
+// underlying fetch() calls, which Next.js otherwise caches indefinitely by
+// default (its Data Cache, separate from and invisible to a visitor's own
+// browser cache) since nothing on this route opted out — this page being
+// dynamically rendered (it reads searchParams) does NOT itself disable
+// that. Without this, a booking made or an early checkout that frees up a
+// room can leave this page showing stale, already-wrong availability to
+// every visitor indefinitely, well past anyone clearing their own cache.
+export const fetchCache = "force-no-store";
+
 export async function generateMetadata({
   params,
 }: {
