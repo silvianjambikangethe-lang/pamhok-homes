@@ -41,9 +41,16 @@ export default function HouseRulesModal({
       aria-modal="true"
       aria-labelledby="house-rules-title"
       aria-describedby="house-rules-lede"
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-espresso/60 p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-espresso/60 p-4"
       onClick={onDismiss}
     >
+      {/* A plain `flex items-center` wrapper clips any overflow above the
+          centered point when the panel is taller than the viewport — there
+          is no way to scroll up to see the rest. min-h-full on this inner
+          wrapper keeps it centered while short, but lets it grow (and the
+          outer div's own scroll reach the whole thing) once the panel is
+          taller, so the top is never stuck out of reach. */}
+      <div className="flex min-h-full items-center justify-center">
       <div
         className="relative w-full max-w-md rounded-2xl border-2 border-terracotta-500 bg-surface p-6 shadow-warm"
         onClick={(e) => e.stopPropagation()}
@@ -153,6 +160,7 @@ export default function HouseRulesModal({
           By selecting Yes, I Accept, you confirm that you have read and agree to
           these house rules.
         </p>
+      </div>
       </div>
     </div>
   );
