@@ -352,7 +352,10 @@ create table if not exists business_expenses (
   billing_cycle text not null,   -- 'monthly' | 'annual' | 'one-time'
   next_due_date date not null,
   notes text,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  -- Set by the Expenses page's "Clear" button, alongside next_due_date
+  -- advancing by one billing cycle (monthly/annual) from that same action.
+  last_paid_at timestamptz
 );
 
 -- ------------------------------------------------------------
